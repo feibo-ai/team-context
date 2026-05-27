@@ -58,5 +58,5 @@ similar projects; project-specific rules go in `cases/`, not here.)
 | Team SOP | team-context repo, `sop/group_sop_v0.4.html` |
 | Team standards | team-context repo, `standards/` |
 | Architecture decisions | `<project>/decisions/` + team-context `decisions/` |
-| Multica workspace | `teamctx` (server `http://10.0.5.51:8083`) |
+| Multica workspace | `teamctx` (server URL: run `multica config show`) |
 | Multica CLI ref | `multica --help` or `~/.claude/skills/multica-cli/` |
