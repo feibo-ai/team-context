@@ -1,6 +1,6 @@
 ---
 name: monday-kickoff-protocol
-description: Use Monday 09:30 for the weekly 30-min kickoff meeting. Triggers '周一 kickoff', 'Monday kickoff', '本周计划对齐', 'Monday meeting'. Guides DRI through 30-min protocol: read autopilot-generated plan roundup → DRI aligns priorities/boundaries → end. Designed to NOT repeat what plans already say.
+description: "Use Monday 09:30 for the weekly 30-min kickoff meeting. Triggers '周一 kickoff', 'Monday kickoff', '本周计划对齐', 'Monday meeting'. Guides DRI through 30-min protocol: read autopilot-generated plan roundup → DRI aligns priorities/boundaries → end. Designed to NOT repeat what plans already say."
 ---
 
 # Monday Kickoff — 30-min protocol
