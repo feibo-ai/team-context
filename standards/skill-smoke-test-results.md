@@ -27,3 +27,12 @@
 3. 把 `PENDING` 替换为 `PASS` 或 `FAIL`。若 FAIL，打开 `SKILL.md` 把 `description:` 字段打磨得更锋利（补上漏掉的触发词、收紧用例描述），再重测。
 
 **关于 description 字段**：`description:` 的每一行都占用模型的 attention budget。别用正文内容把它塞满。用 1-3 句话收尾时附上明确的触发短语；模型把这些当作子串匹配在用。
+
+## feishu-cli skills imported (W2)
+
+从 https://github.com/riba2534/feishu-cli 导入 25 个 skill 到本地 multica workspace · 时间 2026-05-27。
+
+- **导入方式**: per-skill URL（plan 原版的 `/skills/` 根路径 import 不工作，跟 team-context private repo 一样的问题）
+- **挂载**: `feishu-cli-msg` + `feishu-cli-card` + `feishu-cli-import` 全部挂到 4 个 autopilot bot (daily-summary-bot / weekly-roundup-bot / wednesday-stats-bot / monthly-health-bot)
+- **Owner**: riba2534 (上游) — 月度 `monthly_health_report` 跑时检查 release 同步
+- **Last reviewed**: 2026-05-27
