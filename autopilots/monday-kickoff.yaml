@@ -1,0 +1,53 @@
+name: monday-kickoff
+description: |
+  Monday roundup. Creates issue with this week's plan-approved items and
+  pushes to feishu via feishu-cli.
+  SOP coverage: P-6 Weekly W-01
+
+trigger:
+  kind: schedule
+  cron: "30 9 * * 1"
+  timezone: Asia/Shanghai
+
+mode: create_issue
+issue_title_template: "Monday Kickoff {{date}}"
+
+agent:
+  name: weekly-roundup-bot
+
+# PB-04 guardrails (autopilot_lint enforces)
+guardrails:
+  forbidden_commands:
+    - "git push"
+    - "git push --force"
+    - "git commit"
+    - "npm publish"
+    - "rm -rf"
+    - "psql.* drop"
+    - "* db migrate"
+  forbidden_paths:
+    - ".env*"
+    - ".ssh/*"
+    - "secrets/*"
+  max_budget_usd: 5
+  max_runtime_minutes: 10
+
+prompt: |
+  1. List all open issues with label `plan-approved`
+     Once Plan 3 PR C is in fork: `multica issue list --label plan-approved --status open`
+     Before then: `multica issue list --status open` and client-side filter
+  2. For each: title, DRI, appetite, last Current State handoff timestamp
+  3. Identify cross-project boundaries (issues touching same files/modules)
+
+  Write the body as markdown to /tmp/monday-kickoff.md.
+  The multica issue body is set to the same markdown.
+
+  Also push a compact summary card to feishu:
+    feishu-cli msg send \
+      --receive-id-type chat_id \
+      --receive-id "$FEISHU_TEAM_CHAT_ID" \
+      --msg-type interactive \
+      --content-file /tmp/monday-card.json
+
+  Card title: "Monday Kickoff · {{date}}"
+  Card body: top 5 plan-approved with DRI + appetite + handoff age.
