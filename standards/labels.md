@@ -8,17 +8,17 @@
 
 | Label | 颜色 | 含义 | 加 / 删时机 | 谁加 |
 |---|---|---|---|---|
-| `plan-draft` | `#94A3B8` gray | plan markdown 已生成、未 review | `plan_create` 自动加 | MCP 工具 |
-| `plan-under-review` | `#F59E0B` amber | 已请 reviewer，等 verdict | `plan_request_review` 加 + `plan-draft` 不动 | MCP 工具 |
-| `plan-approved` | `#10B981` green | SOP 非妥协 #1 通过 · implement 可启动 | `plan_approve` 加 | MCP 工具 |
-| `plan-upgraded` | `#A855F7` purple | plan 升级到 v1.x · 需重新 review | `plan_upgrade` 加 + 重新加 `plan-draft` | MCP 工具 |
-| `debrief` | `#3B82F6` blue | case file 已生成 · 待 review section 4 | `case_create` 加 | MCP 工具 |
-| `debrief-reviewed` | `#059669` deep-green | section 4 DRI 签字 · issue 可 close | `case_review` 加 | MCP 工具 |
-| `ancient-impossible` | `#EC4899` pink | "在传统 5 人团队不可能"的事件 · AI Native 终极指标 | 团队成员手工加 / 月度复盘加 | 任何人 |
-| `betting-table` | `#F97316` orange | 周五 betting table issue | `betting_table_capture` 加 | MCP 工具 |
-| `burnout-alert` | `#DC2626` red | burnout check 任何 yes → 自动建 issue | `burnout_check_distribute` 加 | MCP 工具 |
-| `code-review` | `#8B5CF6` violet | code review 请求 issue | `code_review_request` 加 | MCP 工具 |
-| `research` | `#06B6D4` cyan | RPI Research session 产物 issue | `research_create` 加 | MCP 工具 |
+| `plan-draft` | `#94A3B8` 灰 | plan markdown 已生成、未 review | `plan_create` 自动加 | MCP 工具 |
+| `plan-under-review` | `#F59E0B` 琥珀 | 已请 reviewer，等 verdict | `plan_request_review` 加 + `plan-draft` 不动 | MCP 工具 |
+| `plan-approved` | `#10B981` 绿 | SOP 非妥协 #1 通过 · implement 可启动 | `plan_approve` 加 | MCP 工具 |
+| `plan-upgraded` | `#A855F7` 紫 | plan 升级到 v1.x · 需重新 review | `plan_upgrade` 加 + 重新加 `plan-draft` | MCP 工具 |
+| `debrief` | `#3B82F6` 蓝 | case file 已生成 · 待 review section 4 | `case_create` 加 | MCP 工具 |
+| `debrief-reviewed` | `#059669` 深绿 | section 4 DRI 签字 · issue 可 close | `case_review` 加 | MCP 工具 |
+| `ancient-impossible` | `#EC4899` 粉 | "在传统 5 人团队不可能"的事件 · AI Native 终极指标 | 团队成员手工加 / 月度复盘加 | 任何人 |
+| `betting-table` | `#F97316` 橙 | 周五 betting table issue | `betting_table_capture` 加 | MCP 工具 |
+| `burnout-alert` | `#DC2626` 红 | burnout check 任何 yes → 自动建 issue | `burnout_check_distribute` 加 | MCP 工具 |
+| `code-review` | `#8B5CF6` 紫罗兰 | code review 请求 issue | `code_review_request` 加 | MCP 工具 |
+| `research` | `#06B6D4` 青 | RPI Research session 产物 issue | `research_create` 加 | MCP 工具 |
 
 ## State Machine (核心 issue 路径)
 
