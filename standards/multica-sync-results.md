@@ -67,11 +67,18 @@ First attempt used Claude runtime → all runs failed with `401 Invalid authenti
 
 Plan 1 Task A13 Step 5 specifies `multica agent update --custom-env "..."`. That flag doesn't exist on `agent update`. The real path is the dedicated `multica agent env set <agent-id> --custom-env "..."` subcommand (audited write). Each agent got `FEISHU_TEAM_CHAT_ID` + `FEISHU_CONFIG_DIR` injected; `has_custom_env=true, key_count=2` confirmed via `multica agent env get`.
 
-### Known cosmetic issue
+### Path symlinks (per-workstation setup, one-shot)
 
-The autopilot prompts reference paths `~/projects` and `~/team-context` which on this host are actually `/Users/feibo/projects` (absent) and `/Users/feibo/feibo/team-context`. The Codex agent noted this in its first run and worked around it. Fix later by either:
-- Symlinking `~/team-context -> /Users/feibo/feibo/team-context`, or
-- Updating the 4 autopilot YAMLs to use absolute paths
+Autopilot prompts reference `~/team-context` and `~/projects`. On this host the real paths are `/Users/feibo/feibo/team-context` and `/Users/feibo/feibo`. Fixed via symlinks so the YAMLs stay portable across workstations:
+
+```bash
+ln -s /Users/feibo/feibo/team-context ~/team-context
+ln -s /Users/feibo/feibo ~/projects
+```
+
+After symlinks, third trigger run produced a fully-Chinese card from real data (TEA-1/TEA-2 issues + recent commits) in 3m19s. Feishu message ID `om_x100b6e58dd64f4acb22950d27bb44ec` delivered to Team Context group.
+
+Other workstations with different project roots: adjust the symlink targets — autopilot YAMLs stay portable.
 
 ## Re-sync protocol
 
