@@ -1,0 +1,2371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI MIQ Group SOP · v0.4 · 参考式 Handbook</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1A1A1A; --ink-soft: #2D2D2D; --paper: #F5F2EB; --paper-deep: #EDE8DC;
+  --accent: #C73E1D; --accent-soft: #E07856; --gray: #8B8680; --gray-light: #BFB9AD;
+  --border: #D4CFC4; --border-soft: #E5E0D4;
+  --green: #4A6B3A; --gold: #B8862E; --blue: #2C5570;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Noto Sans SC', -apple-system, sans-serif;
+  background: var(--paper); color: var(--ink); line-height: 1.7;
+  font-size: 15px; -webkit-font-smoothing: antialiased;
+  display: grid; grid-template-columns: 220px 1fr;
+}
+.serif { font-family: 'Noto Serif SC', serif; }
+.mono { font-family: 'IBM Plex Mono', monospace; }
+
+/* SIDEBAR NAV · sticky */
+.sidebar {
+  position: sticky; top: 0; height: 100vh;
+  padding: 36px 24px; background: var(--paper-deep);
+  border-right: 1px solid var(--border);
+  overflow-y: auto; font-size: 13px;
+}
+.sidebar-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 2px;
+  color: var(--accent); margin-bottom: 14px;
+}
+.sidebar-version {
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 700; font-size: 16px;
+  color: var(--ink); margin-bottom: 24px;
+  line-height: 1.3;
+}
+.sidebar-group {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 1.5px;
+  color: var(--gray); text-transform: uppercase;
+  margin: 20px 0 8px;
+}
+.sidebar ul { list-style: none; }
+.sidebar li { margin-bottom: 4px; }
+.sidebar a {
+  display: block; padding: 4px 0; font-size: 13px;
+  color: var(--ink-soft); text-decoration: none;
+  border-left: 2px solid transparent; padding-left: 10px;
+  transition: all 0.15s; line-height: 1.4;
+}
+.sidebar a:hover {
+  color: var(--accent); border-left-color: var(--accent);
+}
+.sidebar a .num {
+  display: inline-block; width: 26px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--gray);
+}
+
+/* MAIN content area */
+.main { padding: 60px 60px 100px; max-width: 820px; }
+
+/* container 取消之前的居中(原本是 max-width: 760px; margin: auto) */
+.doc-section .container { max-width: none; margin: 0; padding: 0; }
+
+/* INTRO hero(README 部分 · 保留原 README 样式) */
+.hero { border-bottom: 2px solid var(--ink); padding-bottom: 40px; margin-bottom: 48px; }
+.hero-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--gray); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px; }
+.hero-title { font-family: 'Noto Serif SC', serif; font-weight: 900; font-size: 52px; line-height: 1.1; letter-spacing: -1.5px; color: var(--ink); margin-bottom: 20px; }
+.hero-title .accent { color: var(--accent); }
+.hero-subtitle { font-size: 17px; color: var(--ink-soft); line-height: 1.7; max-width: 680px; margin-bottom: 28px; }
+.hero-meta { display: flex; gap: 36px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; flex-wrap: wrap; }
+.hero-meta-item .label { color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.hero-meta-item .value { color: var(--ink); font-weight: 600; }
+
+/* PHILOSOPHY block */
+.philosophy { background: var(--paper-deep); border-left: 4px solid var(--accent); padding: 28px 32px; margin-bottom: 56px; font-family: 'Noto Serif SC', serif; font-size: 18px; line-height: 1.7; color: var(--ink-soft); }
+.philosophy strong { color: var(--accent); font-weight: 700; }
+
+/* generic section header (used in README intro for "8 modules" / "playbooks") */
+section.doc-section { margin-bottom: 64px; }
+.doc-section > section { margin-bottom: 56px; }
+.section-header { margin-bottom: 24px; }
+.section-num { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+.section-title { font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 28px; color: var(--ink); border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+
+/* MODULE grid (README) */
+.module-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 32px; }
+.module-card { background: white; border: 1px solid var(--border); padding: 20px 22px; text-decoration: none; color: var(--ink); transition: all 0.15s; display: block; }
+.module-card:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(199, 62, 29, 0.1); }
+.module-card-num { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent); letter-spacing: 1.5px; margin-bottom: 6px; }
+.module-card-title { font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 17px; color: var(--ink); margin-bottom: 8px; line-height: 1.3; }
+.module-card-desc { font-size: 13px; color: var(--gray); line-height: 1.5; margin-bottom: 12px; }
+.module-card-meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--gray-light); letter-spacing: 1px; text-transform: uppercase; }
+.module-card.playbook { background: var(--paper-deep); }
+.module-card.new { border-left: 3px solid var(--accent); }
+
+/* Reading path */
+.reading-path { background: white; border: 1px solid var(--border); padding: 20px 24px; margin-bottom: 14px; }
+.reading-path-title { font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 15px; color: var(--ink); margin-bottom: 8px; }
+.reading-path-flow { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--gray); line-height: 1.8; }
+.reading-path-flow .step { color: var(--accent); font-weight: 600; }
+
+/* MODULE header (01-08 + playbooks) */
+.module-header { border-bottom: 2px solid var(--ink); padding-bottom: 28px; margin-bottom: 40px; margin-top: 60px; }
+.module-num { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); letter-spacing: 2px; margin-bottom: 8px; }
+.new-badge { display: inline-block; background: var(--accent); color: white; padding: 2px 8px; font-size: 10px; letter-spacing: 1px; margin-left: 8px; vertical-align: middle; }
+.module-title { font-family: 'Noto Serif SC', serif; font-weight: 900; font-size: 38px; line-height: 1.15; color: var(--ink); margin-bottom: 12px; }
+.module-subtitle { font-size: 16px; color: var(--gray); line-height: 1.6; margin-bottom: 20px; }
+.module-meta { display: flex; gap: 24px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--gray); letter-spacing: 1px; flex-wrap: wrap; }
+.module-meta span strong { color: var(--ink); font-weight: 600; }
+
+/* playbook 模块 num 用 gold */
+.sect-pb-01 .module-num, .sect-pb-02 .module-num, .sect-pb-03 .module-num, .sect-pb-04 .module-num { color: var(--gold); }
+
+/* sub-section */
+.sub-section { margin-bottom: 48px; }
+.sub-section h2 { font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 24px; color: var(--ink); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.sub-section h3 { font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 18px; color: var(--ink); margin-bottom: 12px; margin-top: 24px; }
+.sub-section p { color: var(--ink-soft); margin-bottom: 14px; }
+.sub-section p strong { color: var(--ink); }
+.sub-section ul, .sub-section ol { margin-left: 22px; margin-bottom: 16px; color: var(--ink-soft); }
+.sub-section ul li, .sub-section ol li { margin-bottom: 6px; line-height: 1.7; }
+
+/* principle card */
+.principle { display: grid; grid-template-columns: 60px 1fr; gap: 24px; margin-bottom: 28px; align-items: start; }
+.principle-num { font-family: 'IBM Plex Mono', monospace; font-size: 44px; font-weight: 700; color: var(--accent); line-height: 1; }
+.principle-content h3 { font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 19px; color: var(--ink); margin-bottom: 10px; }
+.principle-content p { font-size: 14px; color: var(--ink-soft); margin-bottom: 8px; }
+.principle-content .evidence { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--gray); letter-spacing: 1px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+
+/* level card */
+.level-card { background: white; border: 1px solid var(--border); padding: 24px; margin-bottom: 16px; position: relative; }
+.level-card.level-3 { border-color: var(--accent); border-left-width: 4px; }
+.level-card-header { display: flex; align-items: baseline; gap: 16px; margin-bottom: 12px; }
+.level-card-num { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent); letter-spacing: 2px; font-weight: 600; flex-shrink: 0; }
+.level-card-title { font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 19px; color: var(--ink); }
+.level-card-think { font-size: 13px; color: var(--gray); margin-top: 4px; font-style: italic; }
+.level-card ul { margin-left: 18px; margin-bottom: 12px; font-size: 14px; color: var(--ink-soft); }
+.level-card ul li { margin-bottom: 4px; line-height: 1.6; }
+.level-card .best-for { background: var(--paper-deep); padding: 10px 14px; font-size: 13px; color: var(--ink-soft); margin-top: 12px; }
+.level-card .best-for strong { color: var(--accent); }
+
+/* quote */
+.quote, .quote-block { background: var(--paper-deep); border-left: 4px solid var(--ink); padding: 20px 24px; margin: 24px 0; font-family: 'Noto Serif SC', serif; font-size: 16px; line-height: 1.7; color: var(--ink-soft); }
+.quote-attribution { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--gray); letter-spacing: 1px; margin-top: 12px; font-style: normal; }
+
+/* table */
+table { width: 100%; border-collapse: collapse; background: white; font-size: 14px; margin-bottom: 20px; }
+th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--border-soft); vertical-align: top; }
+th { background: var(--paper-deep); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--gray); }
+td.bold { font-weight: 600; color: var(--ink); }
+td .accent { color: var(--accent); font-weight: 600; }
+code.mono, code { background: var(--paper-deep); padding: 1px 6px; font-size: 13px; border-radius: 2px; font-family: 'IBM Plex Mono', monospace; }
+
+/* callout */
+.callout { background: var(--paper-deep); border-left: 3px solid var(--accent); padding: 16px 20px; margin: 20px 0; font-size: 14px; color: var(--ink-soft); line-height: 1.7; }
+.callout strong { color: var(--ink); }
+.callout.green { border-color: var(--green); }
+.callout.gold { border-color: var(--gold); }
+.callout.blue { border-color: var(--blue); }
+.callout.red { background: rgba(199, 62, 29, 0.06); }
+.callout.accent { border-color: var(--accent); }
+
+/* code block */
+.code-block { background: var(--paper-deep); padding: 14px 18px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; line-height: 1.8; margin: 12px 0; color: var(--ink-soft); overflow-x: auto; }
+
+/* evidence */
+.evidence { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--gray); letter-spacing: 1px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+
+/* step / flow */
+.step { background: white; border: 1px solid var(--border); padding: 18px 22px; margin-bottom: 14px; }
+.step-num { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent); letter-spacing: 2px; margin-bottom: 6px; font-weight: 600; }
+.step-title { font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 17px; color: var(--ink); margin-bottom: 8px; }
+.step p { font-size: 14px; }
+
+/* phase-tag (RPI 总图) */
+.phase-tag { display: inline-block; background: var(--ink); color: var(--paper); padding: 4px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 1.5px; margin-bottom: 16px; }
+.phase-tag.r { background: var(--blue); }
+.phase-tag.p { background: var(--gold); }
+.phase-tag.i { background: var(--green); }
+
+/* non-negotiable card */
+.non-neg { background: white; border: 2px solid var(--accent); padding: 20px 24px; margin-bottom: 14px; }
+.non-neg-tag { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent); letter-spacing: 2px; font-weight: 600; margin-bottom: 6px; }
+.non-neg-title { font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 18px; color: var(--ink); margin-bottom: 8px; }
+
+/* layer card */
+.layer-card { background: white; border: 1px solid var(--border); padding: 22px 26px; margin-bottom: 16px; }
+.layer-card.l1 { border-left: 4px solid var(--accent); background: rgba(199, 62, 29, 0.03); }
+.layer-card.l2 { border-left: 4px solid var(--green); background: rgba(74, 107, 58, 0.03); }
+.layer-card.l3 { border-left: 4px solid var(--gray); }
+.layer-tag { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 2px; font-weight: 600; margin-bottom: 6px; }
+.layer-tag.l1 { color: var(--accent); }
+.layer-tag.l2 { color: var(--green); }
+.layer-tag.l3 { color: var(--gray); }
+.layer-card-title { font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 19px; color: var(--ink); margin-bottom: 4px; }
+.layer-card-meta { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--gray); margin-bottom: 12px; }
+
+/* yesno grid */
+.yesno { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+.yesno-card { background: white; padding: 16px 20px; border: 1px solid var(--border); }
+.yesno-card.yes { border-left: 3px solid var(--green); }
+.yesno-card.no { border-left: 3px solid var(--accent); }
+.yesno-tag { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 2px; font-weight: 700; margin-bottom: 8px; }
+.yesno-card.yes .yesno-tag { color: var(--green); }
+.yesno-card.no .yesno-tag { color: var(--accent); }
+
+/* role pill */
+.role-pill { display: inline-block; padding: 3px 10px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 1.5px; font-weight: 600; border-radius: 2px; }
+.role-pill.dri { background: var(--accent); color: white; }
+.role-pill.exec { background: var(--blue); color: white; }
+.role-pill.collab { background: var(--green); color: white; }
+.role-pill.review { background: var(--gold); color: white; }
+
+/* anti-pattern card */
+.anti-card { background: white; border: 1px solid var(--border); padding: 18px 22px; margin-bottom: 12px; border-left: 4px solid var(--accent); }
+.anti-num { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); letter-spacing: 1.5px; font-weight: 700; margin-bottom: 4px; }
+.anti-title { font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 16px; color: var(--ink); margin-bottom: 6px; }
+.anti-card p { font-size: 14px; margin-bottom: 4px; color: var(--ink-soft); }
+.anti-evidence { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--gray); letter-spacing: 1px; margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--border); }
+
+/* iron-card (8 模块 三条铁律) */
+.iron-card { background: white; border: 1px solid var(--border); padding: 20px 24px; margin-bottom: 14px; border-left: 4px solid var(--accent); }
+.iron-num { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); letter-spacing: 2px; font-weight: 700; margin-bottom: 6px; }
+.iron-title { font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 18px; color: var(--ink); margin-bottom: 8px; }
+.iron-example { margin: 12px 0; font-size: 14px; }
+.iron-example .bad { color: var(--accent); }
+.iron-example .good { color: var(--green); }
+
+/* playbook step card · gold */
+.sect-pb-01 .step-card, .sect-pb-02 .step-card, .sect-pb-03 .step-card, .sect-pb-04 .step-card {
+  background: white; border: 1px solid var(--border); padding: 16px 20px; margin-bottom: 12px; border-left: 3px solid var(--gold);
+}
+.step-card .num { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--gold); letter-spacing: 2px; margin-bottom: 4px; font-weight: 700; }
+.step-card .title { font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 16px; color: var(--ink); margin-bottom: 6px; }
+
+/* checklist (playbook) */
+.checklist { background: white; border: 1px solid var(--border); padding: 18px 22px; margin: 12px 0; }
+.checklist-item { font-size: 14px; margin-bottom: 6px; color: var(--ink-soft); display: flex; align-items: baseline; gap: 8px; }
+.checklist-item::before { content: "☐"; color: var(--gray); font-weight: 700; }
+
+/* agent grid (pb 03) */
+.agent-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+.agent-card { background: white; border: 1px solid var(--border); padding: 14px 18px; }
+.agent-card.lead { border-left: 3px solid var(--accent); }
+.agent-card.team { border-left: 3px solid var(--green); }
+.agent-card-role { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 4px; }
+.agent-card.lead .agent-card-role { color: var(--accent); }
+.agent-card.team .agent-card-role { color: var(--green); }
+.agent-card-name { font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 15px; color: var(--ink); margin-bottom: 6px; }
+.agent-card p { font-size: 13px; }
+
+/* section separator */
+.section-separator { height: 80px; }
+
+/* hide hero-meta SUPERSEDES section (老 readme 里 v0.2.3 引用,不再需要) */
+
+/* responsive */
+@media (max-width: 900px) {
+  body { grid-template-columns: 1fr; }
+  .sidebar { position: relative; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  .main { padding: 32px 24px 60px; }
+  .hero-title { font-size: 36px; }
+  .module-title { font-size: 28px; }
+  .module-grid, .yesno, .agent-grid { grid-template-columns: 1fr; }
+  table { font-size: 12px; } th, td { padding: 8px 10px; }
+}
+</style>
+</head>
+<body>
+
+
+<aside class="sidebar">
+  <div class="sidebar-title">AI MIQ GROUP SOP</div>
+  <div class="sidebar-version">v0.4 · 参考式<br>2026-05-25</div>
+
+  <a href="#intro" style="font-weight:600;">主页 · README</a>
+
+  <div class="sidebar-group">PRINCIPLES · 稳定层</div>
+  <ul>
+    <li><a href="#p-01"><span class="num">01</span>7 条核心原则</a></li>
+    <li><a href="#p-03"><span class="num">02</span>RPI 框架 · 三阶段</a></li>
+    <li><a href="#p-04"><span class="num">03</span>沉淀三层 L1/L2/L3</a></li>
+    <li><a href="#p-05"><span class="num">04</span>DRI + 职责四类型</a></li>
+    <li><a href="#p-06"><span class="num">05</span>节奏 · 日/周/月</a></li>
+    <li><a href="#p-07"><span class="num">06</span>10 条反 pattern</a></li>
+  </ul>
+
+  <div class="sidebar-group">PLAYBOOKS · 参考示例</div>
+  <ul>
+    <li><a href="#pb-01"><span class="num">PB1</span>新项目 · greenfield</a></li>
+    <li><a href="#pb-02"><span class="num">PB2</span>修 bug · 轻量任务</a></li>
+    <li><a href="#pb-03"><span class="num">PB3</span>多 Agent 协同 · 示例</a></li>
+    <li><a href="#pb-04"><span class="num">PB4</span>无人值守批量 · 示例</a></li>
+  </ul>
+</aside>
+
+
+<main class="main">
+
+<section id="intro" class="doc-section sect-intro">
+
+<!-- HERO -->
+  <header class="hero">
+    <div class="hero-eyebrow">AI MIQ · GROUP SOP · v0.4 · REFERENCE HANDBOOK</div>
+    <h1 class="hero-title">
+      我们 5 个人<br>
+      <span class="accent">怎么共同工作</span>
+    </h1>
+    <p class="hero-subtitle">
+      v0.4 是<strong>参考式 Handbook</strong> · 不是规章 · 也不是流程模板 ·
+      规定<u>做什么</u> + <u>什么时候做</u> · 不规定<u>用什么工具</u> + <u>什么参数</u>。<br><br>
+      工具配置由团队成员根据习惯决定 · 具体场景沉淀到 cases 慢慢成型 ·
+      <strong>真正不可妥协的只有 2 件事 · 其他都是参考</strong>。
+    </p>
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <div class="label">VERSION</div>
+        <div class="value">v0.4</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="label">DATE</div>
+        <div class="value">2026-05-25</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="label">不可妥协</div>
+        <div class="value">2 件事</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="label">SUPERSEDES</div>
+        <div class="value">v0.3(归档)</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- PHILOSOPHY -->
+  <div class="philosophy">
+    这份文档规定<strong>做什么</strong> · 不规定<strong>用什么工具</strong>。<br>
+    工具配置、模型选择、参数调试 · 团队成员自己决定。<br>
+    个人沉淀到自己的 cheat sheet · 团队共享沉淀到 cases。<br><br>
+    <strong>真正不可妥协的只有 2 件事</strong>:<br>
+    ① 必有 Plan Model(不允许 vibe code)<br>
+    ② 项目/任务结束必有 debrief(写到 cases/)<br><br>
+    其他都是参考路径 · 团队可以借鉴 · 不必照搬。
+  </div>
+
+  <!-- PRINCIPLES -->
+  <section>
+    <div class="section-header">
+      <div class="section-num">PRINCIPLES · 稳定层</div>
+      <h2 class="section-title">8 个原则模块</h2>
+    </div>
+    <p style="color: var(--gray); margin-bottom: 24px;">每个模块 1-2 页 · 团队全员必读一遍 · 一旦定稿改动罕见。</p>
+
+    <div class="module-grid">
+
+      <a href="#p-01" class="module-card">
+        <div class="module-card-num">01</div>
+        <div class="module-card-title">7 条核心原则</div>
+        <div class="module-card-desc">2 件不可妥协 + 5 条工作纪律 · 所有动作的上位依据</div>
+        <div class="module-card-meta">~ 1.5 页 · 全员必读</div>
+      </a>
+
+      <a href="#p-03" class="module-card">
+        <div class="module-card-num">02</div>
+        <div class="module-card-title">RPI 框架 · 三阶段</div>
+        <div class="module-card-desc">Research → Plan → Implement · plan markdown 必备字段 · 不规定工具</div>
+        <div class="module-card-meta">~ 2 页 · 全员必读</div>
+      </a>
+
+      <a href="#p-04" class="module-card">
+        <div class="module-card-num">03</div>
+        <div class="module-card-title">沉淀三层 · L1 / L2 / L3</div>
+        <div class="module-card-desc">CLAUDE.md(高门槛抽象)+ cases/(无限累积具体)+ 中间层</div>
+        <div class="module-card-meta">~ 1.5 页 · 全员必读</div>
+      </a>
+
+      <a href="#p-05" class="module-card">
+        <div class="module-card-num">04</div>
+        <div class="module-card-title">DRI 模式 + 职责四类型</div>
+        <div class="module-card-desc">每个项目一个 DRI 全权 · 实习生也可以是 DRI · 冲突裁定原则</div>
+        <div class="module-card-meta">~ 1 页 · 全员必读</div>
+      </a>
+
+      <a href="#p-06" class="module-card">
+        <div class="module-card-num">05</div>
+        <div class="module-card-title">节奏 · 日 / 周 / 月</div>
+        <div class="module-card-desc">Agent 自动 summary · 周一 Kickoff + 周五 Demo + 月度 burnout check</div>
+        <div class="module-card-meta">~ 1 页 · 全员必读</div>
+      </a>
+
+      <a href="#p-07" class="module-card">
+        <div class="module-card-num">06</div>
+        <div class="module-card-title">10 条反 pattern</div>
+        <div class="module-card-desc">别人踩过的坑 · BCG / METR / HBR 真实研究数据 · 我们绕开</div>
+        <div class="module-card-meta">~ 1.5 页 · 全员必读</div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- PLAYBOOKS -->
+  <section>
+    <div class="section-header">
+      <div class="section-num">PLAYBOOKS · 参考示例</div>
+      <h2 class="section-title">4 个场景参考</h2>
+    </div>
+    <p style="color: var(--gray); margin-bottom: 24px;">每个 playbook 是一个场景<u>参考示例</u> · 不是"必须按这样走" · 团队成员根据具体情况借鉴。</p>
+
+    <div class="module-grid">
+
+      <a href="#pb-01" class="module-card playbook">
+        <div class="module-card-num">PB · 01</div>
+        <div class="module-card-title">新项目 · greenfield</div>
+        <div class="module-card-desc">完整 RPI 三阶段方法参考 · 适合启动 AI 招聘平台 / 要抱抱 这类大项目</div>
+        <div class="module-card-meta">~ 2 页 · 启动前读</div>
+      </a>
+
+      <a href="#pb-02" class="module-card playbook">
+        <div class="module-card-num">PB · 02</div>
+        <div class="module-card-title">修 bug · 轻量任务</div>
+        <div class="module-card-desc">跳过 Research · 直接 Plan + Implement · 适合 debug / 小优化 / 反馈处理</div>
+        <div class="module-card-meta">~ 1 页 · 启动前读</div>
+      </a>
+
+      <a href="#pb-03" class="module-card playbook">
+        <div class="module-card-num">PB · 03</div>
+        <div class="module-card-title">多 Agent 协同 · 示例</div>
+        <div class="module-card-desc">什么时候考虑多 agent · 一个真实启动示例 · 不是强制流程</div>
+        <div class="module-card-meta">~ 1 页 · 想试时读</div>
+      </a>
+
+      <a href="#pb-04" class="module-card playbook">
+        <div class="module-card-num">PB · 04</div>
+        <div class="module-card-title">无人值守批量 · 示例</div>
+        <div class="module-card-desc">什么时候适合让 Claude 自己跑 · 一个真实启动示例</div>
+        <div class="module-card-meta">~ 1 页 · 想试时读</div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- READING PATHS -->
+  <section>
+    <div class="section-header">
+      <div class="section-num">READING PATHS · 怎么读</div>
+      <h2 class="section-title">3 条阅读路径</h2>
+    </div>
+
+    <div class="reading-path">
+      <div class="reading-path-title">路径 1 · 第一次读 · 1.5 小时</div>
+      <div class="reading-path-flow">
+        README → <span class="step">01</span>(7 条原则) → <span class="step">02</span>(3 Levels) → <span class="step">03</span>(RPI) → <span class="step">04</span>(沉淀) → <span class="step">05</span>(DRI)
+      </div>
+    </div>
+
+    <div class="reading-path">
+      <div class="reading-path-title">路径 2 · 启动新项目前 · 15 分钟</div>
+      <div class="reading-path-flow">
+        <span class="step">02</span>(选 orchestration mode) → 对应的 <span class="step">playbook</span> → <span class="step">08</span>(模型配置 + budget cap)
+      </div>
+    </div>
+
+    <div class="reading-path">
+      <div class="reading-path-title">路径 3 · 规避坑 · 30 分钟</div>
+      <div class="reading-path-flow">
+        <span class="step">07</span>(10 条反 pattern) → <span class="step">04</span>(沉淀健康度) → 月度 burnout check
+      </div>
+    </div>
+  </section>
+
+  <!-- v0.3 → v0.4 CHANGES -->
+  <section>
+    <div class="section-header">
+      <div class="section-num">v0.3 → v0.4</div>
+      <h2 class="section-title">从规章式 SOP · 改成参考式 Handbook</h2>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 20%;">变更</th>
+          <th style="width: 38%;">v0.3</th>
+          <th style="width: 42%;">v0.4</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">语气</td>
+          <td>"必须 / 默认 / 不可妥协"</td>
+          <td>"可以考虑 / 一种参考 / 团队这样做过"</td>
+        </tr>
+        <tr>
+          <td class="bold">不可妥协</td>
+          <td>多条非妥协 · 不清晰</td>
+          <td><strong>只有 2 件事</strong>:Plan Mode + Debrief</td>
+        </tr>
+        <tr>
+          <td class="bold">工具配置</td>
+          <td>SOP 规定 model / effort / 命令参数</td>
+          <td>SOP 不规定工具 · 团队成员自己决定</td>
+        </tr>
+        <tr>
+          <td class="bold">原则数</td>
+          <td>7 条</td>
+          <td>7 条(删了"全程 Opus 4.7 + xhigh" · 加了 Debrief 作为独立原则)</td>
+        </tr>
+        <tr>
+          <td class="bold">章节数</td>
+          <td>8 原则 + 4 playbook</td>
+          <td>6 原则(删 #2 Decision Matrix + #8 工具) + 4 playbook</td>
+        </tr>
+        <tr>
+          <td class="bold">事实校准</td>
+          <td>5 处工具事实错误(rody 推文 + 印象)</td>
+          <td>已删除 · 工具相关内容全部从 SOP 移出</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- COEXISTENCE -->
+  <section>
+    <div class="section-header">
+      <div class="section-num">COEXISTENCE · 与其他文档关系</div>
+      <h2 class="section-title">这份 SOP 与 Team Context 三件套</h2>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 25%;">文档</th>
+          <th style="width: 25%;">目标受众</th>
+          <th style="width: 50%;">是什么</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">Manifesto</td>
+          <td>人</td>
+          <td>团队灵魂(WHY)· 我们为什么这样做</td>
+        </tr>
+        <tr>
+          <td class="bold">Constitution</td>
+          <td>Agent</td>
+          <td>给 Claude 的规则书 · 优先级层次</td>
+        </tr>
+        <tr>
+          <td class="bold">Group SOP(本文档)</td>
+          <td>人</td>
+          <td>团队怎么协同工作 · 原则 + playbook</td>
+        </tr>
+        <tr>
+          <td class="bold">CLAUDE.md</td>
+          <td>Agent</td>
+          <td>L1 抽象层 · Agent 每次自动加载</td>
+        </tr>
+        <tr>
+          <td class="bold">cases/</td>
+          <td>人 + Agent 按需</td>
+          <td>L2 具体层 · 每个项目 debrief 沉淀</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <strong>AI MIQ TEAM · GROUP SOP v0.3 · HANDBOOK + PLAYBOOK · INTERNAL</strong><br><br>
+    <strong>v0.2.3 → v0.3 路径</strong>:<br>
+    v0.1 讨论稿(4 章) → v0.2 evidence-based(10 section) → v0.2.1(5-10 baseline) → v0.2.2(全程 Opus + 铁律) → v0.2.3(2 非妥协 + debrief 流程) → <strong style="color: var(--accent);">v0.3 模块化重构</strong><br><br>
+    <strong>对标参考</strong>:GitLab Handbook · Basecamp Shape Up · OpenAI 内部 sub-SOP<br><br>
+    <strong>证据来源</strong>:Anthropic 官方 / Boris Cherny / Dexter Horthy / Sulman Choudhry(OpenAI)/ Even Westvang(Sanity)/ Brian Emerick(Vercel)/ Cursor / METR / BCG / HBR / rody(0x_rody · 2026-05-24)/ + 10+ 真实实践<br><br>
+    本文档与 team_manifesto.md · team_context_constitution.md 协同存在 · 三者各司其职。
+  </footer>
+
+</section>
+
+<div class="section-separator"></div>
+
+<section id="p-01" class="doc-section sect-p-01">
+
+<!-- BREADCRUMB -->
+  
+
+  <!-- MODULE HEADER -->
+  <header class="module-header">
+    <div class="module-num">MODULE 01 · PRINCIPLES</div>
+    <h1 class="module-title">7 条不可妥协的<br>核心原则</h1>
+    <p class="module-subtitle">
+      所有动作的上位依据 · 当 SOP 没覆盖某场景时,用这 7 条裁判 ·
+      它们是<strong>不可妥协的</strong> —— 当具体动作和某条原则冲突时,以原则为准。
+    </p>
+    <div class="module-meta">
+      <span>READ TIME · <strong>~ 8 分钟</strong></span>
+      <span>AUDIENCE · <strong>全员必读</strong></span>
+      <span>UPDATE · <strong>罕见</strong></span>
+    </div>
+  </header>
+
+  <!-- PRINCIPLES -->
+
+  <div class="principle">
+    <div class="principle-num">01</div>
+    <div class="principle-content">
+      <h3>Research / Plan / Implement 严格分离</h3>
+      <p>不要让 Claude 在研究的同时规划 · 在规划的同时实施。三个 discrete sessions · 三个不同的 prompt · 中介是 <strong>Markdown plan 文件</strong>。</p>
+      <p>具体动作见 <a href="#p-03" style="color: var(--accent);">03 · RPI 框架</a>。</p>
+      <div class="evidence">参考:Sam Brickman / Ambral CTO · Dexter Horthy · HumanLayer RPI 框架</div>
+    </div>
+  </div>
+
+  <div class="principle">
+    <div class="principle-num">02</div>
+    <div class="principle-content">
+      <h3>Context 浑浊时立刻重启 · 不要 fix</h3>
+      <p>Claude 的 context window 用太满会进入 <strong>"dumb zone"</strong> · 输出质量下降 · 但自己感觉不到。<u>识别信号 + 立刻重启</u>是工作纪律。</p>
+      <p><strong>常见 context 浑浊信号</strong>:</p>
+      <ul style="margin-left: 20px; font-size: 14px; color: var(--ink-soft);">
+        <li>Claude 开始说 <code class="mono">"You're absolutely right"</code> · 过度迎合</li>
+        <li>重复之前已经否定的方案</li>
+        <li>答非所问 · 或者抓不住重点</li>
+        <li>解决"上一个问题的衍生" · 而不是当前问题</li>
+      </ul>
+      <p style="margin-top: 12px;">看到任一信号 → <strong>新开 session</strong> · 把关键信息重新交付。具体的 context 阈值由个人判断(不同任务、不同工具默认不同)。</p>
+      <div class="evidence">参考:Dex Horthy 100k+ session 分析 · AI Engineer Code Summit 2025</div>
+    </div>
+  </div>
+
+  <div class="principle">
+    <div class="principle-num">03</div>
+    <div class="principle-content">
+      <h3>并行 Agent 是工作节奏 · 大致 5-10 active</h3>
+      <p>不是"偶尔多开几个" · 是<strong>同时 active 多个 Claude</strong>(团队大致节奏)· 每个人可以配 worktree 长期挂着 · 按需启动。</p>
+      <p>5 人团队 = 25-50 个 Agent 单元并行运行 · 这是 AI Native 工作方式的基本物理量。</p>
+      <p>具体每个人开多少 · 按自己舒服的节奏。<strong>避免极端</strong>:1-2 个太少(没用上 AI Native)· 50+ 太多(质量崩溃)。</p>
+      <div class="evidence">参考:Boris Cherny 个人日常 · HumanLayer CodeLayer · GitHub Issue #42796</div>
+    </div>
+  </div>
+
+  <div class="principle">
+    <div class="principle-num">04</div>
+    <div class="principle-content">
+      <h3>"Start over" 优于 "fix"</h3>
+      <p>当 Claude 走偏 → 中断 + 重启 · <strong>不要试图纠正</strong>。10-20% 的 session 直接放弃是健康的。</p>
+      <p>"卡 30 分钟还没进展 → start over" 是个有用的 reminder · 具体阈值按个人判断。</p>
+      <div class="evidence">参考:Boris Cherny · Anthropic Data Science "slot machine" 模式</div>
+    </div>
+  </div>
+
+  <div class="principle">
+    <div class="principle-num">05</div>
+    <div class="principle-content">
+      <h3>CLAUDE.md 是高门槛抽象层 · cases/ 是无限累积具体层</h3>
+      <p>沉淀分两个根本不同的世界:<strong>抽象</strong>(给 Agent · 必须精炼)vs <strong>具体</strong>(给人 + Agent 按需 · 可无限累积)。</p>
+      <p>CLAUDE.md 进入门槛:<strong>这条规则适用于<u>未来所有</u>类似项目</strong>(不是只这个项目的具体情况)· 建议控制在 2-3k token。</p>
+      <p>具体项目 debrief 写到 <code class="mono" style="background:var(--paper-deep);padding:1px 6px;">cases/YYYY-MM-DD-name.md</code> · 无限累积 OK。</p>
+      <p>详见 <a href="#p-04" style="color: var(--accent);">04 · 沉淀三层</a>。</p>
+      <div class="evidence">参考:Boris Cherny CLAUDE.md = 2.5k token · 每周更新多次 · Anthropic 内部团队 + Sanity 6 周实战</div>
+    </div>
+  </div>
+
+  <div class="principle">
+    <div class="principle-num">06</div>
+    <div class="principle-content">
+      <h3>Plan Mode 不可妥协 · 不允许 vibe code</h3>
+      <p>每个非平凡任务<strong>必须先生成 plan 文件</strong>(Markdown · 可读 · 可审 · 可改)· 通过第二个 session 做 review · 只有 plan 通过才进入执行。</p>
+      <p>任务层至少 3 句话 plan · 项目层完整 plan markdown · <strong>永远不允许 "vibe code"</strong>。</p>
+      <p style="font-size: 13px; color: var(--gray);">这是 <strong>2 个不可妥协之一</strong>。</p>
+      <div class="evidence">参考:Boris Cherny · Dex Horthy "Do Not Outsource The Thinking"</div>
+    </div>
+  </div>
+
+  <div class="principle">
+    <div class="principle-num">07</div>
+    <div class="principle-content">
+      <h3>项目/任务结束必有 Debrief</h3>
+      <p>项目或任务完成后<strong>必须写 case file</strong>(<code class="mono" style="background:var(--paper-deep);padding:1px 6px;">cases/YYYY-MM-DD-name.md</code>) · 提炼出的<u>通用规则</u>才进 CLAUDE.md · 具体记录留 case。</p>
+      <p>"做完就走 · 不写 debrief" = 项目没结束。debrief 不是流水账复盘 · 是<u>拆解关键判断的因果链</u>。</p>
+      <p>具体动作见 <a href="#p-03" style="color: var(--accent);">03 · RPI 框架</a> 收尾阶段。</p>
+      <p style="font-size: 13px; color: var(--gray);">这是 <strong>2 个不可妥协之二</strong>。</p>
+      <div class="evidence">参考:Sanity 工程团队 / Anthropic 内部 review 实践</div>
+    </div>
+  </div>
+
+  <!-- WRAP-UP CALLOUT -->
+  <div class="callout" style="margin-top: 40px;">
+    <strong>这 7 条里 · 真正不可妥协的只有 2 件事</strong>:#6(Plan Mode · 不允许 vibe code)和 #7(项目结束必有 debrief)。<br>
+    其他 5 条是<u>工作纪律 / 团队节奏</u> · 团队成员按自己习惯实践 · 实操中校准。<br><br>
+    <strong>工具配置不在这里规定</strong> —— 用什么 model / 什么 effort / 什么界面 · 团队成员自己决定 · 沉淀到 cases 慢慢成型。
+  </div>
+
+  <!-- FOOTER NAV -->
+  
+
+  
+
+</section>
+
+
+<section id="p-03" class="doc-section sect-p-03">
+
+
+
+  <header class="module-header">
+    <div class="module-num">MODULE 03 · PRINCIPLES</div>
+    <h1 class="module-title">RPI 框架<br>三阶段动作</h1>
+    <p class="module-subtitle">
+      Research → Plan → Implement 三个 discrete sessions · 不是一个长对话 ·
+      中介是 Markdown plan 文件 · 这是 v0.3 SOP 的<strong>骨干流程</strong>。
+    </p>
+    <div class="module-meta">
+      <span>READ TIME · <strong>~ 12 分钟</strong></span>
+      <span>AUDIENCE · <strong>全员必读</strong></span>
+      <span>UPDATE · <strong>罕见</strong></span>
+    </div>
+  </header>
+
+  <!-- 两个非妥协 -->
+  <div class="sub-section">
+    <h2>两个非妥协 · 只有这 2 条</h2>
+    <p>v0.2 之前我们写过 3 条非妥协 · v0.2.3 收敛到 2 条 · 其他都不再是"非妥协" · 是建议路径。</p>
+
+    <div class="non-neg">
+      <div class="non-neg-tag">非妥协 1</div>
+      <div class="non-neg-title">必有 Plan Model</div>
+      <p style="font-size: 14px;">
+        项目走完整 RPI(Research → Plan → 第二个 session review) ·
+        任务至少有 3 句话 plan markdown ·
+        <strong>永远不允许 vibe code</strong>。
+      </p>
+    </div>
+
+    <div class="non-neg">
+      <div class="non-neg-tag">非妥协 2</div>
+      <div class="non-neg-title">项目/任务结束必有 debrief</div>
+      <p style="font-size: 14px;">
+        写成 case file(<code class="mono">cases/YYYY-MM-DD-name.md</code>)·
+        提炼出的<u>通用规则</u>才进 CLAUDE.md · 具体记录留在 case 里。
+      </p>
+      <p style="font-size: 14px; margin-top: 8px;">沉淀的具体规则见 <a href="#p-04" style="color: var(--accent);">04 · 沉淀三层</a>。</p>
+    </div>
+  </div>
+
+  <!-- 两层粒度 -->
+  <div class="sub-section">
+    <h2>两层粒度 · 项目 vs 任务</h2>
+    <p>所有新事情先判断属于哪一层 —— <strong>唯一的判断标准是:它是不是一个独立的大目标?</strong></p>
+
+    <table>
+      <thead>
+        <tr><th style="width: 18%;">维度</th><th style="width: 41%;">Project · 项目层</th><th style="width: 41%;">Task · 任务层</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">定义</td>
+          <td>一个独立的大方向、大目标 · 本身有完整存在意义</td>
+          <td>项目下的具体事项 · 必须挂在父项目下</td>
+        </tr>
+        <tr>
+          <td class="bold">例子</td>
+          <td>AI 招聘平台 / 要抱抱 / Team Context 自身迭代</td>
+          <td>debug 某个 bug / 优化某个 prompt / 处理用户反馈</td>
+        </tr>
+        <tr>
+          <td class="bold">RPI 走法</td>
+          <td>完整走 Research → Plan → Implement</td>
+          <td><strong>可跳过 Research</strong> · 直接 Plan + Implement</td>
+        </tr>
+        <tr>
+          <td class="bold">plan 长度</td>
+          <td>完整 plan markdown(几百字)</td>
+          <td>至少 3 句话</td>
+        </tr>
+        <tr>
+          <td class="bold">DRI</td>
+          <td>必须有 DRI · 拥有项目全权</td>
+          <td>通常自己执行 · 默认就是 DRI</td>
+        </tr>
+        <tr>
+          <td class="bold">debrief</td>
+          <td>写完整 case file(5 个 section)</td>
+          <td>写简短 case file 或合并到当周</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- plan markdown 必备字段 -->
+  <div class="sub-section">
+    <h2>Plan Markdown 必备字段</h2>
+    <p>无论项目还是任务 · plan markdown 必须包含以下 <strong>4 个字段</strong>(替代 v0.1 的"6 问"):</p>
+
+    <table>
+      <thead>
+        <tr><th style="width: 18%;">字段</th><th style="width: 50%;">含义</th><th style="width: 32%;">不能是</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="bold">目标</td><td>这件事做完要达到的具体结果 · 可被描述、可被检验</td><td>"做得更好" / "搞定它"</td></tr>
+        <tr><td class="bold">完成标准</td><td>可观测信号 · debrief 时的对照基准 · 可被 Outcomes 自检</td><td>"做好为止" / "没问题就行"</td></tr>
+        <tr><td class="bold">怎么分</td><td>项目层:DRI + 谁参与;任务层:就是自己</td><td>"看情况" / "大家一起搞"</td></tr>
+        <tr><td class="bold">时间盒</td><td>项目层:appetite(几天/一周/一月);任务层:估计小时数</td><td>"尽快" / "越快越好"</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 三阶段总图 -->
+  <div class="sub-section">
+    <h2>三阶段总图</h2>
+    <p>所有事情走这三个阶段。<strong>三阶段是骨架,每个阶段都是 discrete sessions,不是一个长对话。</strong></p>
+
+    <table>
+      <thead>
+        <tr><th style="width: 14%;">阶段</th><th style="width: 26%;">名称</th><th style="width: 60%;">核心动作</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="bold">PHASE 01</td><td><span class="phase-tag r" style="margin:0;">RESEARCH</span> + PLAN</td><td>声明意图 → Research session → Plan session → 第二个 session review → DRI 拍板 → 广播</td></tr>
+        <tr><td class="bold">PHASE 02</td><td><span class="phase-tag i" style="margin:0;">IMPLEMENT</span></td><td>并行 Opus 4.7 sessions + 监督 CoT + Task Budget + 卡 30 分钟 start over + 微更新</td></tr>
+        <tr><td class="bold">PHASE 03</td><td><span class="phase-tag p" style="margin:0;">DEBRIEF</span></td><td>Agent 写 debrief 草稿 → 写入 cases/ → DRI review 校准 → 判断通用规则提升到 CLAUDE.md</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PHASE 1 启动 -->
+  <div class="sub-section">
+    <h2>PHASE 01 · 启动 · 完整 6 步</h2>
+
+    <div class="quote">
+      "Don't make Claude do research while it's trying to plan, while it's trying to implement.
+      Use discrete prompts and make those into discrete steps."
+      <div class="quote-attribution">— Sam Brickman · Ambral CTO · YC W25</div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">STEP 1 · 5 分钟</div>
+      <div class="step-title">一句话声明意图</div>
+      <p>飞书群发一条消息:<em>"我想做 X · 因为 Y · 大概要 Z 时间 · 这是 [项目/任务]。"</em></p>
+      <p style="color: var(--gray); font-size: 13px;">不需要详细思考 · 只是声明意图 · 让团队知道。</p>
+    </div>
+
+    <div class="step">
+      <div class="step-num">STEP 2 · Research</div>
+      <div class="step-title">启动 Research session</div>
+      <p>启动一个新的 Claude Code session:</p>
+      <div class="code-block">"请帮我研究 X · 先读 CLAUDE.md 和相关 skills/ · 然后用 subagent 并行研究:① 我们现有代码相关部分 ② 业界已有做法 ③ 潜在的坑。把结果写成 research_[date]_[topic].md · 放 docs/research/。"</div>
+      <p style="color: var(--gray); font-size: 13px;">这个 session <strong>只做研究 · 不做规划</strong> · Context 用到 30-40% 就结束。</p>
+    </div>
+
+    <div class="step">
+      <div class="step-num">STEP 3 · Plan</div>
+      <div class="step-title">启动 Plan session · 全新 context</div>
+      <p>启动新的 Claude Code session(Opus 4.7 · xhigh · 全新):</p>
+      <div class="code-block">"请阅读 docs/research/research_[date]_[topic].md · 用 Plan Mode 制定实施 plan · 分成 discrete phases · 每个 phase 有清晰输入/输出/验证标准 · 输出到 docs/plans/plan_[date]_[topic].md。"</div>
+      <p style="color: var(--gray); font-size: 13px;"><strong>关键</strong>:plan 文件是<u>人和 Agent 之间最重要的接口</u> · 人 review markdown · 改 markdown · Claude 后续基于 markdown 执行。</p>
+    </div>
+
+    <div class="step">
+      <div class="step-num">STEP 4 · Review</div>
+      <div class="step-title">第二个 session · Plan 审查</div>
+      <p>在第二个 Claude Code session(Opus 4.7)运行:</p>
+      <div class="code-block">"我刚做完一个 plan · 文件在 docs/plans/plan_[date]_[topic].md<br>请你以 staff engineer 角色 review · 重点指出技术风险 / 不一致 / 被忽略的边界情况 / 过度工程"</div>
+      <p style="color: var(--gray); font-size: 13px;"><strong>必须是第二个 Claude</strong>(context 不同 · 会发现第一个 Claude 漏掉的问题)。</p>
+    </div>
+
+    <div class="step">
+      <div class="step-num">STEP 5 · 拍板</div>
+      <div class="step-title">DRI 拍板 · 修订 plan</div>
+      <p>DRI 做最终决策:</p>
+      <ul>
+        <li>看 research:这件事真的值得做吗?</li>
+        <li>看 plan:方案对吗?有没有走偏?</li>
+        <li>看 review:有没有漏掉的关键风险?</li>
+      </ul>
+      <p style="color: var(--gray); font-size: 13px;">输出:plan markdown 修订到 v0.x · 标记"已批准 · 可执行" · 这是<strong>整个启动阶段唯一需要人专注思考的环节</strong>。</p>
+    </div>
+
+    <div class="step">
+      <div class="step-num">STEP 6 · 广播</div>
+      <div class="step-title">广播 · 项目 vs 任务不同</div>
+      <p><strong>项目层</strong>:DRI 在飞书群发简短消息 + plan 文件位置 · 24 小时内全员快速 review · 没有重大反馈 = 默认通过</p>
+      <p><strong>任务层</strong>:Agent 自动登记到 Team Context · 不打扰其他人 · 直接进入执行</p>
+    </div>
+  </div>
+
+  <!-- PHASE 2 执行 -->
+  <div class="sub-section">
+    <h2>PHASE 02 · 执行 · 每日 5 个动作</h2>
+
+    <div class="quote">
+      "I run 5 Claudes in parallel in my terminal. I number my tabs 1-5,
+      and use system notifications to know when a Claude needs input."
+      <div class="quote-attribution">— Boris Cherny · Claude Code 创建者 · 2026-01</div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">DAILY 01 · 早上</div>
+      <div class="step-title">启动 5-10 个 Claude</div>
+      <ul>
+        <li>读自己负责的 plan markdown · 确认今天要做的 phases</li>
+        <li>用 git worktree 创建 10-15 个工作区(长期挂着 · 不是每天重建)</li>
+        <li>启动 5-10 个 active Claude(全员对齐 baseline)</li>
+        <li>给每个 Claude 派一个 phase · 启动 Claude Code session(全程不区分阶段)</li>
+        
+      </ul>
+      <p style="color: var(--gray); font-size: 13px;">orchestration mode 选择见 <a href="#p-02" style="color: var(--accent);">02 · 3 Levels + Decision Matrix</a> · Level 3 团队可用 Lead Opus + Teammates Sonnet 双轨。</p>
+    </div>
+
+    <div class="step">
+      <div class="step-num">DAILY 02 · 监督</div>
+      <div class="step-title">监督 chain of thought · 手指放 ESC 上</div>
+      <p><strong>关键时刻:当 Claude 开始一个任务的前 30 秒</strong></p>
+      <ul>
+        <li>盯它的 chain of thought · 看方向对不对</li>
+        <li>方向不对 → <strong>立刻 ESC 中断</strong> · 不要让它跑完错误方向</li>
+        <li>看到 "You're absolutely right" → 立刻 /clear 或新启 session</li>
+      </ul>
+      <div class="evidence">Vulcan CEO Tanner Jones · YC S25 · "前几次 tool call 抓到走偏比让 Claude 完整跑完错误省时间多了"</div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">DAILY 03 · 卡住</div>
+      <div class="step-title">遇到错误 · start over · 不要 fix</div>
+      <p><strong>当 Claude 第一次没做对时</strong>:</p>
+      <ul>
+        <li>不要"和它讨论怎么改对"</li>
+        <li>/clear 或开新 session</li>
+        <li>把 plan markdown 改得更清楚</li>
+        <li>让新 session 重新执行</li>
+      </ul>
+      <p style="color: var(--gray); font-size: 13px;"><strong>10-20% 的 sessions 被放弃是健康的</strong> · 这不是失败 · 是 AI Native 工作方式。</p>
+    </div>
+
+    <div class="step">
+      <div class="step-num">DAILY 04 · 微更新</div>
+      <div class="step-title">中午 5 分钟 · CLAUDE.md 微更新</div>
+      <p>把上午发现的 Claude 反复犯错加进 CLAUDE.md · 立刻 git commit + push · 团队同步</p>
+      <p>格式:<em>"❌ 不要 X · 因为 Y · 应该 Z"</em></p>
+      <p style="color: var(--gray); font-size: 13px;">注意:微更新前先判断 —— 这条是<u>通用规则</u>还是<u>这个项目独有的</u>?后者只进 case file · 不进 CLAUDE.md。详见 <a href="#p-04" style="color: var(--accent);">04 · 沉淀三层</a>。</p>
+    </div>
+
+    <div class="step">
+      <div class="step-num">DAILY 05 · 收工</div>
+      <div class="step-title">傍晚 · Agent 写 daily summary</div>
+      <p>Agent 基于今天的决策日志 + commits 自动生成 daily summary · 写入 Team Context · 飞书群推送 · 人 30 秒过目。</p>
+      <p>包含:① 完成的 phases · ② 启动的 sessions · ③ 放弃的 · ④ 决策日志 · ⑤ 卡在哪里</p>
+      <p style="color: var(--gray); font-size: 13px;">原则:进度衡量来自<strong>工作产物本身</strong>(commit / decision log / 完成的 phase) · 不是"主动汇报"。</p>
+    </div>
+  </div>
+
+  <!-- PHASE 3 收尾 -->
+  <div class="sub-section">
+    <h2>PHASE 03 · 收尾 · debrief 流程</h2>
+
+    <div class="quote">
+      debrief 不是流水账复盘 · 不是"列出做了什么" ·<br>
+      是<strong>拆解关键判断的因果链</strong> · 提炼出下次能复用的东西。
+    </div>
+
+    <p>每个项目/任务结束都要写 case file · 但<strong>只有 10% 的发现会进 CLAUDE.md</strong> · 90% 留在 case 文件作为具体记录。</p>
+
+    <div class="step">
+      <div class="step-num">STEP 1</div>
+      <div class="step-title">Agent 自动生成 debrief 草稿</div>
+      <p>项目/任务完成时 · 启动一个新 Claude Code session:</p>
+      <div class="code-block">"请阅读 docs/research/[date]_[topic].md · docs/plans/[date]_[topic].md · 这个项目相关 commits · 生成 debrief 草稿写到 cases/YYYY-MM-DD-[project-name].md。<br><br>必须包含 5 个 section:<br>① 目标(plan 里原始目标)<br>② 实际做的事(压缩时间线 · 不超过 200 字)<br>③ 完成标准 + 是否达成<br>④ 关键判断分析 — 真实成败原因 · 不要场面话<br>⑤ 通用规则候选 — 适用于未来所有类似项目?如有列出 + 标记'需要 DRI 决定是否提升'"</div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">STEP 2</div>
+      <div class="step-title">DRI review · 校准真实成败原因</div>
+      <p>DRI 读 Agent 生成的 case file 草稿 · 重点 review section ④:</p>
+      <ul>
+        <li>Agent 抓到的"成败原因"是真实的还是表面的?</li>
+        <li>有没有 Agent 没看到的关键判断点?</li>
+        <li>"如果重来一次 · 哪个判断会改?"</li>
+        <li>"古法不可能"在哪一步发生了?</li>
+      </ul>
+      <p style="color: var(--gray); font-size: 13px;">这是<strong>整个 debrief 唯一需要人专注思考的环节</strong> · Agent 草稿不替代这一步。</p>
+    </div>
+
+    <div class="step">
+      <div class="step-num">STEP 3</div>
+      <div class="step-title">DRI 决定:提升到 CLAUDE.md?</div>
+      <p>对 section ⑤ 的每个"通用规则候选" · DRI 用 1 个问题判断:</p>
+      <div class="callout"><strong>这条规则适用于<u>未来所有</u>类似项目吗?</strong><br>(不是只这个项目的具体情况)<br><br>✅ YES → 提升到 CLAUDE.md · 同时保留 case file · 写成抽象规则(不带具体项目名) · 控制总 token &lt; 3k<br>❌ NO → 只留 case file · 不进 CLAUDE.md · 累积无上限 OK</div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">STEP 4</div>
+      <div class="step-title">项目层:周五 demo</div>
+      <p>仅项目层需要 · 周五下午 30 分钟 · DRI demo 这个项目的结果 · 全员看 · 不需要 PPT · 直接演示真实产物。</p>
+      <p style="color: var(--gray); font-size: 13px;">原则:demo 是<strong>对结果的庆祝</strong> · 不是"汇报会" · task 级别不需要 demo。</p>
+    </div>
+  </div>
+
+  <!-- WRAP-UP -->
+  <div class="sub-section">
+    <div class="callout">
+      <strong>这份 RPI 不是僵化模板</strong>:<br>
+      实操中可以跳过某些步骤(任务层跳 Research)、重新排序(先有 plan 雏形再回头研究)、并行同一阶段(5 个 agent 同时 implement) ·
+      真正的非妥协只有上面 2 个 · 其他都是建议路径 · 团队按场景灵活组合。
+    </div>
+  </div>
+
+  <!-- FOOTER NAV -->
+  
+
+  
+
+</section>
+
+<div class="section-separator"></div>
+
+<section id="p-04" class="doc-section sect-p-04">
+
+
+
+  <header class="module-header">
+    <div class="module-num">MODULE 04 · PRINCIPLES</div>
+    <h1 class="module-title">沉淀三层<br>L1 抽象 · L2 具体 · L3 中间</h1>
+    <p class="module-subtitle">
+      沉淀分两个根本不同的世界:<strong>抽象</strong>(给 Agent · 必须精炼)vs <strong>具体</strong>(给人 + Agent 按需 · 可无限累积)·
+      v0.2 之前混在一起 · v0.3 严格分开。
+    </p>
+    <div class="module-meta">
+      <span>READ TIME · <strong>~ 10 分钟</strong></span>
+      <span>AUDIENCE · <strong>全员必读</strong></span>
+      <span>UPDATE · <strong>罕见</strong></span>
+    </div>
+  </header>
+
+  <!-- 一张总图 -->
+  <div class="sub-section">
+    <h2>三层架构 · 一张总图</h2>
+
+    <table>
+      <thead>
+        <tr><th style="width: 12%;">层</th><th style="width: 22%;">资源</th><th style="width: 18%;">大小</th><th style="width: 22%;">进入门槛</th><th style="width: 26%;">用途</th></tr>
+      </thead>
+      <tbody>
+        <tr style="background: rgba(199, 62, 29, 0.06);">
+          <td class="bold" style="color: var(--accent);">L1 · 抽象</td>
+          <td><strong>CLAUDE.md</strong></td>
+          <td><strong>硬上限 3k token</strong></td>
+          <td><strong>极高</strong> · 适用于未来所有类似项目</td>
+          <td>每个 Claude session 自动加载</td>
+        </tr>
+        <tr style="background: rgba(74, 107, 58, 0.04);">
+          <td class="bold" style="color: var(--green);">L2 · 具体</td>
+          <td><strong>cases/</strong></td>
+          <td>每个 1-3k · 无上限累积</td>
+          <td><strong>低</strong> · 每个项目结束都写</td>
+          <td>人月度 review + Agent 按需主动查</td>
+        </tr>
+        <tr>
+          <td class="bold">L3 · 中间</td>
+          <td>.claude/skills/</td>
+          <td>每个 ~500 token</td>
+          <td>被验证过的具体 prompt</td>
+          <td>Claude 按需调用</td>
+        </tr>
+        <tr>
+          <td class="bold">L3 · 中间</td>
+          <td>standards/</td>
+          <td>累积</td>
+          <td>跨项目的判断标准</td>
+          <td>人检索 + Agent 偶尔读</td>
+        </tr>
+        <tr>
+          <td class="bold">L3 · 中间</td>
+          <td>decisions/</td>
+          <td>累积</td>
+          <td>非平凡架构决策</td>
+          <td>人检索追溯历史</td>
+        </tr>
+        <tr>
+          <td class="bold">L4 · 档案</td>
+          <td>docs/research/ · docs/plans/</td>
+          <td>每个 1-5k</td>
+          <td>项目启动时</td>
+          <td>项目执行依据 · 用过即归档</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>核心区别</strong>:L1 是高门槛 / 硬上限 / 给 Agent · L2 是低门槛 / 无上限 / 给人 ·
+      这两层是 v0.3 沉淀架构的<u>根本设计</u> · 其他层是支撑。
+    </div>
+  </div>
+
+  <!-- L1 CLAUDE.md -->
+  <div class="sub-section">
+    <h2>L1 · CLAUDE.md · 进入门槛是死的</h2>
+
+    <div class="quote">
+      只有一种内容能进 CLAUDE.md:<br>
+      <strong>这条规则适用于未来<u>所有</u>类似项目</strong><br>
+      不是只这个项目的具体情况
+      <div class="quote-attribution">— Boris Cherny · Anthropic 内部团队实践</div>
+    </div>
+
+    <div class="yesno">
+      <div class="yesno-card yes">
+        <div class="yesno-tag">✅ 应该进 CLAUDE.md</div>
+        <ul style="margin-left: 18px; font-size: 13px; line-height: 1.8;">
+          <li>"所有 SQL query 必须带 timezone"</li>
+          <li>"完成标准必须可观测 · 不能是'做好为止'"</li>
+          <li>"❌ 不要在 useEffect 里做 derived state"</li>
+          <li>"DRI 拥有项目全权决策"</li>
+        </ul>
+        <p style="font-size: 12px; color: var(--gray); margin-top: 8px;">关键词:所有 · 通用 · 跨项目</p>
+      </div>
+
+      <div class="yesno-card no">
+        <div class="yesno-tag">❌ 不进 CLAUDE.md(留 case)</div>
+        <ul style="margin-left: 18px; font-size: 13px; line-height: 1.8;">
+          <li>"AI 招聘平台用了 X 库做能力评估"</li>
+          <li>"要抱抱第 3 个按钮颜色 #C73E1D"</li>
+          <li>"5/15 试 prompt A 不好 · 换 B"</li>
+        </ul>
+        <p style="font-size: 12px; color: var(--gray); margin-top: 8px;">关键词:这一个 · 具体 · 这一次</p>
+      </div>
+    </div>
+
+    <h3>CLAUDE.md 推荐结构(2-3k token)</h3>
+    <div class="code-block">
+# AI MIQ Team Context · CLAUDE.md<br><br>
+## Who we are · 30 words<br>
+我们是一个 5 人 AI Native 团队 · 做 AI 招聘平台 / 要抱抱 / Team Context · 不在中国运营 · Claude 是默认协作伙伴<br><br>
+## How we work · 5 rules<br>
+1. Research → Plan → Implement 严格分离 · 不要 vibe code<br>
+2. Context 永远 &lt; 40% · 看到 "You're absolutely right" 立刻重启<br>
+3. 卡 30 分钟 → start over,不要 fix<br>
+4. 项目结束必有 debrief · 提炼出的通用规则才进这个文件<br>
+5. 项目有 DRI · DRI 拥有全权<br><br>
+## Tech stack rules · 跨项目通用<br>
+- Frontend: React + TypeScript + Tailwind · 不用 inline style<br>
+- Database: PostgreSQL · 所有 query 必须带 timezone<br>
+- ...<br><br>
+## Mistakes Claude must not repeat · 跨项目通用<br>
+- ❌ 不要把 import 放在文件中间<br>
+- ❌ 不要用 useEffect 处理简单 derived state<br><br>
+## How to call other Claude sessions · subagent patterns<br>
+- Research: opus-4-7 + xhigh + 单一研究目标<br>
+- Plan: opus-4-7 + xhigh + 读 research → 输出 markdown<br>
+- Review: 启动第二个 session 做 review<br><br>
+## What to do when you're stuck<br>
+不要 fix · /clear 重新开始 · 升级 plan markdown<br><br>
+## How to find specific context<br>
+具体项目细节 → cases/YYYY-MM-DD-*.md<br>
+具体 prompt 模板 → .claude/skills/<br>
+具体判断标准 → standards/
+    </div>
+
+    <div class="callout">
+      <strong>关键设计</strong>:最后一节 "How to find specific context" 告诉 Claude 去哪找具体内容 ·
+      CLAUDE.md 本身保持精炼 · 但 Agent 知道怎么按需查 cases/ 和 skills/。
+    </div>
+  </div>
+
+  <!-- L2 cases/ -->
+  <div class="sub-section">
+    <h2>L2 · cases/ · 无上限累积层</h2>
+
+    <p>每个项目/任务结束都写一个 case file · 不需要担心数量 · 累积 50 · 100 · 500 个都 OK · 因为它<strong>不影响 Claude 的 context window</strong>。</p>
+
+    <h3>命名格式</h3>
+    <div class="code-block">
+cases/YYYY-MM-DD-project-name.md<br><br>
+例:<br>
+cases/2026-05-15-ai-hr-competency-prompt.md<br>
+cases/2026-05-20-yaobao-onboarding-failed.md<br>
+cases/2026-05-22-team-context-iteration-v3.md
+    </div>
+
+    <h3>case file 必备 5 个 section</h3>
+    <div class="code-block">
+# [项目名]<br>
+日期 · DRI · 参与人<br><br>
+## 1. 目标<br>
+[plan 里写的原始目标]<br><br>
+## 2. 实际做的事<br>
+[压缩时间线 · 200 字以内]<br><br>
+## 3. 完成标准 + 是否达成<br>
+- 标准:[plan 里写的]<br>
+- 实际:[达成 / 部分达成 / 未达成]<br>
+- 差距:[如果有 · 写出来]<br><br>
+## 4. 关键判断分析(真实成败原因)<br>
+- 关键判断 1:[做了什么] · 对错 · 因果<br>
+- 关键判断 2:...<br>
+- 如果重来:[哪个判断会改]<br><br>
+## 5. 通用规则候选<br>
+- [候选 1] · 需要 DRI 决定:提升到 CLAUDE.md?<br>
+- [候选 2] · ...
+    </div>
+
+    <h3>cases/ 的 3 个使用场景</h3>
+    <ul>
+      <li><strong>月度 review</strong> · 全员读上月所有 case · 看哪些项目"古法不可能" · 哪些失败可以避免</li>
+      <li><strong>新人 onboarding</strong> · 第一周读最近 10 个 case · 比读 SOP 学得快</li>
+      <li><strong>Agent 按需主动查</strong> · 类似项目启动时 · Agent 可以 prompt 加载相关 case</li>
+    </ul>
+  </div>
+
+  <!-- 提升路径 -->
+  <div class="sub-section">
+    <h2>提升路径 · case → CLAUDE.md</h2>
+
+    <p>每个项目 debrief 时 · DRI 判断 case 里的"通用规则候选"能否提升:</p>
+
+    <table>
+      <thead>
+        <tr><th style="width:18%;">步骤</th><th style="width:42%;">动作</th><th style="width:40%;">输出</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="bold">case 写完</td><td>section 5 列出"通用规则候选"</td><td>候选清单(0-3 条)</td></tr>
+        <tr><td class="bold">DRI 判断</td><td>逐条问:"适用于未来所有类似项目吗?"</td><td>YES / NO 标记</td></tr>
+        <tr><td class="bold">YES</td><td>提炼成抽象规则(去掉项目名)· 加进 CLAUDE.md</td><td>CLAUDE.md +1 条 · case 也保留</td></tr>
+        <tr><td class="bold">NO</td><td>不动作 · 具体记录已经在 case 里</td><td>case 保留 · CLAUDE.md 不变</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout green">
+      <strong>经验数据</strong>:每个项目大约 <strong>10% 的发现</strong>会被提升到 CLAUDE.md ·
+      90% 留在 case 文件作为具体记录 · 这是健康比例。
+    </div>
+  </div>
+
+  <!-- 健康度 -->
+  <div class="sub-section">
+    <h2>CLAUDE.md 健康度 · 月度 review</h2>
+
+    <p>每月最后日 · 1 小时全员 · 检查这 5 个指标:</p>
+
+    <table>
+      <thead>
+        <tr><th style="width:30%;">指标</th><th style="width:70%;">怎么看</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="bold">token 数</td><td>目标 2-3k · 超过 3.5k <u>必须 prune</u></td></tr>
+        <tr><td class="bold">本月新增条目数</td><td>反映团队学习速度 · 太多说明门槛漂移 · 太少说明没在学</td></tr>
+        <tr><td class="bold">重复出现条目</td><td>是不是该合并 / 提升到 skills/</td></tr>
+        <tr><td class="bold">过时条目</td><td>直接删 · 不要恋旧</td></tr>
+        <tr><td class="bold">case-specific 混入</td><td><u>反 pattern</u> · 必须移到 case file</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- FOOTER NAV -->
+  
+
+  
+
+</section>
+
+<div class="section-separator"></div>
+
+<section id="p-05" class="doc-section sect-p-05">
+
+
+
+  <header class="module-header">
+    <div class="module-num">MODULE 05 · PRINCIPLES</div>
+    <h1 class="module-title">DRI 模式<br>+ 职责四类型</h1>
+    <p class="module-subtitle">
+      没有层级关系 · 没有预设角色 · 每个项目一个 <strong>DRI</strong> 拥有全权 · 包括实习生可以是 DRI ·
+      职责按任务认领 · 不按职位贴标签。
+    </p>
+    <div class="module-meta">
+      <span>READ TIME · <strong>~ 8 分钟</strong></span>
+      <span>AUDIENCE · <strong>全员必读</strong></span>
+      <span>UPDATE · <strong>罕见</strong></span>
+    </div>
+  </header>
+
+  <!-- DRI 定义 -->
+  <div class="sub-section">
+    <h2>DRI · Directly Responsible Individual</h2>
+
+    <div class="quote">
+      每个项目有一个 DRI ·<br>
+      DRI 拥有这个项目的<strong>整个</strong>可见性、决策权、最终结果责任 ·<br>
+      不像很多公司分"产品 DRI + 工程 DRI + 设计 DRI" —— 我们一个项目就一个 DRI。
+      <div class="quote-attribution">— Sulman Choudhry · OpenAI ChatGPT 工程团队 · 2026-03</div>
+    </div>
+
+    <h3>DRI 的三个属性</h3>
+    <table>
+      <thead>
+        <tr><th style="width: 22%;">属性</th><th style="width: 78%;">含义</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="bold">可见性</td><td>对项目所有动作有<strong>完整可见性</strong> · 所有 plan / decision / commit / case 都能看到</td></tr>
+        <tr><td class="bold">决策权</td><td>所有判断的<strong>最终决策权</strong> · 包括 review 别人的工作</td></tr>
+        <tr><td class="bold">责任</td><td>从启动到收尾的<strong>每一步</strong>都对项目负责 · 包括失败的后果</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 四种职责 -->
+  <div class="sub-section">
+    <h2>职责的四种类型</h2>
+
+    <p>每个项目启动时 · 把工作按下面四种职责类型拆解 · 然后由团队成员认领。<strong>同一人可承担多种职责 · 同一职责也可由多人共同承担</strong>。</p>
+
+    <table>
+      <thead>
+        <tr><th style="width: 14%;">类型</th><th style="width: 32%;">是什么</th><th style="width: 28%;">对什么负责</th><th style="width: 26%;">什么时候出现</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="role-pill dri">DRI</span></td>
+          <td>项目全权负责 · 可见性 + 决策权 + 责任</td>
+          <td>项目从启动到收尾的整体</td>
+          <td><strong>每个项目有且仅有一个</strong></td>
+        </tr>
+        <tr>
+          <td><span class="role-pill exec">EXEC</span></td>
+          <td>具体产出 · 写代码 / 写文档 / 做内容</td>
+          <td>自己负责模块的质量和交付</td>
+          <td>每个项目一个或多个</td>
+        </tr>
+        <tr>
+          <td><span class="role-pill collab">COLLAB</span></td>
+          <td>提供支持 · 经验输入 · 跨模块对接</td>
+          <td>协作时段内的支持质量</td>
+          <td>项目需要时(协作者自己判断 + DRI 邀请)</td>
+        </tr>
+        <tr>
+          <td><span class="role-pill review">REVIEW</span></td>
+          <td>独立视角的审视 · 质量把关 · 风险提醒</td>
+          <td>review 的客观性 + 关键问题不漏</td>
+          <td>关键节点 · 通常由第二个 Claude 完成</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 认领机制 -->
+  <div class="sub-section">
+    <h2>职责认领 · 6 条规则</h2>
+    <table>
+      <thead>
+        <tr><th style="width: 22%;">规则</th><th style="width: 78%;">含义</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="bold">自愿优先</td><td>项目启动时 · 谁想认领某个职责 · 公开表达</td></tr>
+        <tr><td class="bold">DRI 必有</td><td>每个项目必须有且仅有一个 DRI · 如果没人认领 · 讨论后定</td></tr>
+        <tr><td class="bold">认领即承诺</td><td>认领后对该职责的行动和结果负责 · 不能"领了不做"</td></tr>
+        <tr><td class="bold">可以拒绝</td><td>被邀请时可以拒绝 · 说明原因 · 防止只剩一个人扛</td></tr>
+        <tr><td class="bold">可以交接</td><td>中途状态变化(精力 / 优先级 / 卡住) · 主动提出交接 · 不要硬扛</td></tr>
+        <tr><td class="bold">认领记录</td><td>认领关系写入 plan markdown · 所有人可见</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Generalist -->
+  <div class="sub-section">
+    <h2>Generalist 优先 · 不要早早贴标签</h2>
+
+    <div class="quote">
+      OpenAI 内部用的是<strong>哑铃模型</strong>:<br>
+      一头是极端 generalist(跨 mobile / frontend / backend / 工程 / research 都能做)·<br>
+      一头是极端 specialist(某领域世界级专家) ·<br>
+      <strong>中间地带是被替代的</strong>。
+    </div>
+
+    <p>对我们 5 人:</p>
+    <ul>
+      <li><strong>都应该是 generalist</strong> · 不要把人贴标签为"前端 / 后端 / 设计 / HR"</li>
+      <li>Aaron 的 HRBP 背景 + Claude Code = 可以直接迭代 AI HR 产品的核心逻辑 · 不需要等"工程师来实现"</li>
+      <li>研发也应该理解产品 · 实习生也应该参与决策</li>
+      <li><strong>模糊 research / engineering / 产品的边界是优势 · 不是问题</strong></li>
+    </ul>
+  </div>
+
+  <!-- 实习生 DRI -->
+  <div class="sub-section">
+    <h2>实习生也可以是 DRI</h2>
+
+    <div class="callout">
+      <strong>这是我们和传统团队最大的区别之一</strong>。<br>
+      实习生作为 DRI 时 · 他对项目的可见性最完整 · 不应该被 Aaron 的"经验"覆盖 ·
+      否则就不是真正的 DRI · OpenAI 内部就是这个原则。
+    </div>
+
+    <h3>实习生作 DRI 时 · 如何避免 Aaron 不自觉接管</h3>
+    <ul>
+      <li>Aaron 提供<strong>判断材料</strong> · 不替他做<strong>判断本身</strong></li>
+      <li>Aaron 表达<strong>担心</strong> · 不下<strong>命令</strong></li>
+      <li>实习生 DRI 最终拍板 · 即使 Aaron 不同意 · 也记录在 decisions/ 里</li>
+      <li>如果 Aaron 真的认为这是个错误判断 · 提出 review · 但不强制改</li>
+      <li>项目复盘时 · 不论结果如何 · 都不能用"我早就说过"</li>
+    </ul>
+  </div>
+
+  <!-- 认知自负责 -->
+  <div class="sub-section">
+    <h2>认知行为的自负责</h2>
+
+    <p>"对自己的认知行为负责"是我们工作的核心 · 它具体意味着:</p>
+
+    <table>
+      <thead>
+        <tr><th style="width: 28%;">维度</th><th>含义</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="bold">对判断负责</td><td>判断要写出来 · 要有依据 · 经得起被追溯和质疑</td></tr>
+        <tr><td class="bold">对行动负责</td><td>说要做的事就去做 · 做不到提前说 · 不要让别人猜</td></tr>
+        <tr><td class="bold">对结果负责</td><td>结果好坏都坦诚 · <strong>即使是 AI 生成的代码 · 也是你 ship 的</strong>(Sanity 原则)</td></tr>
+        <tr><td class="bold">对沉淀负责</td><td>学习 / 踩坑 / 判断回写到 CLAUDE.md / cases/</td></tr>
+        <tr><td class="bold">对反馈负责</td><td>看到他人判断有问题主动提出 · 看到自己被反馈认真消化</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 冲突裁定 -->
+  <div class="sub-section">
+    <h2>冲突如何裁定 · 4 条原则</h2>
+
+    <table>
+      <thead>
+        <tr><th style="width: 28%;">原则</th><th>含义</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="bold">对事不对人</td><td>讨论判断本身 · 不评价提出判断的人</td></tr>
+        <tr><td class="bold">依据优先于偏好</td><td>有数据 / 案例 / 经验依据的判断优先于直觉偏好</td></tr>
+        <tr><td class="bold">DRI 有最终决定权</td><td>讨论完无法达成一致时 · 该项目的 DRI 拍板(<strong>即使 DRI 是实习生</strong>)</td></tr>
+        <tr><td class="bold">决策必须记录</td><td>无论谁拍板 · 理由必须写入 docs/decisions/</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>为什么"即使 DRI 是实习生"也成立</strong>:实习生作为 DRI 时 · 他对项目的可见性最完整 ·
+      不应该被 Aaron 的"经验"覆盖 · 否则就不是真正的 DRI · OpenAI 内部就是这个原则。
+    </div>
+  </div>
+
+  <!-- FOOTER NAV -->
+  
+
+  
+
+</section>
+
+<div class="section-separator"></div>
+
+<section id="p-06" class="doc-section sect-p-06">
+
+
+
+  <header class="module-header">
+    <div class="module-num">MODULE 06 · PRINCIPLES</div>
+    <h1 class="module-title">节奏<br>日 / 周 / 月</h1>
+    <p class="module-subtitle">
+      人不写每日报告 · Agent 自动生成 summary · 人 review 关键节点 ·
+      Daily Standup 已死 · 保留 Monday Kickoff + Friday Demo + 月度 burnout check。
+    </p>
+    <div class="module-meta">
+      <span>READ TIME · <strong>~ 6 分钟</strong></span>
+      <span>AUDIENCE · <strong>全员必读</strong></span>
+      <span>UPDATE · <strong>季度</strong></span>
+    </div>
+  </header>
+
+  <!-- 每日 -->
+  <div class="sub-section">
+    <h2>每日节奏</h2>
+    <table>
+      <thead>
+        <tr><th style="width:18%;">时段</th><th style="width:28%;">动作</th><th style="width:54%;">具体内容</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">早上 5-10 分</td>
+          <td>读 Agent summary + 启动 sessions</td>
+          <td>读昨天 Agent 自动写的 daily summary · 10-15 个 worktree 中选今天用的 · 给每个派 phase · 启动 5-10 个 active Claude session</td>
+        </tr>
+        <tr>
+          <td class="bold">上午深度</td>
+          <td>监督 + Orchestrate</td>
+          <td>盯 chain of thought · ESC 中断走偏 · /clear 清理 · 卡 30 分钟 start over</td>
+        </tr>
+        <tr>
+          <td class="bold">中午 5 分</td>
+          <td>CLAUDE.md 微更新</td>
+          <td>把上午发现的 "Claude 反复犯的错"(且<strong>是通用规则</strong>) 加进 CLAUDE.md · git commit + push · case-specific 内容不进 CLAUDE.md</td>
+        </tr>
+        <tr>
+          <td class="bold">下午深度</td>
+          <td>继续 + 第二轮 plan review</td>
+          <td>继续监督 Opus 执行 · 发现 plan 不够清楚 → 启动新 Claude session 重新规划</td>
+        </tr>
+        <tr>
+          <td class="bold">傍晚 5 分</td>
+          <td>Agent 写 daily summary</td>
+          <td>Agent 基于决策日志 + commits 自动生成 · 写入 Team Context · 飞书群推送 · 人 30 秒过目</td>
+        </tr>
+        <tr>
+          <td class="bold">触发式</td>
+          <td>卡点 = start over</td>
+          <td>卡 30 分钟 → 不要 fix · 升级 plan markdown · 启动新 session</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>没有 Daily Standup</strong>。<br>
+      传统团队的"昨天/今天/卡点"已经被 Agent 自动 summary 取代 · 不需要再开会。
+    </div>
+  </div>
+
+  <!-- 每周 -->
+  <div class="sub-section">
+    <h2>每周节奏</h2>
+    <table>
+      <thead>
+        <tr><th style="width:18%;">时段</th><th style="width:28%;">动作</th><th style="width:54%;">具体内容</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">周一 30 分</td>
+          <td>Kickoff</td>
+          <td>全员看本周 plan markdown 列表 · DRI 快速 align · 不重复 plan 内容 · 只 align 边界和优先级</td>
+        </tr>
+        <tr>
+          <td class="bold">周三 异步</td>
+          <td>CLAUDE.md Review</td>
+          <td>Agent 自动统计本周加了多少条 · 哪些重复出现 · 是不是该提升到 skills/</td>
+        </tr>
+        <tr>
+          <td class="bold">周五 30 分</td>
+          <td>Demo + 庆祝</td>
+          <td>本周完成的 projects 做 demo · 不是 PPT · 是真实产物演示 · 互相看见进展</td>
+        </tr>
+        <tr>
+          <td class="bold">周五 15 分</td>
+          <td>Betting Table</td>
+          <td>全员决定下周做什么 · 看 plan markdowns 列表 · 选 · 没选中的不进 backlog · 重要的会重新出现</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 每月 -->
+  <div class="sub-section">
+    <h2>每月节奏</h2>
+    <table>
+      <thead>
+        <tr><th style="width:20%;">时段</th><th style="width:32%;">动作</th><th style="width:48%;">具体内容</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">月最后 1 小时</td>
+          <td>SOP + CLAUDE.md 健康度</td>
+          <td>CLAUDE.md token 数变化 · 哪些规则该被提升 · 哪些 skills 在被频繁用 · SOP 需要哪些校准</td>
+        </tr>
+        <tr>
+          <td class="bold">月最后 30 分</td>
+          <td>"古法不可能"事件清点</td>
+          <td>本月做的哪些事在传统 5 人团队不可能完成 · 这是 AI Native 健康度的最终指标</td>
+        </tr>
+        <tr>
+          <td class="bold">月最后 30 分</td>
+          <td>cases/ review</td>
+          <td>全员读本月所有 case · 看 section 4(关键判断分析) · 找出还没提升的通用规则</td>
+        </tr>
+        <tr>
+          <td class="bold">月最后 30 分</td>
+          <td>Burnout check</td>
+          <td>全员明确回答 3 个问题 · 任何 yes 这个月降到 3-5 active 调整</td>
+        </tr>
+        <tr>
+          <td class="bold">每季度</td>
+          <td>CLAUDE.md prune</td>
+          <td>过 3.5k 强制 prune · 过时条目删 · skills/ 没人调用的归档</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Burnout Check -->
+  <div class="sub-section">
+    <h2>月度 Burnout Check · 3 个问题</h2>
+
+    <div class="quote">
+      AI 用户 burnout 比非 user 高 88% · 每组织 $9M 浪费 ·<br>
+      我们 baseline 是 Boris Cherny 水平 · 认知负荷不低 · burnout 是 SOP 的红线。
+    </div>
+
+    <p>每月最后 30 分钟 · 全员明确回答这 3 个问题:</p>
+    <ol>
+      <li>这个月跑 5-10 active Claude · 你觉得疲惫吗?</li>
+      <li>有没有出现"看到通知就反感"的情况?</li>
+      <li>下班后还在想 Claude session 状态吗?</li>
+    </ol>
+
+    <div class="callout green">
+      <strong>出现任何 yes</strong> · 这个月先降到 3-5 active 调整 · 不要硬撑 ·
+      恢复后再回到 5-10 baseline · 这是<strong>刹车机制 · 不是后退</strong>。
+    </div>
+  </div>
+
+  <!-- 古法不可能 -->
+  <div class="sub-section">
+    <h2>"古法不可能"事件清点</h2>
+
+    <p>每月最后 30 分钟 · 全员清点本月我们做的事 · 找出哪些在传统 5 人团队<strong>古法不可能完成</strong>:</p>
+    <ul>
+      <li>5 人在 1 周内 ship 一个完整 feature(传统需要 1 个月)</li>
+      <li>实习生独立完成一个有商业价值的产品迭代</li>
+      <li>同时维护 3 个产品线 · 而且每个都在进步</li>
+      <li>Aaron 一个人 prototype 完整 AI HR 工作流 · 不需要等工程师</li>
+    </ul>
+
+    <div class="callout">
+      <strong>这是 AI Native 健康度的最终指标</strong>。<br>
+      不是"用了多少 token"、"跑了多少 session" · 是 <strong>"我们做了多少件古法不可能的事"</strong>。
+    </div>
+  </div>
+
+  <!-- FOOTER NAV -->
+  
+
+  
+
+</section>
+
+<div class="section-separator"></div>
+
+<section id="p-07" class="doc-section sect-p-07">
+
+
+
+  <header class="module-header">
+    <div class="module-num">MODULE 07 · PRINCIPLES</div>
+    <h1 class="module-title">10 条反 pattern<br>不要这样做</h1>
+    <p class="module-subtitle">
+      别人踩过的坑 · BCG / METR / HBR / Sanity / Digital Applied 真实研究数据 ·
+      我们直接绕开 · 不重复试错。
+    </p>
+    <div class="module-meta">
+      <span>READ TIME · <strong>~ 8 分钟</strong></span>
+      <span>AUDIENCE · <strong>全员必读</strong></span>
+      <span>UPDATE · <strong>偶尔(新坑出现时)</strong></span>
+    </div>
+  </header>
+
+  <div class="sub-section">
+    <div class="quote">
+      "The tool that makes good judgment better<br>makes poor judgment catastrophically worse."
+      <div class="quote-attribution">— BCG study · 2025-12 executive briefing</div>
+    </div>
+  </div>
+
+  <!-- 10 ANTI-PATTERNS -->
+  <div class="sub-section">
+    <h2>10 条反 pattern</h2>
+
+    <div class="anti-card">
+      <div class="anti-num">❌ 01</div>
+      <div class="anti-title">让 Claude review 它自己的代码</div>
+      <p>找不到结构性 bug · 只能找到表面问题。必须用<strong>第二个 Claude</strong>· 或者人 review。</p>
+      <div class="anti-evidence">EVIDENCE · Sanity 工程团队 6 周实战</div>
+    </div>
+
+    <div class="anti-card">
+      <div class="anti-num">❌ 02</div>
+      <div class="anti-title">同一个 problem space 并行多个 Claude</div>
+      <p>会失去对不同 session 在解决什么问题的追踪 · 5-10 active 应该是<strong>不同问题空间</strong>。</p>
+      <div class="anti-evidence">EVIDENCE · Sanity / Even Westvang · 2026</div>
+    </div>
+
+    <div class="anti-card">
+      <div class="anti-num">❌ 03</div>
+      <div class="anti-title">让 50+ Agent 同时跑</div>
+      <p>"每一个 Agent 都变成白痴" · 10+ session 同时质量崩溃。我们 5-10 active 是<strong>有意识的上限</strong>。</p>
+      <div class="anti-evidence">EVIDENCE · GitHub Issue anthropics/claude-code#42796 · 2026-04</div>
+    </div>
+
+    <div class="anti-card">
+      <div class="anti-num">❌ 04</div>
+      <div class="anti-title">CLAUDE.md 当 "junk drawer"(超 3k token)</div>
+      <p>信息太多 Claude 读不进 context window · 反而降效。<strong>case-specific 内容必须留 case file</strong> · 不进 CLAUDE.md。</p>
+      <div class="anti-evidence">EVIDENCE · Digital Applied · 2026 / Anthropic 内部 prune 实践</div>
+    </div>
+
+    <div class="anti-card">
+      <div class="anti-num">❌ 05</div>
+      <div class="anti-title">skills/ 没有 owner · 加完就走</div>
+      <p>提交人离职后 skill 漂移 · 没人记得它是干什么的。每个 skill 必须有 owner + 上次 review 日期。</p>
+      <div class="anti-evidence">EVIDENCE · Digital Applied · 2026</div>
+    </div>
+
+    <div class="anti-card">
+      <div class="anti-num">❌ 06</div>
+      <div class="anti-title">用 AI 做"超出能力前沿"的事</div>
+      <p>错误率反而<strong>上升 19 个百分点</strong>。启动 Research session 时第一个问题:"这件事在 AI 的能力前沿内吗?"</p>
+      <div class="anti-evidence">EVIDENCE · BCG study · 2024</div>
+    </div>
+
+    <div class="anti-card">
+      <div class="anti-num">❌ 07</div>
+      <div class="anti-title">把"用户使用率高"当作 transformation</div>
+      <p>很多团队 95% 使用率但 .claude/skills/ 是空的 · 只是 autocomplete。<strong>沉淀质量 &gt; 使用频率</strong>。</p>
+      <div class="anti-evidence">EVIDENCE · Digital Applied · 2026</div>
+    </div>
+
+    <div class="anti-card">
+      <div class="anti-num">❌ 08</div>
+      <div class="anti-title">经验丰富的开发者在熟悉 codebase 上用 AI</div>
+      <p>METR RCT:<strong>反而慢 19%</strong>(虽然自我感觉快 20%)· 直接写比让 Claude 写更快的场景真实存在。</p>
+      <div class="anti-evidence">EVIDENCE · METR · Joel Becker et al · 2025-07</div>
+    </div>
+
+    <div class="anti-card">
+      <div class="anti-num">❌ 09</div>
+      <div class="anti-title">"效率至上" · 把 AI 能做的都给 AI 做</div>
+      <p>AI 用户 burnout 比非用户高 <strong>88%</strong> · 每组织 $9M 浪费。月度 burnout check 是 SOP 的红线。</p>
+      <div class="anti-evidence">EVIDENCE · HBR · "6 Things That Failed in 2025"</div>
+    </div>
+
+    <div class="anti-card">
+      <div class="anti-num">❌ 10</div>
+      <div class="anti-title">没有 DRI · 项目无主</div>
+      <p>Agent 不知道听谁的 · 决策推不动 · AI Native 团队<strong>最常见的失败</strong>。每个项目必须有且仅有一个 DRI。</p>
+      <div class="anti-evidence">EVIDENCE · Sulman Choudhry · OpenAI · 2026-03</div>
+    </div>
+  </div>
+
+  <!-- TOP 3 关键 -->
+  <div class="sub-section">
+    <h2>3 条对我们最危险</h2>
+
+    <p>这 10 条都重要 · 但下面 3 条是<strong>我们 5 人团队最容易踩</strong>:</p>
+
+    <table>
+      <thead>
+        <tr><th style="width: 12%;">#</th><th style="width: 38%;">为什么对我们危险</th><th style="width: 50%;">怎么防</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold accent">❌ 06</td>
+          <td>Aaron 用 AI 做 HR 流程 → 能力前沿内 · 但用 AI 做底层算法 → 超出前沿</td>
+          <td>Research session 第一个问题:"这件事在 AI 能力前沿内吗?" 不在前沿 → 人主导</td>
+        </tr>
+        <tr>
+          <td class="bold accent">❌ 08</td>
+          <td>2 个全栈研发在熟悉代码区域 + 简单任务 · 直接写可能比让 Claude 写更快</td>
+          <td>SOP 不要求"所有事都用 AI" · 熟悉任务 + 短时间能完成 · 可以不用 AI</td>
+        </tr>
+        <tr>
+          <td class="bold accent">❌ 09</td>
+          <td>"7 人像 50 人"的代价可能是过度燃烧 · 实习生尤其</td>
+          <td>每月 SOP review 强制 burnout check · 出现 yes 立刻降速</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout red">
+      <strong>这 3 条是<u>红线</u></strong>:任何一条出现迹象 · DRI 必须立即介入 · 不要等月度 review。
+    </div>
+  </div>
+
+  <!-- FOOTER NAV -->
+  
+
+  
+
+</section>
+
+
+<section id="pb-01" class="doc-section sect-pb-01">
+
+
+
+  <header class="module-header">
+    <div class="module-num">PLAYBOOK 01 · GREENFIELD</div>
+    <h1 class="module-title">新项目<br>· 参考示例</h1>
+    <p class="module-subtitle">
+      场景:启动一个独立的新项目(例:AI 招聘平台某个 feature · 要抱抱新模块 · Team Context 自身迭代)·
+      不确定性高 · 适合走完整 Research → Plan → Implement → Debrief。
+      下面是一种参考方式 · <strong>不是必须按这个走</strong>。
+    </p>
+    <div class="module-meta">
+      <span>SCENARIO · <strong>新项目 + 不确定性高</strong></span>
+      <span>DURATION · <strong>大致 3 天 - 2 周</strong></span>
+    </div>
+  </header>
+
+  <!-- 启动检查 -->
+  <div class="sub-section">
+    <h2>启动前 · 自检 4 项</h2>
+    <div class="checklist">
+      <div class="checklist-item">这件事真的是<strong>项目层</strong>而不是任务层?(独立大目标 + 涉及整个团队)</div>
+      <div class="checklist-item">这件事在 AI <strong>能力前沿内</strong>?(反 pattern ❌6)</div>
+      <div class="checklist-item">我自己是 DRI · 还是另有人?</div>
+      <div class="checklist-item">我能投入 <strong>3 天-2 周</strong> 的连续 attention?</div>
+    </div>
+  </div>
+
+  <!-- PHASE 1: 启动 -->
+  <div class="sub-section">
+    <h2>PHASE 1 · 启动(半天-1 天)</h2>
+
+    <div class="step-card">
+      <div class="num">STEP 1 · 5 分钟</div>
+      <div class="title">声明意图</div>
+      <p style="font-size: 14px;">飞书群发:<em>"我想做 X · 因为 Y · 这是<strong>项目层</strong> · 预计 N 天 · DRI 是我。"</em></p>
+    </div>
+
+    <div class="step-card">
+      <div class="num">STEP 2 · 30 分钟 - 2 小时</div>
+      <div class="title">Research session</div>
+      <p style="font-size: 14px;">启动新 Claude Code session:</p>
+      <div class="code-block">"请研究 [项目主题]<br><br>先读:<br>- CLAUDE.md(团队 context)<br>- standards/ 里相关判断<br>- cases/ 里类似项目(过去 6 个月内)<br><br>用 subagent 并行研究:<br>1. 我们现有代码相关部分<br>2. 业界已有做法(2024-2026)<br>3. 潜在的坑<br>4. 类似 case 的成败原因<br><br>输出 docs/research/research_[date]_[topic].md<br>结构:① 现状 ② 业界做法 ③ 潜在坑 ④ 推荐方向 ⑤ 风险<br>每段不超过 150 字"</div>
+    </div>
+
+    <div class="step-card">
+      <div class="num">STEP 3 · 1-2 小时</div>
+      <div class="title">Plan session(全新 context)</div>
+      <p style="font-size: 14px;">启动另一个新 Claude Code session(全新 context):</p>
+      <div class="code-block">"请阅读 docs/research/research_[date]_[topic].md<br><br>用 Plan Mode 制定实施 plan · 分成 discrete phases ·<br>每个 phase 有清晰的:<br>- 输入(从哪个 phase 来)<br>- 输出(交付什么)<br>- 验证标准(怎么知道完成)<br><br>输出 docs/plans/plan_[date]_[topic].md<br>必备 4 个字段:目标 / 完成标准 / 怎么分 / 时间盒"</div>
+    </div>
+
+    <div class="step-card">
+      <div class="num">STEP 4 · 30 分钟</div>
+      <div class="title">第二个 session · Plan 审查</div>
+      <p style="font-size: 14px;">第二个 Claude session(Opus 4.7):</p>
+      <div class="code-block">"我刚做完一个 plan · 文件在 docs/plans/plan_[date]_[topic].md<br>请你以 staff engineer 角色 review · 重点指出:<br>- 技术风险<br>- 不一致<br>- 被忽略的边界情况<br>- 过度工程"</div>
+    </div>
+
+    <div class="step-card">
+      <div class="num">STEP 5 · 30-60 分钟</div>
+      <div class="title">DRI 拍板</div>
+      <p style="font-size: 14px;">DRI 读 research + plan + review · 修订 plan markdown 到 v1.0 · 标记"已批准 · 可执行"。</p>
+    </div>
+
+    <div class="step-card">
+      <div class="num">STEP 6 · 5 分钟</div>
+      <div class="title">广播</div>
+      <p style="font-size: 14px;">飞书群发简短消息 + plan 文件位置 · 24 小时内全员快速 review · 没反馈 = 默认通过。</p>
+    </div>
+  </div>
+
+  <!-- PHASE 2: 执行 -->
+  <div class="sub-section">
+    <h2>PHASE 2 · 执行(几天-1 周)</h2>
+
+    <h3 style="font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 16px; margin-bottom: 10px;">每天的标准动作</h3>
+
+    <table>
+      <thead>
+        <tr><th style="width:18%;">时段</th><th style="width:82%;">动作</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">早上 5-10 分</td>
+          <td>读昨天 Agent daily summary · 选今天用的 worktree · 启动 5-10 个 active Claude session· 各自派一个 plan phase</td>
+        </tr>
+        <tr>
+          <td class="bold">上午深度</td>
+          <td>监督 chain of thought · ESC 中断走偏 · /clear 清理 · 卡 30 分钟 start over</td>
+        </tr>
+        <tr>
+          <td class="bold">中午 5 分</td>
+          <td>CLAUDE.md 微更新(只加通用规则 · case-specific 留 case file)</td>
+        </tr>
+        <tr>
+          <td class="bold">下午</td>
+          <td>继续 · 发现 plan 不清楚 → 启动新 Claude 重新规划 phase</td>
+        </tr>
+        <tr>
+          <td class="bold">傍晚 5 分</td>
+          <td>Agent 自动写 daily summary · 推送飞书群</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="font-family: 'Noto Serif SC', serif; font-weight: 700; font-size: 16px; margin-top: 20px; margin-bottom: 10px;">如果遇到 plan 不对</h3>
+    <ol>
+      <li>停下当前执行</li>
+      <li>启动新 Claude session 重新 Plan(可能跳回 Research)</li>
+      <li>升级 plan markdown 到 v1.x</li>
+      <li>让第二个 session 重新审查</li>
+      <li>DRI 拍板 · 继续执行</li>
+    </ol>
+    <p style="color: var(--gray); font-size: 13px;">原则:plan 是<u>活的</u> · 但每次修订都走 review · 不要 "vibe code"。</p>
+  </div>
+
+  <!-- PHASE 3: Debrief -->
+  <div class="sub-section">
+    <h2>PHASE 3 · Debrief(半天)</h2>
+
+    <div class="step-card">
+      <div class="num">STEP 1 · 30 分钟</div>
+      <div class="title">Agent 生成 debrief 草稿</div>
+      <p style="font-size: 14px;">启动一个新 Claude Code session · 用 04 模块的 prompt 模板生成 <code class="mono">cases/YYYY-MM-DD-[project].md</code></p>
+    </div>
+
+    <div class="step-card">
+      <div class="num">STEP 2 · 1-2 小时</div>
+      <div class="title">DRI review · 校准 section 4</div>
+      <p style="font-size: 14px;">读草稿 · 校准 "关键判断分析" · 真实成败原因 · 不要场面话。</p>
+    </div>
+
+    <div class="step-card">
+      <div class="num">STEP 3 · 30 分钟</div>
+      <div class="title">提升到 CLAUDE.md(如有)</div>
+      <p style="font-size: 14px;">对每个"通用规则候选"问:<strong>适用于未来所有类似项目吗?</strong> · YES 才进 CLAUDE.md。</p>
+    </div>
+
+    <div class="step-card">
+      <div class="num">STEP 4 · 30 分钟</div>
+      <div class="title">周五 demo</div>
+      <p style="font-size: 14px;">DRI 在 周五下午全员 demo · 真实产物演示 · 不需要 PPT · 庆祝。</p>
+    </div>
+  </div>
+
+  <!-- 关键提醒 -->
+  <div class="sub-section">
+    <h2>关键提醒 · 5 条</h2>
+    <div class="callout">
+      <strong>1.</strong> Research 和 Plan 必须是<u>不同 session</u> · 不要让 Claude 一边研究一边规划<br>
+      <strong>2.</strong> Code review 必须用<u>第二个 Claude</u> · 第一个 Claude 不能 review 自己<br>
+      <strong>3.</strong> 卡住时 <u>start over</u> 不要 fix · 10-20% 放弃率是健康的<br>
+      <strong>4.</strong> Case file 是必须的 · 不写 case = 项目没结束<br>
+      <strong>5.</strong> 只有 ~10% 发现进 CLAUDE.md · 90% 留 case · 不要塞 junk drawer
+    </div>
+  </div>
+
+  <!-- FOOTER NAV -->
+  
+
+  
+
+</section>
+
+<div class="section-separator"></div>
+
+<section id="pb-02" class="doc-section sect-pb-02">
+
+
+
+  <header class="module-header">
+    <div class="module-num">PLAYBOOK 02 · BUG FIX</div>
+    <h1 class="module-title">修 bug<br>· 参考示例</h1>
+    <p class="module-subtitle">
+      场景:debug 某个具体 bug / 小优化 / 处理用户反馈 / 单文件修复 ·
+      可以跳过 Research · 直接 Plan + Implement · 大致 1-3 小时闭环。
+      下面是一种参考方式 · <strong>不是必须按这个走</strong>。
+    </p>
+    <div class="module-meta">
+      <span>SCENARIO · <strong>任务层 · 单一明确问题</strong></span>
+      <span>DURATION · <strong>大致 15 分钟 - 3 小时</strong></span>
+    </div>
+  </header>
+
+  <!-- 适用场景 -->
+  <div class="sub-section">
+    <h2>什么时候用这个 playbook</h2>
+
+    <table>
+      <thead>
+        <tr><th style="width:50%;">✅ 用 bug-fix playbook</th><th style="width:50%;">❌ 不要用 · 该走别的 playbook</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>某个页面按钮失效</td>
+          <td>整个页面重设计 → greenfield</td>
+        </tr>
+        <tr>
+          <td>一段代码报错</td>
+          <td>整个模块架构问题 → greenfield</td>
+        </tr>
+        <tr>
+          <td>用户反馈某个文案错</td>
+          <td>整体改产品 voice → greenfield</td>
+        </tr>
+        <tr>
+          <td>调一个 prompt 的输出格式</td>
+          <td>重做 prompt 体系 → greenfield</td>
+        </tr>
+        <tr>
+          <td>批量改 10 个相似文件</td>
+          <td>跨模块依赖的 feature → Level 3 Team</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>核心判断</strong>:范围小(1-3 文件) + 问题明确(知道改什么) + 无跨模块依赖 → bug-fix playbook
+    </div>
+  </div>
+
+  <!-- 4 步流程 -->
+  <div class="sub-section">
+    <h2>4 步流程 · 总耗时 15 分钟 - 3 小时</h2>
+
+    <div class="step-card">
+      <div class="num">STEP 1 · 2 分钟</div>
+      <div class="title">写 mini-plan(3 句话)</div>
+      <p style="font-size: 14px;">飞书发自己留底 + 写到 plan 文件第一行:</p>
+      <div class="code-block">
+任务:[一句话说清楚]<br>
+完成标准:[1 个可验证信号]<br>
+边界:[不要碰什么]
+      </div>
+      <p style="font-size: 13px; color: var(--gray);">不是项目层 · 不需要广播 · 不需要 DRI 拍板 · 自己就是 DRI。但 mini-plan 必须有 · <strong>不允许 vibe code</strong>(非妥协 1)。</p>
+    </div>
+
+    <div class="step-card">
+      <div class="num">STEP 2 · 主体时间</div>
+      <div class="title">单 session 执行 · Opus 4.7</div>
+      <p style="font-size: 14px;">启动 1 个普通 Claude Code session(<u>不需要</u> Agent View · 不需要 Level 3):</p>
+      <div class="code-block">
+[prompt 三条铁律 + 通用模板]<br><br>
+任务:[mini-plan 第一行]<br>
+具体动作:[动词+数字+具体值]<br>
+输出:[diff / 修改的文件 / 测试通过]<br>
+边界:[只改 X · 不要碰 Y · 发现别的问题写 TODO]
+      </div>
+      <p style="font-size: 13px; color: var(--gray);">不需要 subagent · 不需要并行。</p>
+    </div>
+
+    <div class="step-card">
+      <div class="num">STEP 3 · 5 分钟</div>
+      <div class="title">人 review + 合并</div>
+      <p style="font-size: 14px;">读 diff · 跑测试 · 验证完成标准 · git commit · push。</p>
+      <p style="font-size: 13px; color: var(--gray);">不需要项目层那种 review · 但<strong>人必须亲眼看 diff</strong> · Claude ship 的代码就是你 ship 的(原则 Sanity)。</p>
+    </div>
+
+    <div class="step-card">
+      <div class="num">STEP 4 · 2 分钟</div>
+      <div class="title">轻量 debrief(必须做)</div>
+      <p style="font-size: 14px;">非妥协 2 · 任务也要 debrief · 但<strong>极简版</strong>:</p>
+      <div class="code-block">
+追加到 cases/YYYY-MM-WW-tasks.md(按周合并所有小任务):<br><br>
+## [今天日期] · [任务标题]<br>
+- 做了什么:[1 句话]<br>
+- 完成标准是否达成:[YES / 部分 / NO]<br>
+- 通用规则候选:[有 / 无 · 有的话列出]
+      </div>
+      <p style="font-size: 13px; color: var(--gray);">单独任务 < 1 小时的 · 不开新 case file · 合并到当周 <code class="mono">cases/YYYY-MM-WW-tasks.md</code> · 月底 review。</p>
+    </div>
+  </div>
+
+  <!-- 卡住怎么办 -->
+  <div class="sub-section">
+    <h2>卡住了怎么办</h2>
+
+    <table>
+      <thead>
+        <tr><th style="width:30%;">情况</th><th style="width:70%;">动作</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">Claude 走偏</td>
+          <td>立刻 ESC · 不要看它跑完错误方向</td>
+        </tr>
+        <tr>
+          <td class="bold">卡 30 分钟没进展</td>
+          <td>/clear 重启 · 升级 mini-plan(可能要加更多边界 / 更精确动作)</td>
+        </tr>
+        <tr>
+          <td class="bold">第二次还是错</td>
+          <td><strong>升级到 greenfield playbook</strong> · 说明问题比想象复杂 · 需要 Research</td>
+        </tr>
+        <tr>
+          <td class="bold">看到 "You're absolutely right"</td>
+          <td>立刻 /clear · 这是 context 浑浊信号</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout accent">
+      <strong>升级信号</strong>:如果一个 bug-fix 任务跑超过 3 小时还没解决 · 说明它<u>不是任务层</u> · 应该升级成项目走 greenfield playbook。<br>
+      <strong>不要硬撑</strong> · 误判任务粒度是常见错。
+    </div>
+  </div>
+
+  <!-- 反 pattern 提醒 -->
+  <div class="sub-section">
+    <h2>容易踩的坑</h2>
+    <ul>
+      <li><strong>不写 mini-plan 直接喂 Claude</strong> → 反 pattern · 非妥协 1 违反 · "vibe code"</li>
+      <li><strong>不亲眼看 diff 直接 merge</strong> → 你 ship 的代码 · 错就是你的</li>
+      <li><strong>跳过 debrief</strong> → 一个月跑了 100 个小任务 · 一个学习都没沉淀</li>
+      <li><strong>用 Agent View / Level 3 跑小 bug</strong> → orchestration 错配 · 浪费时间 + token(见 02 模块 Decision Matrix)</li>
+    </ul>
+  </div>
+
+  <!-- FOOTER NAV -->
+  
+
+  
+
+</section>
+
+<div class="section-separator"></div>
+
+<section id="pb-03" class="doc-section sect-pb-03">
+
+  <header class="module-header">
+    <div class="module-num">PLAYBOOK 03 · 参考示例</div>
+    <h1 class="module-title">多 Agent 协同<br>· 参考示例</h1>
+    <p class="module-subtitle">
+      当一个 feature 涉及多个独立模块、并且彼此有交付依赖时 ·
+      可以考虑让多个 Claude session 并行 + 一个 lead session 协调。
+      下面是一个真实示例 · <strong>不是必须按这个走</strong> · 是给团队第一次想试时的起点参考。
+    </p>
+    <div class="module-meta">
+      <span>SCENARIO · <strong>多模块协同 feature</strong></span>
+      <span>STATUS · <strong>Aaron piloted · 团队还没正式用过</strong></span>
+    </div>
+  </header>
+
+  <!-- 什么时候考虑 -->
+  <div class="sub-section">
+    <h2>什么时候<u>可以考虑</u>多 agent 协同</h2>
+
+    <p>这不是规定 · 是<u>识别信号</u>:当下面几条都成立时 · 多 agent 协同<u>可能</u>比单 agent 顺序做更快。</p>
+
+    <ul>
+      <li>一个 feature 涉及 <strong>3-5 个相对独立的模块</strong>(例:backend + frontend + tests + review)</li>
+      <li>模块之间有清晰的交付依赖(谁完成什么 · 谁等谁)</li>
+      <li>你能<u>说清楚</u>每个 agent 各自做什么(说不清楚就不是这个场景)</li>
+      <li>预计 1-4 小时能闭环 · 不是几天的大项目</li>
+    </ul>
+
+    <div class="callout">
+      <strong>反信号</strong>(说明该用别的方式):3 个独立 feature 没依赖 → 各自单 session 就行 / 单文件 bug → 直接修 / 不确定方向 → 走 greenfield。
+    </div>
+  </div>
+
+  <!-- 真实启动示例 -->
+  <div class="sub-section">
+    <h2>一个真实启动示例 · Aaron piloted</h2>
+
+    <p>下面是 Aaron 个人 pilot 过的一个启动方式 · <u>不是唯一对的方式</u> · 团队成员可以借鉴或者发明自己的方式。</p>
+
+    <div class="step-card">
+      <div class="num">示例 STEP 1</div>
+      <div class="title">写一个简短的 team plan</div>
+      <p style="font-size: 14px;">不需要完整 plan markdown · 一段话说清楚每个 agent 做什么:</p>
+      <div class="code-block">
+目标:[feature 完成后能干什么]<br>
+完成标准:[最关键的 1-2 个可验证信号]<br>
+分工:<br>
+&nbsp;&nbsp;Agent 1 (Backend): [模块 · 关键 endpoint]<br>
+&nbsp;&nbsp;Agent 2 (Frontend): [组件 · 用户交互]<br>
+&nbsp;&nbsp;Agent 3 (Tests): [测试覆盖范围]<br>
+&nbsp;&nbsp;Agent 4 (Review): 检查 1-3 的产出<br>
+依赖关系:[Agent 2 等 Agent 1 输出]<br>
+时间盒:[小时数]
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="num">示例 STEP 2</div>
+      <div class="title">在 Claude Code 里描述 team</div>
+      <p style="font-size: 14px;">让 lead 自己拆 · 不要把分工写得太死:</p>
+      <div class="code-block">
+"我需要 build [完整 feature 描述]<br><br>
+请 spawn 一个 agent team:<br>
+1. Backend agent: [职责 · 模块 · 文件]<br>
+2. Frontend agent: [职责]<br>
+3. Testing agent: [职责]<br>
+4. Review agent: 检查 1-3 的产出<br><br>
+每个 agent 在自己的 context 里工作 · 通过共享 task list 协调 · 开始依赖任务前先 flag 依赖。"
+      </div>
+      <p style="font-size: 13px; color: var(--gray);">具体怎么启用 agent team · 团队成员自己查 Anthropic 文档 · SOP 不规定。</p>
+    </div>
+
+    <div class="step-card">
+      <div class="num">示例 STEP 3</div>
+      <div class="title">监督 + 人 review · 不可省</div>
+      <ul style="font-size: 14px;">
+        <li>不要每个 agent 都盯 · 看 lead 的协调输出</li>
+        <li>看到 teammate 走偏 → 中断那个 agent</li>
+        <li>全部完成后 → 读 lead 汇总 + 每个 teammate 的 diff</li>
+        <li>跑测试 · 验证完成标准 · 有问题启动新 session 修(<strong>不要让原 team 改</strong>)</li>
+        <li>合并代码 · 人手 git push</li>
+        <li>写 case file <code class="mono">cases/YYYY-MM-DD-[feature].md</code>(<u>这是不可妥协 #7</u>)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 现状提醒 -->
+  <div class="sub-section">
+    <h2>团队现状 · 第一次跑怎么开始</h2>
+
+    <div class="callout">
+      <strong>团队还没正式用过 agent team</strong> · 只有 Aaron 个人 pilot 过。第一次跑的建议:<br>
+      ① <strong>Aaron + 1 个研发 + 1 个实习生</strong>一起 · 边跑边学<br>
+      ② 跑完写一个真实 case file · 沉淀团队第一手经验<br>
+      ③ 第二次 / 第三次别人主导 · Aaron 不接管 · 让团队真正掌握<br>
+      ④ 跑过 3-5 个真实 case 后 · 看是否需要更新 SOP / 写一个团队自己的 best-practice
+    </div>
+  </div>
+
+  <!-- 容易踩的坑 -->
+  <div class="sub-section">
+    <h2>容易踩的坑(参考)</h2>
+    <ul>
+      <li><strong>无依赖任务硬用多 agent</strong> → 单 session 顺序做反而更快</li>
+      <li><strong>5+ agents 并行</strong> → 质量集体下降(参考反 pattern ❌3)</li>
+      <li><strong>不写 team plan 直接喂 prompt</strong> → lead 拆得很糟糕</li>
+      <li><strong>跳过人 review 直接 push</strong> → 5 个 agent 的产出没看就 push · 风险大</li>
+      <li><strong>用 Claude Desktop App 想跑 agent team</strong> → 团队成员自己确认工具支持</li>
+    </ul>
+  </div>
+
+</section>
+
+<div class="section-separator"></div>
+
+<section id="pb-04" class="doc-section sect-pb-04">
+
+  <header class="module-header">
+    <div class="module-num">PLAYBOOK 04 · 参考示例</div>
+    <h1 class="module-title">无人值守批量任务<br>· 参考示例</h1>
+    <p class="module-subtitle">
+      当一批小任务<u>不需要人盯着</u>(批量 refactor / 文档更新 / 翻译 / 注释生成)·
+      可以让 Claude 自己跑 · 你做别的事 · 结束后人 review。
+      下面是一个真实示例 · <strong>不是必须按这个走</strong>。
+    </p>
+    <div class="module-meta">
+      <span>SCENARIO · <strong>低风险批量任务 + 你不在场</strong></span>
+      <span>STATUS · <strong>团队尚未正式用过</strong></span>
+    </div>
+  </header>
+
+  <!-- 什么时候适合 -->
+  <div class="sub-section">
+    <h2>什么时候<u>可以考虑</u>无人值守</h2>
+
+    <table>
+      <thead>
+        <tr><th style="width:50%;">✅ 适合</th><th style="width:50%;">❌ 不适合 · 必须人在场</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>批量更新 README / 注释</td><td>影响生产的 deploy</td></tr>
+        <tr><td>批量加测试覆盖率到现有代码</td><td>架构性变更</td></tr>
+        <tr><td>批量 refactor 命名规范</td><td>需要判断的设计决策</td></tr>
+        <tr><td>批量翻译 / i18n 文本</td><td>需要 review 的安全敏感代码</td></tr>
+        <tr><td>清理 dead code · 没人调用的函数</td><td>跨模块依赖的 feature</td></tr>
+        <tr><td>批量 lint fix</td><td>不可逆操作(数据库 migration)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>核心判断</strong>:如果某个任务失败了影响你睡得着觉吗?睡不着 → 不要 overnight · 睡得着 → 可以。
+    </div>
+  </div>
+
+  <!-- 一个真实示例 -->
+  <div class="sub-section">
+    <h2>一个真实启动示例</h2>
+
+    <p>下面是一种可以参考的启动方式 · <u>不是唯一对的方式</u>。</p>
+
+    <div class="step-card">
+      <div class="num">示例 STEP 1</div>
+      <div class="title">睡前 30 分 · 挑 backlog + 写 task list</div>
+      <p style="font-size: 14px;">从飞书 backlog 挑 5-15 个适合无人值守的小任务 · 写到一个 markdown:</p>
+      <div class="code-block">
+docs/plans/overnight_[date].md<br><br>
+## 今晚跑的 backlog<br><br>
+- [ ] Task 1: 把所有 console.log 换成 logger · 文件:src/**/*.ts<br>
+- [ ] Task 2: 给 utils/date.ts 加测试 · 覆盖率到 90%<br>
+- [ ] Task 3: 翻译 zh-CN 的 5 个新 UI 字符串<br><br>
+完成标准:每个 task 跑测试通过 + 不动 src/auth/ + 不 push
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="num">示例 STEP 2</div>
+      <div class="title">设安全 guardrails</div>
+      <p style="font-size: 14px;">无人值守没人盯 · 必须有<strong>明确的"不允许做什么"</strong>:</p>
+      <ul style="font-size: 14px;">
+        <li><strong>不允许</strong>:git push / npm publish / 改 .env / 改 .ssh / 数据库 migration</li>
+        <li><strong>允许</strong>:写 src/ / 写 tests/ / 写 docs/ / 跑测试</li>
+        <li><strong>遇到不确定</strong>:跳过 · 写到 results 文件 · 不要硬上</li>
+      </ul>
+      <p style="font-size: 13px; color: var(--gray);">具体怎么配置 guardrails(settings.json 之类) · 团队成员自己查 Anthropic 文档。</p>
+    </div>
+
+    <div class="step-card">
+      <div class="num">示例 STEP 3</div>
+      <div class="title">启动 + 设预算上限</div>
+      <p style="font-size: 14px;">让 Claude 按 task list 顺序执行 · 每个 task 写到 results 文件 · 任一 task 失败就跳过下一个。</p>
+      <p style="font-size: 14px;"><strong>预算上限要设</strong>(避免半夜烧光):</p>
+      <ul style="font-size: 14px;">
+        <li>小 · 5 task → 建议 $10-15</li>
+        <li>中 · 10-15 task → 建议 $30-50</li>
+        <li>大 · 20+ task → 建议 $80-150</li>
+      </ul>
+      <p style="font-size: 13px; color: var(--gray);">具体 CLI 参数怎么设(<code class="mono">-p</code> mode / <code class="mono">--max-budget-usd</code>)· 团队成员自己查文档。</p>
+    </div>
+
+    <div class="step-card">
+      <div class="num">示例 STEP 4</div>
+      <div class="title">早上 review · 决定 merge / 丢弃</div>
+      <ol style="font-size: 14px;">
+        <li>读 results 文件 · 看每个 task 状态</li>
+        <li>对每个完成的 task · 看 diff · 跑测试</li>
+        <li>OK 的合并 · <strong>人手 git push</strong>(不要让 agent 自己 push)</li>
+        <li>失败的单独处理 · 走 bug-fix playbook</li>
+        <li>写 case file(<u>不可妥协 #7</u>)· 记录:成功率 / 实际花费 / 节省的时间</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- 容易踩的坑 -->
+  <div class="sub-section">
+    <h2>容易踩的坑(参考)</h2>
+    <ul>
+      <li><strong>没设预算上限</strong> → 早上来发现 $300 没了</li>
+      <li><strong>没禁止 git push</strong> → agent 把错误代码 push 到 main</li>
+      <li><strong>tasks 互相依赖</strong> → 一个失败后面全错(应该改用多 agent 协同)</li>
+      <li><strong>把生产敏感的事丢给无人值守</strong> → 自找麻烦</li>
+      <li><strong>不写 case file</strong> → 没数据知道下次预算设多少</li>
+      <li><strong>早上不亲眼看 diff 直接 merge</strong> → 你 ship 的代码就是你的</li>
+    </ul>
+  </div>
+
+  <!-- 衍生用法 -->
+  <div class="sub-section">
+    <h2>衍生用法 · 不只是"隔夜"</h2>
+    <p>"无人值守"不一定要"晚上跑" · 任何<strong>你不需要全程盯</strong>的批量任务都适用:</p>
+    <ul>
+      <li>会议期间跑(2 小时会议 + 同时跑 10 task)</li>
+      <li>周末家庭时间跑</li>
+      <li>跨时区协作时跑</li>
+      <li>等其他项目 review 时跑</li>
+    </ul>
+  </div>
+
+</section>
+
+
+<footer style="margin-top: 80px; padding-top: 32px; border-top: 1px solid var(--border); font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--gray); line-height: 1.8;">
+<strong style="color: var(--ink);">AI MIQ TEAM · GROUP SOP v0.4 · REFERENCE HANDBOOK · INTERNAL</strong><br><br>
+<strong style="color: var(--ink);">v0.3 → v0.4 路径</strong>:<br>
+v0.1 讨论稿 → v0.2 evidence-based → v0.2.3(2 非妥协 + debrief) → v0.3 单文件版(8 原则 + 4 playbook · 规章式)→ <strong style="color: var(--accent);">v0.4 参考式 Handbook(6 原则 + 4 playbook · 不规定工具)</strong><br><br>
+<strong style="color: var(--ink);">v0.4 关键变化</strong>:<br>
+① 删 2 章纯工具配置(原 02 Decision Matrix + 原 08 模型/工具)<br>
+② 语气从"必须/默认/不可妥协"变成"可以考虑/一种参考"<br>
+③ 真正不可妥协只有 2 件事:Plan Mode + Debrief<br>
+④ 4 个 playbook 从"5 步流程"变成"参考示例" · 工具配置作为<u>举例</u>不是<u>规定</u><br>
+⑤ 修正 v0.3 中 5 处工具事实错误(rody 推文 + 印象拼凑) · 全部从 SOP 移除<br><br>
+<strong style="color: var(--ink);">证据来源</strong>:Anthropic 官方文档 · Boris Cherny · Dex Horthy · Sulman Choudhry(OpenAI) · Even Westvang(Sanity) · METR · BCG · HBR<br><br>
+本文档与 team_manifesto.md · team_context_constitution.md 协同存在 · 三者各司其职。<br>
+<strong style="color: var(--ink);">SOP 规定<u>做什么</u> · 不规定<u>用什么工具</u>。工具配置由团队成员自己决定。</strong>
+</footer>
+
+
+</main>
+
+</body>
+</html>
