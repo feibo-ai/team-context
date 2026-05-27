@@ -42,7 +42,9 @@ for yaml in "${AUTOPILOTS_DIR}"/*.yaml; do
       echo "  ❌ ${name}: forbidden_commands has ${fc_count} entries (< 5)"
       LINT_FAIL=$((LINT_FAIL + 1))
     fi
-    if ! yq eval '.guardrails.forbidden_commands[]' "${yaml}" | grep -qi "git push"; then
+    # Capture-then-grep to avoid `grep -q` SIGPIPE'ing yq under `set -o pipefail`.
+    fc_lines=$(yq eval '.guardrails.forbidden_commands[]' "${yaml}")
+    if ! echo "${fc_lines}" | grep -qi "git push"; then
       echo "  ❌ ${name}: forbidden_commands missing 'git push'"
       LINT_FAIL=$((LINT_FAIL + 1))
     fi
@@ -79,42 +81,48 @@ for yaml in "${AUTOPILOTS_DIR}"/*.yaml; do
 
   echo "Applying autopilot: ${name}"
 
+  # Merge YAML's description + prompt into the CLI's single --description field.
+  # CLI semantics: --description IS the task prompt the agent receives.
+  full_desc=$(printf '%s\n\n%s' "${desc}" "${prompt}")
+
+  # autopilot list returns {autopilots: [...], total: N}; not a bare array.
   existing_id=$(multica autopilot list --output json 2>/dev/null \
-    | jq -r ".[] | select(.name==\"${name}\") | .id" || echo "")
+    | jq -r ".autopilots[] | select(.title==\"${name}\") | .id" || echo "")
 
   if [[ -n "${existing_id}" ]]; then
     echo "  Updating ${existing_id}"
     multica autopilot update "${existing_id}" \
-      --description "${desc}" \
-      --agent "${agent}" \
-      --prompt "${prompt}"
+      --description "${full_desc}" \
+      --agent "${agent}" >/dev/null
   else
     echo "  Creating new"
     new_id=$(multica autopilot create \
-      --name "${name}" \
-      --description "${desc}" \
+      --title "${name}" \
+      --description "${full_desc}" \
       --mode "${mode}" \
       --agent "${agent}" \
-      --prompt "${prompt}" \
-      --output id-only)
+      --output json | jq -r '.id')
 
     if [[ "${mode}" == "create_issue" ]]; then
       title_template=$(yq eval '.issue_title_template' "${yaml}")
-      multica autopilot update "${new_id}" --issue-title-template "${title_template}"
+      multica autopilot update "${new_id}" --issue-title-template "${title_template}" >/dev/null
     fi
 
     existing_id="${new_id}"
   fi
 
-  # Apply or update schedule trigger
-  multica autopilot trigger-add "${existing_id}" \
-    --kind schedule \
-    --cron "${cron}" \
-    --timezone "${tz}" || \
-  multica autopilot trigger-update "${existing_id}" \
-    --kind schedule \
-    --cron "${cron}" \
-    --timezone "${tz}"
+  # Schedule trigger: add if missing; update existing one if present.
+  existing_trigger=$(multica autopilot get "${existing_id}" --output json 2>/dev/null \
+    | jq -r '.triggers[]? | select(.kind=="schedule") | .id' | head -1)
+  if [[ -z "${existing_trigger}" ]]; then
+    multica autopilot trigger-add "${existing_id}" \
+      --kind schedule \
+      --cron "${cron}" \
+      --timezone "${tz}" >/dev/null
+  else
+    multica autopilot trigger-update "${existing_id}" "${existing_trigger}" \
+      --cron "${cron}" >/dev/null
+  fi
 
   echo "  Done: ${name}"
 done
