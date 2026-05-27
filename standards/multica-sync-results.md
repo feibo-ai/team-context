@@ -48,6 +48,31 @@ multica agent skills set --agent <agent-id> \
 multica agent skills list --agent <agent-id>
 ```
 
+## Autopilot deployment (added 2026-05-27 18:24)
+
+After fixing `apply-autopilots.sh` (see commit `ecf9a36`), 4 autopilots applied:
+
+| Autopilot | Mode | Cron (Asia/Shanghai) | Bound agent |
+| --- | --- | --- | --- |
+| daily-summary | run_only | `0 18 * * 1-5` | daily-summary-bot |
+| monday-kickoff | create_issue | `30 9 * * 1` | weekly-roundup-bot |
+| wednesday-stats | run_only | `0 9 * * 3` | wednesday-stats-bot |
+| monthly-health | run_only | `0 10 1 * *` | monthly-health-bot |
+
+### Runtime: Codex (NOT Claude)
+
+First attempt used Claude runtime → all runs failed with `401 Invalid authentication credentials` (Claude CLI auth on this host is expired/missing). Switched all 4 agents to Codex runtime via `multica agent update --runtime-id`. After switch, daily-summary completed end-to-end in 2m38s and sent feishu interactive card `om_x100b6e582d28b8acb16489122d931ee` to the Team Context group.
+
+### `multica agent env set` (NOT `multica agent update --custom-env`)
+
+Plan 1 Task A13 Step 5 specifies `multica agent update --custom-env "..."`. That flag doesn't exist on `agent update`. The real path is the dedicated `multica agent env set <agent-id> --custom-env "..."` subcommand (audited write). Each agent got `FEISHU_TEAM_CHAT_ID` + `FEISHU_CONFIG_DIR` injected; `has_custom_env=true, key_count=2` confirmed via `multica agent env get`.
+
+### Known cosmetic issue
+
+The autopilot prompts reference paths `~/projects` and `~/team-context` which on this host are actually `/Users/feibo/projects` (absent) and `/Users/feibo/feibo/team-context`. The Codex agent noted this in its first run and worked around it. Fix later by either:
+- Symlinking `~/team-context -> /Users/feibo/feibo/team-context`, or
+- Updating the 4 autopilot YAMLs to use absolute paths
+
 ## Re-sync protocol
 
 If `skills/*/SKILL.md` changes locally:
