@@ -1,4 +1,4 @@
 # decisions/
 
-Non-trivial team-level architecture decisions (ADR format).
-Naming: `YYYY-MM-DD-<slug>.md`.
+非琐碎的团队级架构决策（ADR 格式）。
+命名: `YYYY-MM-DD-<slug>.md`。
