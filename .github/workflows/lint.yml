@@ -1,0 +1,54 @@
+name: lint
+on: [push, pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq \
+            https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Lint SKILL.md frontmatter
+        run: |
+          set -e
+          fail=0
+          for skill in skills/*/SKILL.md; do
+            name=$(yq eval '.name' "$skill" 2>/dev/null || echo NULL)
+            desc=$(yq eval '.description' "$skill" 2>/dev/null || echo NULL)
+            if [ "$name" = "NULL" ] || [ "$name" = "null" ]; then
+              echo "ERROR: missing 'name' in $skill"; fail=1
+            fi
+            if [ "$desc" = "NULL" ] || [ "$desc" = "null" ]; then
+              echo "ERROR: missing 'description' in $skill"; fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Check SKILL body ≤ 2000 tokens
+        run: |
+          set -e
+          fail=0
+          for skill in skills/*/SKILL.md; do
+            words=$(wc -w < "$skill")
+            tokens=$((words * 13 / 10))
+            if [ $tokens -gt 2000 ]; then
+              echo "ERROR: $skill is ~$tokens tokens (limit 2000)"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Check claude_md_team_global.md ≤ 3000 tokens
+        run: |
+          if [ -f claude_md_team_global.md ]; then
+            words=$(wc -w < claude_md_team_global.md)
+            tokens=$((words * 13 / 10))
+            if [ $tokens -gt 3000 ]; then
+              echo "ERROR: claude_md_team_global.md is ~$tokens tokens (limit 3000)"
+              exit 1
+            fi
+          fi
