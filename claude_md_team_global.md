@@ -1,62 +1,51 @@
 # AI MIQ — team-global CLAUDE.md
 
-Cross-project rules that apply to ALL team work. Copied (or symlinked)
-into each product repo's CLAUDE.md, OR layered above it via Claude Code's
-`CLAUDE.md` inheritance.
+跨项目规则，适用于所有团队工作。复制（或软链）到每个产品 repo 的 CLAUDE.md，或者通过 Claude Code 的 `CLAUDE.md` 继承机制叠加在它之上。
 
-## Who we are
-AI MIQ — 5-person AI-Native team. We operate by SOP v0.4 reference
-Handbook. Generalist + AI-leveraged, dumbbell model.
+## 我们是谁
+AI MIQ — 5 人 AI-Native 团队。以 SOP v0.4 参考 Handbook 为准。通才 + AI 杠杆，哑铃模型。
 
-## How we work — 5 core rules
+## 怎么工作 · 5 条核心规则
 
-1. **Research / Plan / Implement are DISCRETE sessions.** Never blend.
-   Use `rpi-research`, `rpi-plan-template`, `rpi-implement-discipline`
-   skills as session protocols.
-2. **Context pollution → invoke `pre-clear` skill → /clear.** Don't fix
-   in place.
-3. **Every project/task ends with a debrief in `cases/YYYY-MM-DD-*.md`**
-   using the `debrief-template` skill. 5 mandatory sections. SOP
-   non-negotiable #2.
-4. **Plan markdown required before any code, reviewed by second session.**
-   `rpi-plan-template` skill. SOP non-negotiable #1.
-5. **Sanity rule: every AI-generated diff seen by a human eye before
-   commit.** Yours to ship.
+1. **Research / Plan / Implement 是分离的 session。** 不要混。session 协议分别用 `rpi-research`、`rpi-plan-template`、`rpi-implement-discipline` 三个 skill。
+2. **Context pollution → 调 `pre-clear` skill → /clear。** 不要原地修。
+3. **每个项目 / 任务都要以 `cases/YYYY-MM-DD-*.md` 复盘收尾**，用 `debrief-template` skill。5 个必填段落。SOP 不可妥协 #2。
+4. **写代码前必须有 plan markdown，并由第二个 session 评审。** 用 `rpi-plan-template` skill。SOP 不可妥协 #1。
+5. **底线规则：每段 AI 生成的 diff 在 commit 前都要过人眼。** 你来 ship。
 
-## Cross-project tech rules
-(Populated as team standards emerge. Each rule must apply to ALL future
-similar projects; project-specific rules go in `cases/`, not here.)
+## 跨项目技术规则
+（团队标准成形后填进来。每条规则必须适用于所有未来同类项目；项目特有的规则去 `cases/`，不放这里。）
 
-## Mistakes Claude must not repeat
-(Promoted from case files via `case_promote_rule` MCP tool.)
+## Claude 不能再犯的错
+（通过 `case_promote_rule` MCP 工具从 case file 提升上来。）
 
-## How to call other Claude sessions
+## 怎么叫起其他 Claude session
 
-| Need | Skill |
+| 需求 | Skill |
 | --- | --- |
 | Research | `rpi-research` |
 | Plan | `rpi-plan-template` |
 | Implement | `rpi-implement-discipline` |
 | Debrief | `debrief-template` |
-| Self-check | `anti-pattern-self-check` |
-| Pollution scan | `context-pollution-detector` |
-| Before /clear | `pre-clear` |
+| 自检 | `anti-pattern-self-check` |
+| 污染扫描 | `context-pollution-detector` |
+| /clear 之前 | `pre-clear` |
 
-## When you are stuck
-- 30 minutes no progress → invoke `pre-clear` skill
-- 3 handoffs on the same issue → upgrade to greenfield playbook (PB1)
-- 5 handoffs in a single week → flag burnout signal at monthly review
+## 卡住的时候
+- 30 分钟没进展 → 调 `pre-clear` skill
+- 同一个问题 3 次 handoff → 升级到 greenfield playbook (PB1)
+- 单周 5 次 handoff → 月度 review 时标 burnout 信号
 
-## Where to find specific context
+## 去哪儿找具体 context
 
-| What | Where |
+| 什么 | 在哪 |
 | --- | --- |
-| Cross-project Skills | `~/.claude/skills/` (synced from team-context repo) |
-| Per-project plans | `<project>/docs/plans/` |
-| Per-project research | `<project>/docs/research/` |
-| Project cases (L2) | `<project>/cases/YYYY-MM-DD-*.md` |
-| Team SOP | team-context repo, `sop/group_sop_v0.4.html` |
-| Team standards | team-context repo, `standards/` |
-| Architecture decisions | `<project>/decisions/` + team-context `decisions/` |
-| Multica workspace | `team-context` (server URL: run `multica config show`) |
-| Multica CLI ref | `multica --help` or `~/.claude/skills/multica-cli/` |
+| 跨项目 Skills | `~/.claude/skills/`（从 team-context repo 同步） |
+| 项目内 plans | `<project>/docs/plans/` |
+| 项目内 research | `<project>/docs/research/` |
+| 项目 cases (L2) | `<project>/cases/YYYY-MM-DD-*.md` |
+| 团队 SOP | team-context repo，`sop/group_sop_v0.4.html` |
+| 团队标准 | team-context repo，`standards/` |
+| 架构决策 | `<project>/decisions/` + team-context `decisions/` |
+| Multica workspace | `team-context`（server URL：跑 `multica config show`） |
+| Multica CLI 参考 | `multica --help` 或 `~/.claude/skills/multica-cli/` |
