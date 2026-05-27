@@ -35,6 +35,8 @@ guardrails:
   max_runtime_minutes: 30
 
 prompt: |
+  **输出语言要求：报告 markdown 内容、飞书 doc 标题、飞书群消息全部用简体中文。** 命令行操作可英文，用户看到的所有内容都是中文。
+
   Step 1 · Generate report via team-context-mcp `monthly_health_report` with:
     - teamContextRepo: ~/team-context
     - projectRepos: <list of active project repos>

@@ -33,6 +33,8 @@ guardrails:
   max_runtime_minutes: 10
 
 prompt: |
+  **输出语言要求：multica issue body + 飞书 card title/正文 全部用简体中文。** 命令行操作可英文，但用户看到的所有内容都是中文。
+
   1. List all open issues with label `plan-approved`
      Once Plan 3 PR C is in fork: `multica issue list --label plan-approved --status open`
      Before then: `multica issue list --status open` and client-side filter

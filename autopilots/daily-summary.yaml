@@ -33,7 +33,9 @@ guardrails:
   max_runtime_minutes: 10
 
 prompt: |
-  Generate today's team summary (~200 words max):
+  **输出语言要求：所有最终发送到飞书的内容（card title、各 section 标题与正文、fallback text）必须用简体中文。** 命令行操作和内部思考可用英文，但用户看到的所有文字都是中文。
+
+  Generate today's team summary (~200 字以内):
   1. From multica: list issues that changed today
      `multica issue list --updated-after $(date -v-1d +%Y-%m-%d)`
   2. From git: scan recent commits across team repos

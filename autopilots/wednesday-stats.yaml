@@ -31,6 +31,8 @@ guardrails:
   max_runtime_minutes: 15
 
 prompt: |
+  **输出语言要求：飞书 card title/各 section/正文全部用简体中文。** 命令行操作可英文，用户看到的所有内容都是中文。
+
   1. `cd ~/team-context && git log --since="last Sunday" claude_md_team_global.md` — count net adds
   2. Call team-context-mcp `skill_lint` tool with skillsDir=~/team-context/skills
      — collect skills with stale last_reviewed_at (>90d) or missing owner
