@@ -17,8 +17,11 @@ jobs:
           set -e
           fail=0
           for skill in skills/*/SKILL.md; do
-            name=$(yq eval '.name' "$skill" 2>/dev/null || echo NULL)
-            desc=$(yq eval '.description' "$skill" 2>/dev/null || echo NULL)
+            # Extract only the YAML frontmatter (between the first two --- lines)
+            # so yq doesn't try to parse the markdown body as additional YAML docs.
+            fm=$(awk '/^---$/{c++; if(c==2)exit; next} c==1' "$skill")
+            name=$(echo "$fm" | yq eval '.name' - 2>/dev/null || echo NULL)
+            desc=$(echo "$fm" | yq eval '.description' - 2>/dev/null || echo NULL)
             if [ "$name" = "NULL" ] || [ "$name" = "null" ]; then
               echo "ERROR: missing 'name' in $skill"; fail=1
             fi
