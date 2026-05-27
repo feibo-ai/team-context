@@ -1,0 +1,57 @@
+name: daily-summary
+description: |
+  Workspace agent reads today's commits, issue updates, and decision logs,
+  posts a 200-word digest to the team feishu group via feishu-cli.
+  SOP coverage: P-6 Daily D-05 (傍晚 5 分 daily summary)
+
+trigger:
+  kind: schedule
+  cron: "0 18 * * 1-5"
+  timezone: Asia/Shanghai
+
+mode: run_only
+
+agent:
+  name: daily-summary-bot
+
+# PB-04 guardrails (autopilot_lint enforces)
+guardrails:
+  forbidden_commands:
+    - "git push"
+    - "git push --force"
+    - "git commit"
+    - "npm publish"
+    - "rm -rf"
+    - "psql.* drop"
+    - "* db migrate"
+  forbidden_paths:
+    - ".env*"
+    - ".ssh/*"
+    - "secrets/*"
+    - "~/.multica/config.json"
+  max_budget_usd: 5
+  max_runtime_minutes: 10
+
+prompt: |
+  Generate today's team summary (~200 words max):
+  1. From multica: list issues that changed today
+     `multica issue list --updated-after $(date -v-1d +%Y-%m-%d)`
+  2. From git: scan recent commits across team repos
+     `cd ~/projects && for r in */; do (cd $r && git log --since="midnight" --pretty=format:"- %s (%an)"); done`
+  3. From decision log: new files in team-context/decisions/ today
+     `ls -t ~/team-context/decisions/*.md | head -3`
+
+  Compose interactive card JSON to /tmp/daily-card.json with sections:
+  - **Shipped today**: <issue/commit highlights>
+  - **In progress**: <issues advanced but not done>
+  - **Decisions**: <new decisions/ files>
+  - **Tomorrow's priorities**: <derived from active plan markdowns>
+
+  Push to feishu team group:
+    feishu-cli msg send \
+      --receive-id-type chat_id \
+      --receive-id "$FEISHU_TEAM_CHAT_ID" \
+      --msg-type interactive \
+      --content-file /tmp/daily-card.json
+
+  Verify: exit code 0 = success. Non-zero → log + retry once with `--msg-type text` fallback.
