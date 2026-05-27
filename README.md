@@ -7,7 +7,7 @@
 
 # team-context
 
-AI MIQ 团队的跨项目方法学唯一 source of truth。
+AI MIQ 团队跨项目方法学的唯一权威来源。
 
 **配套**: SOP v0.4 (`sop/group_sop_v0.4.html`) · 团队 Manifesto · Constitution · 决策记录。
 
@@ -159,12 +159,12 @@ L3 中间 (本仓库)
 
 ## License
 
-Internal. 仅 AI MIQ 团队使用。
+内部使用。仅 AI MIQ 团队使用。
 
 ## 关联文档
 
 - 团队 SOP: `sop/group_sop_v0.4.html`
-- Feishu 集成: `docs/integrations/feishu-cli.md` (在产品仓库 docs/ 下，不在 team-context)
+- 飞书集成: `docs/integrations/feishu-cli.md` (在产品仓库 docs/ 下，不在 team-context)
 - 实施详情:
   - Plan 1 (本仓库): `docs/superpowers/plans/2026-05-26-plan-1-team-context-foundation.md`
   - Plan 2 (team-context-mcp 服务): `docs/superpowers/plans/2026-05-26-plan-2-team-context-mcp.md`
