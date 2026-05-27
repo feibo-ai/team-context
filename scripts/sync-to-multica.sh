@@ -29,4 +29,8 @@ echo "Target workspace: ${WS}"
 multica skill import --url "${REPO_URL}"
 
 echo ""
+echo "Now applying autopilots (requires daemon running)..."
+~/team-context/scripts/apply-autopilots.sh
+
+echo ""
 echo "Skills imported. Verify with: multica skill list"

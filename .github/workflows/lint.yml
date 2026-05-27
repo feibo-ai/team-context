@@ -52,3 +52,23 @@ jobs:
               exit 1
             fi
           fi
+
+      - name: Lint autopilot YAML schema
+        run: |
+          set -e
+          for yaml in autopilots/*.yaml; do
+            [[ -f "$yaml" ]] || continue
+            for required in name description mode agent.name prompt trigger.cron trigger.timezone; do
+              val=$(yq eval ".${required}" "$yaml")
+              if [ "$val" = "null" ] || [ -z "$val" ]; then
+                echo "ERROR: $yaml missing required field: $required"
+                exit 1
+              fi
+            done
+            # Validate mode enum
+            mode=$(yq eval '.mode' "$yaml")
+            if [ "$mode" != "run_only" ] && [ "$mode" != "create_issue" ]; then
+              echo "ERROR: $yaml mode must be run_only or create_issue (got: $mode)"
+              exit 1
+            fi
+          done
