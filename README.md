@@ -1,3 +1,16 @@
+# team-context (上线后用的正式 README)
+
+> 这是 W1 Plan 1 Task 1 后，**~/team-context/README.md** 应当替换成的完整版本。
+> 现在 Plan 1 Task 1 写的是骨架版 · 上线后 EXEC 在 W1 末用此文件替换。
+
+---
+
+# team-context
+
+AI MIQ 团队的跨项目方法学唯一 source of truth。
+
+**配套**: SOP v0.4 (`sop/group_sop_v0.4.html`) · 团队 Manifesto · Constitution · 决策记录。
+
 ## 装
 
 ### 第一次拿到这个仓库
