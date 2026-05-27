@@ -1,0 +1,69 @@
+name: monthly-health
+description: |
+  Trigger full monthly_health_report MCP tool, upload markdown to feishu doc,
+  push link to team group, archive to team-context wiki + git.
+  SOP coverage: P-6 Monthly M-01
+
+trigger:
+  kind: schedule
+  cron: "0 10 1 * *"
+  timezone: Asia/Shanghai
+
+mode: run_only
+
+agent:
+  name: monthly-health-bot
+
+# PB-04 guardrails (autopilot_lint enforces)
+# Note: monthly-health writes to /tmp/ only. Local git archive is done by humans (or
+# a separate cron sync script with elevated trust outside autopilot scope).
+guardrails:
+  forbidden_commands:
+    - "git push"
+    - "git push --force"
+    - "git commit"
+    - "npm publish"
+    - "rm -rf"
+    - "psql.* drop"
+    - "* db migrate"
+  forbidden_paths:
+    - ".env*"
+    - ".ssh/*"
+    - "secrets/*"
+    - "~/team-context/.git"
+  max_budget_usd: 15
+  max_runtime_minutes: 30
+
+prompt: |
+  Step 1 · Generate report via team-context-mcp `monthly_health_report` with:
+    - teamContextRepo: ~/team-context
+    - projectRepos: <list of active project repos>
+  Tool writes markdown to /tmp/monthly-health-{{date}}.md.
+  Report covers: 5 SOP indicators + wip/clear count + ancient-impossible label
+  tally + skill staleness + soft-gate bypass count (+ Quarterly Prune Checklist
+  on 3/6/9/12 months).
+
+  Step 2 · Upload markdown to feishu doc:
+    DOC_JSON=$(feishu-cli doc import /tmp/monthly-health-{{date}}.md \
+      --title "Monthly Health {{date}}" \
+      --upload-images --verbose --output json)
+    DOC_URL=$(echo "$DOC_JSON" | jq -r '.url')
+    DOC_ID=$(echo "$DOC_JSON" | jq -r '.document_id')
+
+  Step 3 · Push to feishu group:
+    feishu-cli msg send \
+      --receive-id-type chat_id \
+      --receive-id "$FEISHU_TEAM_CHAT_ID" \
+      --text "📊 Monthly Health Report · {{date}} — $DOC_URL"
+
+  Step 4 · (Optional) Archive to wiki:
+    [ -n "$FEISHU_TEAM_WIKI_SPACE" ] && feishu-cli wiki node create \
+      --space-id "$FEISHU_TEAM_WIKI_SPACE" \
+      --parent-node-token "$FEISHU_HEALTH_REPORTS_NODE" \
+      --node-type docx --document-id "$DOC_ID" \
+      --title "Monthly Health {{date}}"
+
+  Step 5 · Stage local archive (NO git commit/push — guardrails forbid · human commits later):
+    mkdir -p ~/team-context/health/monthly
+    cp /tmp/monthly-health-{{date}}.md ~/team-context/health/monthly/{{date}}.md
+    echo "📁 Local archive staged at ~/team-context/health/monthly/{{date}}.md — human must `git add health/monthly/ && git commit` later."
