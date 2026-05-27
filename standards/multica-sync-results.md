@@ -1,19 +1,19 @@
-# Multica skill sync result — 2026-05-27
+# Multica skill 同步结果 — 2026-05-27
 
 **Workspace**: `team-context` (slug: `team-context`, id: `766a0455-62d4-4454-b8b3-1794e2e92864`)
-**Server**: `http://localhost:8080` (local Docker)
-**Skills imported**: 12 / 12
+**Server**: `http://localhost:8080` (本地 Docker)
+**导入的 skills**: 12 / 12
 
-## How the import ran
+## 如何执行
 
-The plan's original path — `multica skill import --url https://github.com/feibo-ai/team-context` — does not work for this repo because:
+plan 里原来的路径 —— `multica skill import --url https://github.com/feibo-ai/team-context` —— 在这个 repo 上跑不通，原因：
 
-1. `multica skill import` expects exactly one `SKILL.md` at the URL root, so per-skill URLs are required (one URL per skill, not one URL per repo).
-2. The repo is **private**, so the multica server's GitHub fetcher gets HTTP 404 on `raw.githubusercontent.com`. The team SOP and skill bodies stay private by design.
+1. `multica skill import` 期望 URL 根目录下恰好有一个 `SKILL.md`，所以必须用「每个 skill 一个 URL」（不是「整个 repo 一个 URL」）。
+2. 这个 repo 是**私有的**，multica server 的 GitHub fetcher 在 `raw.githubusercontent.com` 上拿到 HTTP 404。团队 SOP 和 skill 正文按设计就是私有的。
 
-Workaround: import locally via `multica skill create --name <n> --description <d> --content <body>` for each `skills/<name>/SKILL.md`. Frontmatter is split off, body is sent as `--content`. All 12 succeeded.
+绕路方案：本地走 `multica skill create --name <n> --description <d> --content <body>`，对每个 `skills/<name>/SKILL.md` 单独执行。frontmatter 单独拆出来，正文通过 `--content` 传入。12 个全部成功。
 
-## Imported skills
+## 已导入 skills
 
 | Skill | Multica ID |
 | --- | --- |
@@ -30,9 +30,9 @@ Workaround: import locally via `multica skill create --name <n> --description <d
 | rpi-plan-template | `a6797576-09a5-4c41-b2a8-bf01a4ed56a0` |
 | rpi-research | `8cdfc6b3-8779-407a-8178-f3f02459227f` |
 
-## Agent mount (Step 4) — DEFERRED
+## Agent 挂载 (Step 4) — DEFERRED
 
-Plan's Step 4 expects an existing test agent to mount the 12 skills on. The local workspace has **0 agents** at this point:
+plan 的 Step 4 假设已经有一个测试 agent 可以把这 12 个 skills 挂上去。当前本地 workspace 里有 **0 个 agent**：
 
 ```
 $ multica agent list
@@ -40,7 +40,7 @@ ID  NAME  STATUS  RUNTIME  ARCHIVED
 (empty)
 ```
 
-When the first agent is created (via `multica agent create` or via squad import), run:
+等第一个 agent 创建出来后（通过 `multica agent create` 或 squad 导入），跑：
 
 ```bash
 multica agent skills set --agent <agent-id> \
@@ -48,47 +48,47 @@ multica agent skills set --agent <agent-id> \
 multica agent skills list --agent <agent-id>
 ```
 
-## Autopilot deployment (added 2026-05-27 18:24)
+## Autopilot 部署 (补于 2026-05-27 18:24)
 
-After fixing `apply-autopilots.sh` (see commit `ecf9a36`), 4 autopilots applied:
+修好 `apply-autopilots.sh`（见 commit `ecf9a36`）后，4 个 autopilot 全部 apply 成功：
 
-| Autopilot | Mode | Cron (Asia/Shanghai) | Bound agent |
+| Autopilot | Mode | Cron (Asia/Shanghai) | 绑定的 agent |
 | --- | --- | --- | --- |
 | daily-summary | run_only | `0 18 * * 1-5` | daily-summary-bot |
 | monday-kickoff | create_issue | `30 9 * * 1` | weekly-roundup-bot |
 | wednesday-stats | run_only | `0 9 * * 3` | wednesday-stats-bot |
 | monthly-health | run_only | `0 10 1 * *` | monthly-health-bot |
 
-### Runtime: Codex (NOT Claude)
+### Runtime：Codex（不是 Claude）
 
-First attempt used Claude runtime → all runs failed with `401 Invalid authentication credentials` (Claude CLI auth on this host is expired/missing). Switched all 4 agents to Codex runtime via `multica agent update --runtime-id`. After switch, daily-summary completed end-to-end in 2m38s and sent feishu interactive card `om_x100b6e582d28b8acb16489122d931ee` to the Team Context group.
+第一次尝试用的是 Claude runtime → 所有 run 全部以 `401 Invalid authentication credentials` 失败（这台机器上的 Claude CLI auth 过期或缺失）。通过 `multica agent update --runtime-id` 把 4 个 agent 全部切到 Codex runtime。切换之后，daily-summary 端到端在 2m38s 跑完，并向 Team Context 群发出 feishu 互动卡片 `om_x100b6e582d28b8acb16489122d931ee`。
 
-### `multica agent env set` (NOT `multica agent update --custom-env`)
+### `multica agent env set`（不是 `multica agent update --custom-env`）
 
-Plan 1 Task A13 Step 5 specifies `multica agent update --custom-env "..."`. That flag doesn't exist on `agent update`. The real path is the dedicated `multica agent env set <agent-id> --custom-env "..."` subcommand (audited write). Each agent got `FEISHU_TEAM_CHAT_ID` + `FEISHU_CONFIG_DIR` injected; `has_custom_env=true, key_count=2` confirmed via `multica agent env get`.
+Plan 1 Task A13 Step 5 写的是 `multica agent update --custom-env "..."`。这个 flag 在 `agent update` 上不存在。真正的入口是专门的 `multica agent env set <agent-id> --custom-env "..."` 子命令（带 audit 的写操作）。每个 agent 都注入了 `FEISHU_TEAM_CHAT_ID` + `FEISHU_CONFIG_DIR`；通过 `multica agent env get` 确认 `has_custom_env=true, key_count=2`。
 
-### Path symlinks (per-workstation setup, one-shot)
+### 路径软链（按 workstation 一次性配置）
 
-Autopilot prompts reference `~/team-context` and `~/projects`. On this host the real paths are `/Users/feibo/feibo/team-context` and `/Users/feibo/feibo`. Fixed via symlinks so the YAMLs stay portable across workstations:
+Autopilot 的 prompt 里引用了 `~/team-context` 和 `~/projects`。在这台机器上真实路径是 `/Users/feibo/feibo/team-context` 和 `/Users/feibo/feibo`。用 symlink 修一下，让 YAML 在不同 workstation 之间保持可移植：
 
 ```bash
 ln -s /Users/feibo/feibo/team-context ~/team-context
 ln -s /Users/feibo/feibo ~/projects
 ```
 
-After symlinks, third trigger run produced a fully-Chinese card from real data (TEA-1/TEA-2 issues + recent commits) in 3m19s. Feishu message ID `om_x100b6e58dd64f4acb22950d27bb44ec` delivered to Team Context group.
+加完软链后，第三次触发跑出了一张完全中文、基于真实数据（TEA-1/TEA-2 issues + 近期 commits）的卡片，耗时 3m19s。feishu message ID `om_x100b6e58dd64f4acb22950d27bb44ec` 已投递到 Team Context 群。
 
-Other workstations with different project roots: adjust the symlink targets — autopilot YAMLs stay portable.
+其他 workstation 如果项目根目录不同：调整 symlink 目标即可 —— autopilot YAML 保持不变。
 
-## Re-sync protocol
+## 重新同步流程
 
-If `skills/*/SKILL.md` changes locally:
+如果本地的 `skills/*/SKILL.md` 有改动：
 
 ```bash
 cd ~/team-context
-git pull             # sync from feibo-ai/team-context
-# Re-import: the local-create approach is idempotent only if you delete first.
-# For per-skill update use:  multica skill update --name X --content <body>
+git pull             # 从 feibo-ai/team-context 拉取
+# 重新导入：本地 create 这条路只有先删才幂等。
+# 单 skill 更新用：  multica skill update --name X --content <body>
 ```
 
-The plan's `scripts/sync-to-multica.sh` wrapper assumes a public GitHub URL; for this private setup, prefer the local-create path above until multica supports authenticated GitHub fetch or local-path import.
+plan 里的 `scripts/sync-to-multica.sh` wrapper 假设 GitHub URL 是公开的；对于当前这个私有 setup，先走上面的本地 create 路径，等 multica 支持带 auth 的 GitHub fetch 或本地路径导入再切。

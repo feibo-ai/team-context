@@ -1,8 +1,8 @@
-# Skill smoke-test results — 2026-05-27
+# Skill 冒烟测试结果 — 2026-05-27
 
-Manual test in a fresh Claude Code session: paste the trigger phrase, verify the named skill is invoked. Mark PASS or FAIL.
+在全新的 Claude Code 会话里手工测试：粘贴触发短语，确认对应的 skill 被调用。标 PASS 或 FAIL。
 
-| Skill | Trigger phrase | Status |
+| Skill | 触发短语 | 状态 |
 | --- | --- | --- |
 | pre-clear | "I want to /clear" | PENDING |
 | rpi-research | "Let's research X" | PENDING |
@@ -17,13 +17,13 @@ Manual test in a fresh Claude Code session: paste the trigger phrase, verify the
 | role-assignment-protocol | "认领角色" / "role assignment" | PENDING |
 | conflict-adjudication | "冲突" / "意见不合" | PENDING |
 
-**Sync status (mechanical, not subjective):**
-- `~/team-context/scripts/sync-to-local.sh` ran 2026-05-27 14:10, all 12 skills symlinked into `~/.claude/skills/`.
-- Verify: `ls -la ~/.claude/skills/ | grep team-context` should show 12 symlinks pointing at `/Users/feibo/feibo/team-context/skills/*`.
+**同步状态（机械检查，不含主观判断）：**
+- `~/team-context/scripts/sync-to-local.sh` 于 2026-05-27 14:10 执行完毕，12 个 skills 全部 symlink 到 `~/.claude/skills/`。
+- 验证：`ls -la ~/.claude/skills/ | grep team-context` 应该显示 12 条软链，指向 `/Users/feibo/feibo/team-context/skills/*`。
 
-**Method:**
-1. Open a fresh Claude Code session in any project (e.g. `cd /tmp && claude`).
-2. For each skill: paste the trigger phrase verbatim. The model should invoke the skill via the `Skill` tool within its first response.
-3. Replace `PENDING` with `PASS` or `FAIL`. If FAIL, open the `SKILL.md` and sharpen the `description:` field (add the missed trigger, tighten the use case). Re-test.
+**测试方法：**
+1. 在任意项目中打开一个全新的 Claude Code 会话（比如 `cd /tmp && claude`）。
+2. 对每个 skill：逐字粘贴触发短语。模型应在首次响应中通过 `Skill` 工具调用对应 skill。
+3. 把 `PENDING` 替换为 `PASS` 或 `FAIL`。若 FAIL，打开 `SKILL.md` 把 `description:` 字段打磨得更锋利（补上漏掉的触发词、收紧用例描述），再重测。
 
-**On the description field**: every line of `description:` is in the model's attention budget. Don't pad it with body content. Use 1-3 sentences ending with explicit triggers; the model uses these as substring matches.
+**关于 description 字段**：`description:` 的每一行都占用模型的 attention budget。别用正文内容把它塞满。用 1-3 句话收尾时附上明确的触发短语；模型把这些当作子串匹配在用。
