@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+echo "⚠️  DEPRECATED · feishu-cli direct install is no longer required for team members." >&2
+echo "    team-context-mcp v0.2+ exposes 9 remote MCP tools (notify_team / dm_member /" >&2
+echo "    archive_to_wiki / search_chat / read_member_dm + 5 moved) that talk to feishu" >&2
+echo "    via lark Node.js SDK inside the remote server container." >&2
+echo "" >&2
+echo "    DRI debug only · proceeding in 3s · Ctrl-C to abort..." >&2
+sleep 3
 # install-feishu-cli.sh — one-shot installer + verifier for feishu-cli
 # Per AI MIQ SOP plan · ref docs/integrations/feishu-cli.md
 set -euo pipefail
