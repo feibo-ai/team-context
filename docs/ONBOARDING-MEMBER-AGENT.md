@@ -77,10 +77,17 @@ multica config set app_url     https://teamctx.actionow.ai     >/dev/null
 multica config set workspace_id "$MULTICA_WORKSPACE_ID"         >/dev/null
 
 # Pick shell rc · prefer zsh on macOS · idempotent line replace
+# (tcmcp-local reads ALL 3 env vars at startup · multica config alone is not enough)
 RC="$HOME/.zshrc"; [ -n "$BASH_VERSION" ] && [ ! -f "$RC" ] && RC="$HOME/.bashrc"
 touch "$RC"
-grep -v '^export MULTICA_TOKEN=' "$RC" > "$RC.tmp" && mv "$RC.tmp" "$RC"
-echo "export MULTICA_TOKEN=$MULTICA_TOKEN" >> "$RC"
+grep -vE '^export (MULTICA_TOKEN|MULTICA_SERVER_URL|MULTICA_WORKSPACE_ID)=' "$RC" > "$RC.tmp" && mv "$RC.tmp" "$RC"
+cat >> "$RC" <<RCEOF
+export MULTICA_SERVER_URL=https://api.teamctx.actionow.ai
+export MULTICA_WORKSPACE_ID=$MULTICA_WORKSPACE_ID
+export MULTICA_TOKEN=$MULTICA_TOKEN
+RCEOF
+export MULTICA_SERVER_URL=https://api.teamctx.actionow.ai
+export MULTICA_WORKSPACE_ID
 export MULTICA_TOKEN
 ```
 
@@ -107,7 +114,7 @@ if [ ! -d "$TCMCP_DIR/.git" ]; then
 fi
 cd "$TCMCP_DIR"
 git pull --ff-only 2>/dev/null || true   # fail-open: continue with current commit
-pnpm install --frozen-lockfile 2>&1 | tail -3
+CI=true pnpm install --frozen-lockfile 2>&1 | tail -3   # CI=true: avoid no-TTY purge prompt on re-runs
 pnpm --filter @tcmcp/shared build 2>&1 | tail -3
 pnpm --filter @tcmcp/local  build 2>&1 | tail -3
 ```

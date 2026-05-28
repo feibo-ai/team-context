@@ -26,8 +26,8 @@ brew install jq node@22
 
 **验证 0:**
 ```bash
-multica --version    # 期望: multica v0.3.x · 不到 0.3 升级
-node --version       # 期望: v22.x.x
+multica --version    # 期望: multica v0.3.x 或以上 · 不到 0.3 升级
+node --version       # 期望: v22 或以上 (v22-v29 都行)
 jq --version         # 期望: jq-1.7+
 ```
 
@@ -42,8 +42,13 @@ multica config set server_url https://api.teamctx.actionow.ai
 multica config set app_url https://teamctx.actionow.ai
 multica config set workspace_id <DRI 给你的 UUID>
 
-# PAT 写 shell rc · 永久生效
-echo 'export MULTICA_TOKEN=<DRI 给你的 mul_xxx>' >> ~/.zshrc
+# 3 个 env 都写 shell rc · 永久生效
+# (tcmcp-local 启动只读 env · 不读 multica config · 3 个都得 export)
+cat >> ~/.zshrc <<EOF
+export MULTICA_SERVER_URL=https://api.teamctx.actionow.ai
+export MULTICA_WORKSPACE_ID=<DRI 给你的 UUID>
+export MULTICA_TOKEN=<DRI 给你的 mul_xxx>
+EOF
 source ~/.zshrc
 ```
 
@@ -70,13 +75,14 @@ cd ~
 git clone https://github.com/feibo-ai/team-context-mcp.git
 cd team-context-mcp
 npm install -g pnpm@11
-pnpm install --frozen-lockfile
+CI=true pnpm install --frozen-lockfile   # CI=true 避开非交互式 TTY 阻塞
 pnpm --filter @tcmcp/shared build
 pnpm --filter @tcmcp/local  build
 ```
 
 **验证 2:** (会等 ~4 秒 · 起 server → 列工具 → 杀掉)
 ```bash
+# 这里 sleep 不能省 · 给 server 时间响应
 {
   echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"v","version":"0"}}}'
   echo '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
@@ -86,7 +92,9 @@ pnpm --filter @tcmcp/local  build
 ```
 期望:`12`
 
-返回别的数字 / 空 / error · build 没成功 · 重跑 `pnpm install` + build。
+返回 `0 / empty / error`:
+- 报 `multica config missing. Set MULTICA_SERVER_URL/MULTICA_TOKEN/MULTICA_WORKSPACE_ID` → 你 Step 1 那 3 个 env 没 source · 跑 `source ~/.zshrc` 或重开 terminal
+- build 没成功 → `cd ~/team-context-mcp && CI=true pnpm install --frozen-lockfile && pnpm --filter @tcmcp/local build` 重跑
 
 ---
 
