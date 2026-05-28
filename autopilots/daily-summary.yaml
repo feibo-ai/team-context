@@ -13,7 +13,7 @@ trigger:
 mode: run_only
 
 agent:
-  name: daily-summary-bot
+  name: daily-summary-bot-codex
   integration_ref: team-context-mcp  # resolved at apply time
 
 # PB-04 guardrails (autopilot_lint enforces)

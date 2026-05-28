@@ -12,7 +12,7 @@ mode: create_issue
 issue_title_template: "Monday Kickoff {{date}}"
 
 agent:
-  name: weekly-roundup-bot
+  name: weekly-roundup-bot-codex
   integration_ref: team-context-mcp  # resolved at apply time
 
 # PB-04 guardrails (autopilot_lint enforces)
