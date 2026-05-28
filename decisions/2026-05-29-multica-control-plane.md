@@ -56,6 +56,11 @@ team-context (本仓库) · 角色转变成 **spec source**:
 - 不做 k8s · DRI mac 跑 docker compose (Decision D-H) · 5 人团队不需要 k8s
 - 不回推 multica-ai 上游 (Decision D-J) · 内部专属 · 上游接不接受不知道
 
+## Operational notes
+
+- autopilot-bot user token rotated every 90d (`multica auth issue-token --user-email autopilot-bot@aimiq --name "autopilot-bot-<YYYY>-q<N>"`)
+  + re-run `apply-autopilots.sh` to re-inject. Calendar reminder lives in monthly-health autopilot output.
+
 ## Review trigger
 
 - W12 月度健康度报告中检查:

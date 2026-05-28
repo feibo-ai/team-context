@@ -92,3 +92,46 @@ git pull             # 从 feibo-ai/team-context 拉取
 ```
 
 plan 里的 `scripts/sync-to-multica.sh` wrapper 假设 GitHub URL 是公开的；对于当前这个私有 setup，先走上面的本地 create 路径，等 multica 支持带 auth 的 GitHub fetch 或本地路径导入再切。
+
+---
+
+## v2 control plane bootstrap · 2026-05-28
+
+**Plan**: [2026-05-29-plan-6-team-context-integration-config](../../multica/docs/superpowers/plans/2026-05-29-plan-6-team-context-integration-config.md)
+**Branch**: `feat/integration-config-migration` (4 commits: b4b5094, 8986ca0, 2251ee6, 4f99a7a)
+
+### Bootstrap results
+
+| 项 | 状态 | 数据 |
+|---|---|---|
+| Integration `team-context-mcp` | ✅ | id=`cc68a7cf-b1af-4acd-93d2-5a18b6a08cd6` · workspace=`team-context` |
+| Secrets | ✅ | `FEISHU_APP_ID` + `FEISHU_APP_SECRET` (v=1) |
+| autopilot-bot user | ✅ | id=`5061ced2-f2be-41a6-87fa-fd9979f0589b` · role=admin |
+| autopilot-bot PAT (90d) | ✅ | name=`autopilot-bot-2026-q2` · 注入到 4 个 agent custom_env |
+| Daemon runtime | ✅ | codex runtime `279b9cc2-d20e-4713-a86f-c6df7cd7faa8` |
+| 4 个 autopilot 应用 | ✅ | daily-summary / monday-kickoff / wednesday-stats / monthly-health |
+| 4 个 autopilot 对应 agent | ✅ | 全部接入 `TCMCP_REMOTE_URL` + `TCMCP_AGENT_TOKEN` env |
+| tcmcp-remote `/health` | ✅ | `multica_reachable=true · feishu_ready=true · config_source=LayeredConfigSource` |
+| codex `mcp add tcmcp-remote` | ✅ | http://localhost:8443/mcp · bearer-token-env-var=`TCMCP_AGENT_TOKEN` |
+
+### End-to-end smoke (daily-summary autopilot)
+
+- Run id: `e58dcb40-6404-46fd-9731-92a820021a38` · task id: `abe9b6dc-8870-4058-860b-1539a20230ee`
+- Triggered: `15:20:08+08:00` · Completed: `15:25:26+08:00` (5min18s)
+- Status: `completed` · failure_reason: `null`
+- 路径验证:
+  1. ✅ multica autopilot trigger → daemon picked task in 2s
+  2. ✅ codex spawned with `TCMCP_AGENT_TOKEN` injected from agent.custom_env
+  3. ✅ codex 收集数据 (47 个 git commit · 2 个 multica issue)
+  4. ✅ codex 调用 MCP tool `notify_team` via tcmcp-remote HTTP /mcp
+  5. ✅ tcmcp-remote 从 multica integration 解析 `feishu_team_chat_id`
+  6. ✅ tcmcp-remote 通过 lark SDK 发卡 → feishu messageId `om_x100b6e4a941b3098b3bdb37c982c0ad`
+- 已知 gap (operational · 不影响 code path):
+  - `team_members` 字段未在 integration config 配置 → agent 用 workspace member 兜底 → `dm_member` 对 `test@multica.local` 返回 feishu 400 (非真实邮箱)
+  - DRI 在生产前需补 `feishu_team_chat_id` 与 `team_members` 真实数据 (参见 `standards/integration-schemas/mcp-server-v1.yaml`)
+
+### Hot-reload (TC-10 Step 6 · skipped)
+
+工作空间无第二个测试 chat_id 可用 · 跳过 chat_id 翻转测试 · 待 DRI 在生产前补做。
+
+**Status**: v2 control plane CODE 完整 · 操作配置补全后即可上线。
