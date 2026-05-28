@@ -1,8 +1,9 @@
 name: daily-summary
 description: |
-  Workspace agent reads today's commits, issue updates, and decision logs,
-  posts a 200-word digest to the team feishu group via feishu-cli.
-  SOP coverage: P-6 Daily D-05 (傍晚 5 分 daily summary)
+  Workspace agent reads today's commits + multica issue updates,
+  composes a 200-word digest, sends a team summary to feishu group
+  AND per-user P2P summaries via MCP tools.
+  SOP coverage: P-6 Daily D-05 (per-user variant per W5 design)
 
 trigger:
   kind: schedule
@@ -13,6 +14,7 @@ mode: run_only
 
 agent:
   name: daily-summary-bot
+  integration_ref: team-context-mcp  # resolved at apply time
 
 # PB-04 guardrails (autopilot_lint enforces)
 guardrails:
@@ -35,25 +37,27 @@ guardrails:
 prompt: |
   **输出语言要求：所有最终发送到飞书的内容（card title、各 section 标题与正文、fallback text）必须用简体中文。** 命令行操作和内部思考可用英文，但用户看到的所有文字都是中文。
 
-  Generate today's team summary (~200 字以内):
-  1. From multica: list issues that changed today
-     `multica issue list --updated-after $(date -v-1d +%Y-%m-%d)`
-  2. From git: scan recent commits across team repos
-     `cd ~/projects && for r in */; do (cd $r && git log --since="midnight" --pretty=format:"- %s (%an)"); done`
-  3. From decision log: new files in team-context/decisions/ today
-     `ls -t ~/team-context/decisions/*.md | head -3`
+  Generate today's team summary. Use the MCP tools (not shell-out).
 
-  Compose interactive card JSON to /tmp/daily-card.json with sections:
-  - **Shipped today**: <issue/commit highlights>
-  - **In progress**: <issues advanced but not done>
-  - **Decisions**: <new decisions/ files>
-  - **Tomorrow's priorities**: <derived from active plan markdowns>
+  Step 1 · 收集团队数据
+    multica issue list --updated-after $(date -v-1d +%Y-%m-%d)
+    cd ~/projects && for r in */; do (cd $r && git log --since="midnight" --pretty=format:"- %s (%an)"); done
 
-  Push to feishu team group:
-    feishu-cli msg send \
-      --receive-id-type chat_id \
-      --receive-id "$FEISHU_TEAM_CHAT_ID" \
-      --msg-type interactive \
-      --content-file /tmp/daily-card.json
+  Step 2 · Compose team-group card (interactive · groups by member)
+    Format: card with sections per shipping member.
 
-  Verify: exit code 0 = success. Non-zero → log + retry once with `--msg-type text` fallback.
+  Step 3 · 推团队群
+    Call MCP tool: notify_team({ card: <card-json> })
+    (resolves feishu_team_chat_id from integration config · zero shell-out)
+
+  Step 4 · 遍历 team_members (read from integration config)
+    For each member { email, display_name }:
+      a. 收集本人今天产出 (filter step 1 data by author=display_name)
+      b. 收集本人本周 plan-approved issue (multica issue list --label plan-approved --assignee X)
+      c. Detect SOP signals:
+         - Today's `git log | grep -c "wip:"` for this author → /clear count
+         - close issues 没 case_create → 'unwritten debrief' nudge
+      d. Compose personal card (sections: Shipped, In Progress, Tomorrow, Signals)
+      e. Call MCP tool: dm_member({ email, card: <personal-card-json> })
+
+  Verify: each MCP tool call should return { messageId: ... }. Log failures · don't crash on one member's send failure.

@@ -1,6 +1,6 @@
 name: wednesday-stats
 description: |
-  Mid-week CLAUDE.md and skills health check, pushed to feishu via feishu-cli.
+  Mid-week CLAUDE.md and skills health check, pushed to feishu.
   SOP coverage: P-6 Weekly W-02
 
 trigger:
@@ -12,6 +12,7 @@ mode: run_only
 
 agent:
   name: wednesday-stats-bot
+  integration_ref: team-context-mcp  # resolved at apply time
 
 # PB-04 guardrails (autopilot_lint enforces)
 guardrails:
@@ -33,19 +34,13 @@ guardrails:
 prompt: |
   **输出语言要求：飞书 card title/各 section/正文全部用简体中文。** 命令行操作可英文，用户看到的所有内容都是中文。
 
-  1. `cd ~/team-context && git log --since="last Sunday" claude_md_team_global.md` — count net adds
-  2. Call team-context-mcp `skill_lint` tool with skillsDir=~/team-context/skills
-     — collect skills with stale last_reviewed_at (>90d) or missing owner
-  3. Heuristic regex for duplicate rules in CLAUDE.md
+  1. cd ~/team-context && git log --since="last Sunday" claude_md_team_global.md
+  2. Call MCP tool skill_lint (find stale + missing-owner)
+  3. Heuristic regex for duplicate rules
 
-  Compose interactive card JSON to /tmp/wednesday-card.json with sections:
-  - **CLAUDE.md this week**: <N> rules added, <list>
-  - **Stale skills**: <N>, oldest: <name> (last reviewed <date>)
-  - **Possible duplicates**: <heuristic findings>
+  Compose card:
+    - CLAUDE.md this week: <N> rules
+    - Stale skills: <N>, oldest: <name>
+    - Possible duplicates: <findings>
 
-  Push to feishu:
-    feishu-cli msg send \
-      --receive-id-type chat_id \
-      --receive-id "$FEISHU_TEAM_CHAT_ID" \
-      --msg-type interactive \
-      --content-file /tmp/wednesday-card.json
+  Push via MCP: notify_team({ card: <stats-card-json> })

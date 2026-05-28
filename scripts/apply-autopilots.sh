@@ -3,16 +3,18 @@
 # Idempotent: re-runnable to update existing autopilots.
 set -euo pipefail
 
+# Required envs (TC-N1 + TC-N2): autopilots reach feishu via tcmcp-remote · NOT feishu-cli.
+# Secrets stay in multica; only TCMCP_REMOTE_URL + TCMCP_AGENT_TOKEN are injected into agent env.
+: "${MULTICA_WORKSPACE:?MULTICA_WORKSPACE must be set}"
+: "${TCMCP_REMOTE_URL:=http://host.docker.internal:8443/mcp}"
+: "${TCMCP_AGENT_TOKEN:?TCMCP_AGENT_TOKEN must be set — see TC-3.5 for how DRI issues this once}"
+export MULTICA_WORKSPACE
+
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 AUTOPILOTS_DIR="${REPO_DIR}/autopilots"
 
 command -v yq >/dev/null || { echo "Install yq first: brew install yq"; exit 1; }
 command -v jq >/dev/null || { echo "Install jq first: brew install jq"; exit 1; }
-command -v feishu-cli >/dev/null || {
-  echo "ERROR: feishu-cli not installed (autopilots push to feishu)."
-  echo "Install: curl -fsSL https://raw.githubusercontent.com/riba2534/feishu-cli/main/install.sh | bash"
-  exit 1
-}
 
 multica auth status > /dev/null || { echo "Run: multica login"; exit 1; }
 
@@ -80,6 +82,25 @@ for yaml in "${AUTOPILOTS_DIR}"/*.yaml; do
   tz=$(yq eval '.trigger.timezone' "${yaml}")
 
   echo "Applying autopilot: ${name}"
+
+  # Resolve integration_ref (TC-5 · TC-N2 design): inject only TCMCP_REMOTE_URL +
+  # TCMCP_AGENT_TOKEN into agent env. Secrets stay in multica · MCP tools fetch
+  # them server-side via tcmcp-remote.
+  INTEGRATION_REF=$(yq eval '.agent.integration_ref // ""' "${yaml}")
+  if [[ -n "${INTEGRATION_REF}" ]]; then
+    echo "  Wiring agent to tcmcp-remote (integration: ${INTEGRATION_REF})"
+    multica integration get "${INTEGRATION_REF}" --output json >/dev/null || {
+      echo "  ERROR: integration ${INTEGRATION_REF} not found"; exit 1;
+    }
+    AGENT_ID=$(multica agent list --output json | jq -r ".[] | select(.name==\"${agent}\") | .id")
+    if [[ -n "${AGENT_ID}" ]]; then
+      multica agent env set "${AGENT_ID}" --custom-env \
+        "{\"TCMCP_REMOTE_URL\":\"${TCMCP_REMOTE_URL}\",\"TCMCP_AGENT_TOKEN\":\"${TCMCP_AGENT_TOKEN}\"}"
+      echo "  Agent ${agent} now reaches tcmcp-remote (secrets stay in multica)"
+    else
+      echo "  WARN: agent ${agent} not found · run TC-3.5 first"
+    fi
+  fi
 
   # Merge YAML's description + prompt into the CLI's single --description field.
   # CLI semantics: --description IS the task prompt the agent receives.
