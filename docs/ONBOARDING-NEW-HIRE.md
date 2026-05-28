@@ -24,76 +24,36 @@ DRI 在你来之前：
 
 ## Day 1 · 上午 90 分钟 · 环境就位
 
-### 09:00–09:30 · 装 4 件工具 + 拿 token
+### 09:00–10:30 · 跟 `ONBOARDING-MEMBER.md` 走完 5 步
 
-```bash
-# 1. Claude Code (https://claude.com/claude-code 下载)
-# 2. Codex CLI (公司提供安装链接)
-# 3. Homebrew 工具
-brew install gh yq jq pandoc
+打开 [`ONBOARDING-MEMBER.md`](./ONBOARDING-MEMBER.md) · 按它走:
 
-# 4. multica CLI
-brew install multica-ai/tap/multica
-multica setup    # 跟随提示登录
-multica daemon start
-```
+| step | 干嘛 | 期望时间 |
+|---|---|---|
+| Step 0 | brew 装 multica/jq/node | 3 min |
+| Step 1 | 连云 multica · `multica auth status` 三行匹配 | 1 min |
+| Step 2 | tcmcp-local build · stdio tools/list = 12 | 5 min (含 pnpm install 网络等) |
+| Step 3 | sync 12 skill 到 `~/.claude/skills/` | 1 min |
+| Step 4a/4b | Codex 或 Claude Code MCP config | 2 min |
+| Step 5 | e2e 冒烟 `search_chat` 返 `oc_035c...` | 30 sec |
 
-**拿到你的 multica bearer token**:
-- DRI 在 multica web UI / CLI 给你签一个 personal access token (workspace-scoped)
-- 也会告诉你 tcmcp-remote 的 host (默认 `http://localhost:8443` · 同 LAN 时 DRI 的 mac 跑)
-- token 用于 Claude Code / Codex CLI 连 remote MCP server · 不要写到 git
+**前置 (DRI 在你来之前应该已经做的):**
+- 飞书 DM 发给你: 你的 email · PAT (`mul_xxx`) · workspace_id (UUID)
+- 把你加进 GitHub org `feibo-ai` ·`team-context-mcp` (public · clone OK) ·`team-context` (private · 你**不用**仓库权限 · skill 走 multica API)
+- 把你加进 AI MIQ 飞书群 (「Team Context」)
 
-### 09:30–10:15 · Clone 两个仓库 + sync skills
-
-```bash
-cd ~
-git clone git@github.com:feibo-ai/team-context.git
-git clone git@github.com:feibo-ai/team-context-mcp.git
-
-cd team-context
-bash scripts/sync-to-local.sh           # 12 个 skill symlink 到 ~/.claude/skills/
-
-cd ../team-context-mcp
-pnpm install && pnpm build              # 出 dist/server-local.js (12 个本地 git+file 工具)
-```
-
-### 10:15–10:30 · 配 Claude Code + Codex CLI
-
-编辑 `~/Library/Application Support/Claude/claude_desktop_config.json`，加入 (注意 **两个** entry):
-```json
-{
-  "mcpServers": {
-    "tcmcp-remote": {
-      "transport": "http",
-      "url": "http://localhost:8443/mcp",
-      "headers": { "Authorization": "Bearer <你的 multica token>" }
-    },
-    "tcmcp-local": {
-      "command": "node",
-      "args": ["/Users/<you>/team-context-mcp/dist/server-local.js"]
-    }
-  }
-}
-```
-重启 Claude Code。然后：
-```bash
-codex mcp add tcmcp-remote --transport http --url http://localhost:8443/mcp \
-  --header "Authorization: Bearer <token>"
-codex mcp add tcmcp-local -- node ~/team-context-mcp/dist/server-local.js
-```
+任一前置缺 · 立即飞书 @ DRI · **不要硬扛**。
 
 ### 10:30–10:45 · Verify
 
-| 检查 | 期望 |
-|---|---|
-| `multica auth status` | ok |
-| `multica workspace list` | 看到 teamctx |
-| `curl http://localhost:8443/health` (假设 LAN/同一 mac · 否则替换 host) | `{"status":"ok"}` |
-| `ls ~/.claude/skills/ \| wc -l` | ≥ 12 |
-| Claude Code 新 session 问 "What tools do you have from tcmcp-remote + tcmcp-local?" | 列出 **22** 个 (10 远程 + 12 本地) |
-| Claude Code 新 session 输入 "I want to /clear" | 自动激活 `pre-clear` skill |
+`ONBOARDING-MEMBER.md` Step 5 那个 e2e 冒烟通过 = 你完毕。再做下面 1 个新人专属检查:
 
-任一不过 → 飞书 @ DRI，不要硬扛。
+```bash
+# 测 SOP skill auto-trigger (Claude Code only · Codex 暂不支持 fuzzy match)
+```
+新 Claude Code session · 输入 "I want to /clear" → 期望: `pre-clear` skill 自动激活 (frontmatter description 在「context restart」三字附近 fuzzy match)。
+
+不激活 · `ls ~/.claude/skills/pre-clear/SKILL.md` 看文件在不在; Claude Code 设置里 skills 功能没禁用。
 
 ---
 
