@@ -75,3 +75,58 @@ jobs:
               exit 1
             fi
           done
+
+      - name: Lint autopilot PB-04 guardrails (SOP hard line)
+        run: |
+          set -e
+          fail=0
+          for yaml in autopilots/*.yaml; do
+            [[ -f "$yaml" ]] || continue
+            name=$(yq eval '.name' "$yaml")
+
+            # 1) guardrails section must exist
+            g_present=$(yq eval '.guardrails' "$yaml")
+            if [[ "${g_present}" == "null" || -z "${g_present}" ]]; then
+              echo "ERROR: ${name}: missing 'guardrails' section (SOP PB-04 violation)"
+              fail=1
+              continue
+            fi
+
+            # 2) forbidden_commands ≥ 5 entries
+            fc_count=$(yq eval '.guardrails.forbidden_commands | length' "$yaml")
+            if [ "${fc_count}" = "null" ] || [ -z "${fc_count}" ] || [ "${fc_count}" -lt 5 ]; then
+              echo "ERROR: ${name}: guardrails.forbidden_commands has ${fc_count} entries (must be ≥ 5)"
+              fail=1
+            fi
+
+            # 3) forbidden_commands must contain 'git push'
+            if ! yq eval '.guardrails.forbidden_commands[]' "$yaml" 2>/dev/null | grep -qi "git push"; then
+              echo "ERROR: ${name}: guardrails.forbidden_commands missing 'git push'"
+              fail=1
+            fi
+
+            # 4) forbidden_paths must have at least 1 entry
+            fp_count=$(yq eval '.guardrails.forbidden_paths | length' "$yaml")
+            if [ "${fp_count}" = "null" ] || [ -z "${fp_count}" ] || [ "${fp_count}" -lt 1 ]; then
+              echo "ERROR: ${name}: guardrails.forbidden_paths must have ≥ 1 entry"
+              fail=1
+            fi
+
+            # 5) max_budget_usd ≤ 150 hard cap
+            budget=$(yq eval '.guardrails.max_budget_usd' "$yaml")
+            if [ "${budget}" = "null" ] || [ -z "${budget}" ]; then
+              echo "ERROR: ${name}: missing guardrails.max_budget_usd"
+              fail=1
+            elif [ "${budget}" -gt 150 ]; then
+              echo "ERROR: ${name}: max_budget_usd ${budget} > 150 hard cap (SOP PB-04)"
+              fail=1
+            fi
+
+            # 6) max_runtime_minutes must be positive
+            runtime=$(yq eval '.guardrails.max_runtime_minutes' "$yaml")
+            if [ "${runtime}" = "null" ] || [ -z "${runtime}" ] || [ "${runtime}" -le 0 ]; then
+              echo "ERROR: ${name}: guardrails.max_runtime_minutes must be a positive number (got: ${runtime})"
+              fail=1
+            fi
+          done
+          exit $fail
