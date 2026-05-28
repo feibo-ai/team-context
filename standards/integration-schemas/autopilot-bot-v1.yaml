@@ -1,0 +1,25 @@
+# Schema: autopilot-bot v1
+# One integration per autopilot agent (daily-summary-bot / weekly-roundup-bot / etc.)
+#
+# Field mapping (same convention as mcp-server-v1):
+#   kind          → integrations.kind (CHECK enum)
+#   schema_ref    → integrations.config_schema_ref
+#   config_fields → integrations.config (jsonb)
+#   secret_fields → secrets table
+
+kind: autopilot-bot                 # must match the integrations.kind CHECK enum
+schema_ref: autopilot-bot-v1
+config_fields:
+  agent_name:
+    type: string
+    required: true
+    description: "multica agent name this autopilot uses"
+  feishu_integration_ref:
+    type: string
+    required: false
+    description: "Name of feishu integration to use (defaults to team-context-mcp if not set)"
+  custom_prompt_overrides:
+    type: object
+    required: false
+    description: "Per-bot prompt overrides (rarely needed)"
+secret_fields: []  # autopilot-bot has no secrets · uses feishu_integration_ref to get them

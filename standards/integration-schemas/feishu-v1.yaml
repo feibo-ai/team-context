@@ -1,0 +1,18 @@
+# Schema: feishu v1
+# Currently UNUSED · feishu credentials live under mcp-server-v1 (the MCP server uses them).
+# Kept here for future use if we want a standalone feishu integration object.
+#
+# Field mapping (same as mcp-server-v1):
+#   kind          → integrations.kind (CHECK enum)
+#   schema_ref    → integrations.config_schema_ref
+#   config_fields → integrations.config (jsonb)
+#   secret_fields → secrets table
+
+kind: feishu                        # must match the integrations.kind CHECK enum
+schema_ref: feishu-v1
+config_fields:
+  team_chat_id: { type: string, required: true }
+  team_wiki_space_id: { type: string, required: false }
+secret_fields:
+  - { key: APP_ID, description: "feishu app App ID" }
+  - { key: APP_SECRET, description: "feishu app secret" }

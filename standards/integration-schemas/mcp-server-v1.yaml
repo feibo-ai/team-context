@@ -1,0 +1,80 @@
+# Schema: mcp-server v1
+# Used by team-context-mcp (and any other team MCP server)
+#
+# How these fields map to multica's `integrations` table (Plan-4 v2 D-1):
+#   kind          → integrations.kind         (CHECK constraint: 'mcp-server' | 'feishu' | 'autopilot-bot')
+#   schema_ref    → integrations.config_schema_ref  (used by web UI to find this file + render the form)
+#   config_fields → integrations.config       (jsonb · the public non-secret bag, top-level keys flat)
+#   secret_fields → secrets table             (written via `multica secret set`, NOT in this file's values)
+#
+# Web UI lookup flow: when DRI clicks an integration, the UI fetches
+#   integrations.config_schema_ref → opens this file → renders inputs + client-side validates.
+#
+# Editing this schema does NOT auto-migrate existing integrations. Run
+#   multica integration set <name> <field>=<value>
+# to patch each integration's config jsonb if you've renamed / added keys.
+
+kind: mcp-server                    # must match the integrations.kind CHECK enum
+schema_ref: mcp-server-v1           # echoed into integrations.config_schema_ref
+config_fields:
+  multica_server_url:
+    type: string
+    required: false
+    default: "http://localhost:8083"
+    description: "Multica server URL (server-internal, may be docker-network specific)"
+  feishu_team_chat_id:
+    type: string
+    required: true
+    pattern: "^oc_[a-f0-9]{20,}$"
+    description: "Team feishu group chat_id (oc_xxx). Discover via `feishu-cli msg search-chats` once."
+  feishu_wiki_space_id:
+    type: string
+    required: false
+    pattern: "^wikcn[a-zA-Z0-9]+$"
+    description: "Feishu wiki space ID for monthly_health_report archiving."
+  feishu_wiki_default_parent:
+    type: string
+    required: false
+    description: "Default parent node_token under wiki space for new pages."
+  reload_poll_interval_seconds:
+    type: integer
+    required: false
+    default: 30
+    minimum: 10
+    description: |
+      WS subscription is primary; this is safety-net poll cadence in seconds.
+      Note: tcmcp-remote internally maps this to its `pollIntervalMs` option
+      (multiply by 1000). The seconds-based name here is for human readability
+      in the integration UI; the conversion happens server-side.
+  team_members:
+    type: array
+    required: false
+    description: |
+      Per-user daily summary distribution list.
+      WARNING — currently consumed only by autopilot prompts that explicitly
+      reference `team_members` in their text. There is no MCP tool that reads
+      this field server-side. Until a `roster` tool exists, the daily-summary
+      autopilot's prompt must explicitly fetch it (e.g. include a step that
+      calls `multica integration get team-context-mcp` and parses .config.team_members).
+    items:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        display_name: { type: string }
+        role: { type: string, enum: [dri, exec, collab, review] }
+      required: [email, display_name]
+secret_fields:
+  - key: FEISHU_APP_ID
+    description: "Feishu app App ID (cli_xxx)"
+  - key: FEISHU_APP_SECRET
+    description: "Feishu app secret"
+  # NOTE — MULTICA_SERVICE_TOKEN is NOT an integration secret. It's the boot
+  # env that tcmcp-remote uses to *fetch* this integration in the first place
+  # (chicken-vs-egg). It lives in /Users/<dri>/.tcmcp.env, not here.
+deployment:
+  image_registry: ghcr.io/feibo-ai/tcmcp-remote
+  health_endpoint: /health
+  redeploy_webhook_template: "http://localhost:8083/api/integrations/{integration_id}/redeploy"
+  notes: |
+    Per Decision D-H · runs on DRI's mac as docker compose service · accessible at
+    http://localhost:8443 (or LAN IP for other team members on same network).
