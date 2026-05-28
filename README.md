@@ -11,6 +11,12 @@ AI MIQ 团队跨项目方法学的唯一权威来源。
 
 **配套**: SOP v0.4 (`sop/group_sop_v0.4.html`) · 团队 Manifesto · Constitution · 决策记录。
 
+> **v2 (W5+) · Multica control plane**: integration configs + secrets 现在集中存活在 multica。
+> 本仓库 `autopilots/*.yaml` 通过 `integration_ref: team-context-mcp` 引用 (不再含 secret)，
+> apply 时由 `scripts/apply-autopilots.sh` 在 multica 解析；运行时 tcmcp-remote 在启动时拉、WS 订阅 hot-reload。
+> 见 [decisions/2026-05-29-multica-control-plane.md](decisions/2026-05-29-multica-control-plane.md) (rationale) ·
+> [standards/integration-overview.md](standards/integration-overview.md) (operator 用法)。
+
 ## 装
 
 ### 第一次拿到这个仓库
@@ -101,6 +107,25 @@ team-context/
 └── .github/workflows/
     └── lint.yml                       ← SKILL.md frontmatter + token + autopilot YAML schema
 ```
+
+## Multica control plane integration (v2)
+
+W5 起，本仓库不再持有飞书 secret · 不再生成 `.env`：
+
+| 物件 | 存哪 | 谁管 |
+|---|---|---|
+| Integration `team-context-mcp` (kind: `mcp-server`) | multica workspace | DRI (web UI / CLI) |
+| Config (chat_id · wiki_space_id · team_members · …) | multica integration `config` 字段 | DRI |
+| Secrets (`FEISHU_APP_ID` · `FEISHU_APP_SECRET` · …) | multica `Secret` 对象 (加密) | DRI |
+| Schema (config 形状的 source of truth) | `standards/integration-schemas/mcp-server-v1.json` (本仓库) | DRI PR review |
+| Autopilot YAML (含 `integration_ref: team-context-mcp`) | 本仓库 `autopilots/*.yaml` | EXEC PR · DRI review |
+
+**Hot-reload**：tcmcp-remote 启动时通过 ConfigSource 抽象拉一次 multica integration · 之后订阅 WS `integration.config-changed` 事件 · DRI 改 chat_id / team_members 不需要重启 server · 也不需要找 5 个人改 `.env`。
+
+**Bootstrap**：第一次切到 v2 用 `scripts/multica-secrets-bootstrap.sh` 一次性把 env-file → multica secret。
+
+操作细节 (创建 integration · rotate secret · 看 deployment 状态) 见 [standards/integration-overview.md](standards/integration-overview.md)。
+设计动机 (W2-W3 暴露的 secret 漂移 / 离职吊销 / 配置漂移问题) 见 [decisions/2026-05-29-multica-control-plane.md](decisions/2026-05-29-multica-control-plane.md)。
 
 ## 三件套关系
 
