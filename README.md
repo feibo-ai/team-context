@@ -1,25 +1,19 @@
-# team-context (上线后用的正式 README)
-
-> 这是 W1 Plan 1 Task 1 后，**~/team-context/README.md** 应当替换成的完整版本。
-> 现在 Plan 1 Task 1 写的是骨架版 · 上线后 EXEC 在 W1 末用此文件替换。
-
----
-
 # team-context
 
 AI MIQ 团队跨项目方法学的唯一权威来源。
 
 **配套**: SOP v0.4 (`sop/group_sop_v0.4.html`) · 团队 Manifesto · Constitution · 决策记录。
 
-> **v2 (W5+) · Multica control plane**: integration configs + secrets 现在集中存活在 multica。
+> **v2 (W5+) · Multica control plane**: integration configs + secrets 集中存活在 multica。
 > 本仓库 `autopilots/*.yaml` 通过 `integration_ref: team-context-mcp` 引用 (不再含 secret)，
-> apply 时由 `scripts/apply-autopilots.sh` 在 multica 解析；运行时 tcmcp-remote 在启动时拉、WS 订阅 hot-reload。
+> apply 时由 `scripts/apply-autopilots.sh` 在 multica 解析；运行时 tcmcp-remote 启动时拉 + WS 订阅 hot-reload。
 > 见 [decisions/2026-05-29-multica-control-plane.md](decisions/2026-05-29-multica-control-plane.md) (rationale) ·
 > [standards/integration-overview.md](standards/integration-overview.md) (operator 用法)。
+> 团队成员**不再**需要本地装 feishu-cli。
 
 ## 装
 
-### 第一次拿到这个仓库
+### 第一次拿到这个仓库 (团队成员)
 
 ```bash
 git clone https://github.com/<your-org>/team-context ~/team-context
@@ -27,12 +21,12 @@ cd ~/team-context
 
 # 同步 12 个 skill 到本地 Claude Code
 bash scripts/sync-to-local.sh
-
-# 装 feishu-cli + smoke test (5 分钟)
-bash scripts/install-feishu-cli.sh
 ```
 
 完事。重启 Claude Code · 试 "我想 /clear" · 应该弹 pre-clear skill。
+
+> feishu-cli 不再是团队成员入门前提 (W5+ 用 tcmcp-remote 集中处理飞书)。
+> `scripts/install-feishu-cli.sh` 已 deprecated · 只 DRI 排查飞书 OpenAPI 时偶尔用。
 
 ### DRI / 管理员的额外步骤
 
@@ -43,12 +37,14 @@ bash scripts/create-labels.sh
 # 同步 12 个 skill 到 multica workspace
 bash scripts/sync-to-multica.sh https://github.com/<your-org>/team-context
 
-# 部署 4 个 autopilot (含 PB-04 guardrails 预检)
-bash scripts/apply-autopilots.sh
+# 一次性把飞书 secret 从 env-file 推到 multica · 替代旧的散户配置流程
+bash scripts/multica-secrets-bootstrap.sh team-context-mcp
 
-# 给 4 个 autopilot agent 注入 FEISHU_TEAM_CHAT_ID env
-# (详见 docs/superpowers/plans/2026-05-26-plan-1 · Task A13 Step 5)
+# 部署 4 个 autopilot (apply-autopilots.sh 含 PB-04 guardrails 预检 · 含 integration_ref 解析)
+bash scripts/apply-autopilots.sh
 ```
+
+apply-autopilots.sh **不再注入 secret 到 agent env** —— 它只注入 `TCMCP_REMOTE_URL` + `TCMCP_AGENT_TOKEN`,agent 调用远程 MCP 工具时由 tcmcp-remote 内部用 multica 拉到的 secret 完成飞书连接。详见 `autopilots/README.md`。
 
 ## 目录结构
 
@@ -86,12 +82,15 @@ team-context/
 │
 ├── standards/                         ← 跨项目判断标准 (无上限累积)
 │   ├── labels.md                      ← 11 个 multica label 字典 (owner: DRI)
+│   ├── integration-overview.md        ← v2 control plane operator 指南
+│   ├── integration-schemas/           ← 3 个 integration schema YAML (mcp-server / feishu / autopilot-bot)
 │   ├── skill-smoke-test-results.md    ← skill 加载/触发验证记录
-│   ├── feishu-cli-smoke.md            ← feishu-cli 集成验证记录
-│   └── multica-sync-results.md        ← multica skill 导入记录
+│   ├── feishu-cli-smoke.md            ← v1 历史验证记录 (W5+ deprecated)
+│   └── multica-sync-results.md        ← multica skill / integration 导入记录
 │
 ├── decisions/                         ← 团队级架构决策 (ADR 格式 · YYYY-MM-DD-<slug>.md)
-│   └── 2026-05-26-v0.2-launch.md      ← 项目启动 6 项决策
+│   ├── 2026-05-26-v0.2-launch.md      ← 项目启动 6 项决策
+│   └── 2026-05-29-multica-control-plane.md ← v2 控制面架构决策 (supersedes 部分 v0.2 launch)
 │
 ├── health/                            ← 健康度归档 (autopilot + manual)
 │   ├── monthly/                       ← 月度 health report 本地副本
@@ -100,9 +99,10 @@ team-context/
 ├── scripts/                           ← 运维脚本
 │   ├── sync-to-local.sh               ← symlink skills/* 到 ~/.claude/skills/
 │   ├── sync-to-multica.sh             ← multica skill import × 12
-│   ├── apply-autopilots.sh            ← YAML → CLI flag 翻译器 + autopilot_lint 预检
+│   ├── apply-autopilots.sh            ← YAML → CLI flag 翻译器 + autopilot_lint 预检 + integration_ref 解析
 │   ├── create-labels.sh               ← 11 个标准 label 创建
-│   └── install-feishu-cli.sh          ← feishu-cli 一键安装 + 配置 + smoke
+│   ├── multica-secrets-bootstrap.sh   ← v2 · env-file → multica secret upsert (DRI 一次性)
+│   └── install-feishu-cli.sh          ← DEPRECATED · 仅 DRI 排查保留 · 团队成员不需要
 │
 └── .github/workflows/
     └── lint.yml                       ← SKILL.md frontmatter + token + autopilot YAML schema
@@ -189,10 +189,15 @@ L3 中间 (本仓库)
 ## 关联文档
 
 - 团队 SOP: `sop/group_sop_v0.4.html`
-- 飞书集成: `docs/integrations/feishu-cli.md` (在产品仓库 docs/ 下，不在 team-context)
-- 实施详情:
-  - Plan 1 (本仓库): `docs/superpowers/plans/2026-05-26-plan-1-team-context-foundation.md`
-  - Plan 2 (team-context-mcp 服务): `docs/superpowers/plans/2026-05-26-plan-2-team-context-mcp.md`
-  - Plan 3 (multica fork PR): `docs/superpowers/plans/2026-05-26-plan-3-multica-core-prs.md`
-- 项目方案 HTML: `team_context_proposal.html`
-- 项目决策: `decisions/2026-05-26-v0.2-launch.md`
+- v2 控制面 operator 指南: `standards/integration-overview.md`
+- v2 控制面架构 ADR: `decisions/2026-05-29-multica-control-plane.md`
+- Integration schema source of truth: `standards/integration-schemas/`
+- 实施详情 (在 multica docs 仓库,不在本仓库):
+  - Plan 1 (本仓库 W1): `docs/superpowers/plans/2026-05-26-plan-1-team-context-foundation.md`
+  - Plan 2 (team-context-mcp 服务 W1): `docs/superpowers/plans/2026-05-26-plan-2-team-context-mcp.md`
+  - Plan 3 (multica fork PR W1): `docs/superpowers/plans/2026-05-26-plan-3-multica-core-prs.md`
+  - Plan 4 (tc-multica control plane W5): `docs/superpowers/plans/2026-05-29-plan-4-tc-multica-control-plane.md`
+  - Plan 5 (tcmcp 远程重构 W5): `docs/superpowers/plans/2026-05-29-plan-5-tcmcp-remote-refactor.md`
+  - Plan 6 (本仓库迁移 W5): `docs/superpowers/plans/2026-05-29-plan-6-team-context-integration-config.md`
+- W1 项目决策: `decisions/2026-05-26-v0.2-launch.md`
+- W5 控制面决策: `decisions/2026-05-29-multica-control-plane.md`

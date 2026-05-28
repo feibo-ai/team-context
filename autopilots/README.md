@@ -1,28 +1,69 @@
 # autopilots/
 
-multica autopilot 定义的 YAML 模板。
+multica autopilot 的 YAML 模板。
 
-**重要**: `multica autopilot create` 不会读取 YAML 文件 —— 它接收 CLI flags。
-具体看 `scripts/apply-autopilots.sh`，它会解析这些 YAML 并翻译成
-`multica autopilot create / trigger-add` 调用。
+**重要 1**: `multica autopilot create` 不读取 YAML 文件 —— 它接收 CLI flags。
+模板要经 `scripts/apply-autopilots.sh` 解析,翻译成 `multica autopilot create + trigger-add` 调用。
 
-| 文件 | 时间 | 模式 | 用途 |
+**重要 2** (v2 control plane edition · W5+): 这里 **不存任何 secret**,也 **不写 `FEISHU_*` env 变量**。所有飞书 secret 集中存活在 multica 的 `Secret` 对象(加密) · 所有 chat_id / wiki_space / team_members 等非 secret config 集中存活在 multica integration `team-context-mcp` 的 `config` 字段。
+
+## 4 个 autopilot
+
+| 文件 | Cron(Asia/Shanghai) | Mode | 用途 |
 | --- | --- | --- | --- |
-| daily-summary.yaml | 工作日 18:00 (Asia/Shanghai) | run_only | 每日总结推送到飞书 |
-| monday-kickoff.yaml | 周一 09:30 (Asia/Shanghai) | create_issue | 每周计划汇总 |
-| wednesday-stats.yaml | 周三 09:00 (Asia/Shanghai) | run_only | CLAUDE.md 周度统计 |
-| monthly-health.yaml | 每月 1 号 10:00 (Asia/Shanghai) | run_only | 触发 monthly_health_report |
+| `daily-summary.yaml`   | 工作日 18:00 | `run_only`     | 每日 SOP 总结 → 飞书群 + per-user P2P |
+| `monday-kickoff.yaml`  | 周一 09:30   | `create_issue` | 周计划汇总 → 飞书群 + 创建 issue |
+| `wednesday-stats.yaml` | 周三 09:00   | `run_only`     | CLAUDE.md 周度统计 → 飞书群 |
+| `monthly-health.yaml`  | 月 1 号 10:00 | `run_only`     | 触发 `monthly_health_report` → 飞书 doc + wiki |
 
-## 必需的 env vars (在每个 agent 的 custom-env 中设置)
+## 每个 YAML 必含的 PB-04 guardrails
 
-飞书集成使用 [feishu-cli](https://github.com/riba2534/feishu-cli)。安装、
-scope 配置和 setup 看 `docs/integrations/feishu-cli.md`。
+`apply-autopilots.sh` 在调 multica 前会 lint 这些字段 · 缺一拒 apply:
 
-- `FEISHU_TEAM_CHAT_ID` —— 主团队群 chat_id (oc_xxx)，用于每日/每周/每月推送
-- `FEISHU_DEMO_CHAT_ID` —— 可选 · 周五 demo 用的独立群
-- `FEISHU_TEAM_WIKI_SPACE` —— 可选 · 用于归档月度健康报告的 wiki space
-- `FEISHU_HEALTH_REPORTS_NODE` —— 可选 · 健康报告归档的 wiki 父节点
-- `FEISHU_CONFIG_DIR` —— 默认 `~/.feishu-cli` · workstation 共享配置
+```yaml
+guardrails:
+  forbidden_commands:    # ≥ 5 条 · 必含 "git push" 跟 "npm publish"
+    - "git push"
+    - "git push --force"
+    - "npm publish"
+    - "rm -rf"
+    - "psql.* drop"
+  forbidden_paths:       # ≥ 1 条
+    - ".env*"
+    - ".ssh/*"
+    - "secrets/*"
+  max_budget_usd: 5      # ≤ 150 (SOP PB-04 大批量上限)
+  max_runtime_minutes: 60
+```
 
-每台 EXEC workstation 必须先运行一次 `feishu-cli config create-app --save` 和
-`feishu-cli doctor`，autopilot 才能正常推送。
+## 每个 YAML 必含的 `integration_ref`
+
+```yaml
+agent:
+  integration_ref: team-context-mcp   # ← multica integration 名 (kind: mcp-server)
+```
+
+`apply-autopilots.sh` 看到这个字段后:
+1. `multica integration get team-context-mcp` 验证存在
+2. 拿到 integration `id` (后续 deployment 注册用)
+3. 给 multica agent 注入两个 env: `TCMCP_REMOTE_URL` + `TCMCP_AGENT_TOKEN` (autopilot-bot 专用 PAT)
+4. **不**注入 `FEISHU_APP_SECRET` 等 secret —— tcmcp-remote 自己从 multica 拉
+
+agent 在 prompt 里调远程 MCP 工具(`notify_team` / `dm_member` / `archive_to_wiki` / `read_member_dm` / `search_chat`)推飞书 · feishu 连接全在 tcmcp-remote 进程里完成。
+
+## EXEC workstation 装什么
+
+**不装 feishu-cli** (W5 起 deprecated · `scripts/install-feishu-cli.sh` 顶部 banner 已说明)。
+EXEC workstation 上跑 multica daemon 即可 · autopilot agent 由 daemon 调度 · agent 通过 MCP 客户端调用 tcmcp-remote。
+
+## 操作清单
+
+| 任务 | 命令 / 文档 |
+|---|---|
+| 配 / 改 chat_id · team_members · wiki_space_id | `multica integration set team-context-mcp <key>=<value>` · WS 推送 hot-reload 到 tcmcp-remote · 无需重启 autopilot |
+| 创 / rotate FEISHU_APP_SECRET 等 | `echo -n "<val>" \| multica secret set --integration team-context-mcp <KEY> --value-stdin` · tcmcp-remote 内 5-min cache TTL 后自动用新 secret |
+| 加新 autopilot YAML | PR · 必含 `integration_ref` + 完整 `guardrails` 段 · CI lint 守门 |
+| 看 autopilot 跑成功没 | `multica autopilot list` · 看 `last_run_at` · 或飞书群是否真收到 |
+| 整体设计动机 | `decisions/2026-05-29-multica-control-plane.md` |
+| operator 用法详解 | `standards/integration-overview.md` |
+| integration schema 字段 source of truth | `standards/integration-schemas/mcp-server-v1.yaml` |
