@@ -48,13 +48,13 @@ jq --version         # 期望: jq-1.7+
 ```bash
 multica config set server_url https://api.teamctx.actionow.ai
 multica config set app_url https://teamctx.actionow.ai
-multica config set workspace_id <DRI 给你的 UUID>
+multica config set workspace_id b18d7b35-344a-4663-9ddc-00a71de89399
 
 # 3 个 env 都写 shell rc · 永久生效
 # (tcmcp-local 启动只读 env · 不读 multica config · 3 个都得 export)
 cat >> ~/.zshrc <<EOF
 export MULTICA_SERVER_URL=https://api.teamctx.actionow.ai
-export MULTICA_WORKSPACE_ID=<DRI 给你的 UUID>
+export MULTICA_WORKSPACE_ID=b18d7b35-344a-4663-9ddc-00a71de89399
 export MULTICA_TOKEN=<DRI 给你的 mul_xxx>
 EOF
 source ~/.zshrc
