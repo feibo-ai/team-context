@@ -2,7 +2,7 @@
 # ⚠️  DEPRECATED · since W5 (control plane edition)
 #
 # Team members no longer need feishu-cli. v2 architecture:
-#   - tcmcp-remote (Docker container on DRI's mac) talks to Feishu via
+#   - tcmcp-remote (Zeabur cloud service · mcp.teamctx.actionow.ai) talks to Feishu via
 #     `@larksuiteoapi/node-sdk` (lark Node SDK).
 #   - All 10 remote MCP tools (notify_team / dm_member / archive_to_wiki /
 #     search_chat / read_member_dm + 5 moved · burnout / plan_request_review /

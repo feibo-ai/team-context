@@ -8,32 +8,32 @@
 
 | Label | 颜色 | 含义 | 加 / 删时机 | 谁加 |
 |---|---|---|---|---|
-| `plan-draft` | `#94A3B8` 灰 | plan markdown 已生成、未 review | `plan_create` 自动加 | MCP 工具 |
-| `plan-under-review` | `#F59E0B` 琥珀 | 已请 reviewer，等 verdict | `plan_request_review` 加 + `plan-draft` 不动 | MCP 工具 |
-| `plan-approved` | `#10B981` 绿 | SOP 非妥协 #1 通过 · implement 可启动 | `plan_approve` 加 | MCP 工具 |
-| `plan-upgraded` | `#A855F7` 紫 | plan 升级到 v1.x · 需重新 review | `plan_upgrade` 加 + 重新加 `plan-draft` | MCP 工具 |
-| `debrief` | `#3B82F6` 蓝 | case file 已生成 · 待 review section 4 | `case_create` 加 | MCP 工具 |
-| `debrief-reviewed` | `#059669` 深绿 | section 4 DRI 签字 · issue 可 close | `case_review` 加 | MCP 工具 |
-| `ancient-impossible` | `#EC4899` 粉 | "在传统 5 人团队不可能"的事件 · AI Native 终极指标 | 团队成员手工加 / 月度复盘加 | 任何人 |
-| `betting-table` | `#F97316` 橙 | 周五 betting table issue | `betting_table_capture` 加 | MCP 工具 |
-| `burnout-alert` | `#DC2626` 红 | burnout check 任何 yes → 自动建 issue | `burnout_check_distribute` 加 | MCP 工具 |
-| `code-review` | `#8B5CF6` 紫罗兰 | code review 请求 issue | `code_review_request` 加 | MCP 工具 |
-| `research` | `#06B6D4` 青 | RPI Research session 产物 issue | `research_create` 加 | MCP 工具 |
+| `计划-草稿` | `#94A3B8` 灰 | plan markdown 已生成、未 review | `plan_create` 自动加 | MCP 工具 |
+| `计划-评审中` | `#F59E0B` 琥珀 | 已请 reviewer，等 verdict | `plan_request_review` 加 + `计划-草稿` 不动 | MCP 工具 |
+| `计划-已批准` | `#10B981` 绿 | SOP 非妥协 #1 通过 · implement 可启动 | `plan_approve` 加 | MCP 工具 |
+| `计划-已升级` | `#A855F7` 紫 | plan 升级到 v1.x · 需重新 review | `plan_upgrade` 加 + 重新加 `计划-草稿` | MCP 工具 |
+| `复盘-待审` | `#3B82F6` 蓝 | case file 已生成 · 待 review section 4 | `case_create` 加 | MCP 工具 |
+| `复盘-已审` | `#059669` 深绿 | section 4 DRI 签字 · issue 可 close | `case_review` 加 | MCP 工具 |
+| `古法不可能` | `#EC4899` 粉 | "在传统 5 人团队不可能"的事件 · AI Native 终极指标 | 团队成员手工加 / 月度复盘加 | 任何人 |
+| `投注表` | `#F97316` 橙 | 周五 betting table issue | `betting_table_capture` 加 | MCP 工具 |
+| `倦怠预警` | `#DC2626` 红 | burnout check 任何 yes → 自动建 issue | `burnout_check_distribute` 加 | MCP 工具 |
+| `代码评审` | `#8B5CF6` 紫罗兰 | code review 请求 issue | `code_review_request` 加 | MCP 工具 |
+| `研究` | `#06B6D4` 青 | RPI Research session 产物 issue | `research_create` 加 | MCP 工具 |
 
 ## State Machine (核心 issue 路径)
 
 ```
 新项目 issue
-  └─> [plan_create] ──> plan-draft
-       └─> [plan_request_review] ──> plan-under-review (+plan-draft)
-            └─> [plan_approve] ──> plan-approved
+  └─> [plan_create] ──> 计划-草稿
+       └─> [plan_request_review] ──> 计划-评审中 (+计划-草稿)
+            └─> [plan_approve] ──> 计划-已批准
                  │
                  ├─> [implement work happens]
                  │
-                 ├─> [plan_upgrade if 卡住 30 分钟] ──> plan-upgraded + plan-draft (重新 review)
+                 ├─> [plan_upgrade if 卡住 30 分钟] ──> 计划-已升级 + 计划-草稿 (重新 review)
                  │
-                 └─> [case_create on完工] ──> debrief
-                      └─> [case_review by DRI] ──> debrief-reviewed
+                 └─> [case_create on完工] ──> 复盘-待审
+                      └─> [case_review by DRI] ──> 复盘-已审
                            └─> [issue close 允许]
 ```
 
@@ -46,17 +46,17 @@
 set -euo pipefail
 
 NAMES=(
-  plan-draft
-  plan-under-review
-  plan-approved
-  plan-upgraded
-  debrief
-  debrief-reviewed
-  ancient-impossible
-  betting-table
-  burnout-alert
-  code-review
-  research
+  计划-草稿
+  计划-评审中
+  计划-已批准
+  计划-已升级
+  复盘-待审
+  复盘-已审
+  古法不可能
+  投注表
+  倦怠预警
+  代码评审
+  研究
 )
 COLORS=(
   "#94A3B8"
@@ -100,4 +100,4 @@ echo "Done. Verify: multica label list"
 
 - ❌ 直接在 multica web UI 改 label 颜色 · 必须改本文件 + 重跑 create-labels.sh
 - ❌ 创建本文件没列的 label · 长期下来分散语义、查询匹配不上
-- ❌ 给 `plan-approved` issue 同时加 `plan-draft` (state machine 违反)
+- ❌ 给 `计划-已批准` issue 同时加 `计划-草稿` (state machine 违反)

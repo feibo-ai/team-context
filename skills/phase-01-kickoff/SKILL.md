@@ -26,11 +26,11 @@ Or call MCP `plan_create` for skeleton.
 
 ### Step 4 — Review by second session
 Spawn NEW session with role = staff engineer. Hand it the plan. Wait for verdict.
-Or call MCP `plan_request_review` — labels issue under-review.
+Or call MCP `plan_request_review` — labels issue `计划-评审中`.
 
 ### Step 5 — DRI 拍板
 DRI reads review verdict. Final call: proceed / revise / kill.
-If proceed: call MCP `plan_approve` → issue gets `plan-approved` label. SOP non-negotiable #1 gate.
+If proceed: call MCP `plan_approve` → issue gets `计划-已批准` label. SOP non-negotiable #1 gate.
 
 ### Step 6 — Broadcast
 Post to feishu: "Starting [project]. Plan: [link]. DRI: [me]. Appetite: [X]." Tag the team.

@@ -53,7 +53,7 @@ prompt: |
   Step 4 · 遍历 team_members (read from integration config)
     For each member { email, display_name }:
       a. 收集本人今天产出 (filter step 1 data by author=display_name)
-      b. 收集本人本周 plan-approved issue (multica issue list --label plan-approved --assignee X)
+      b. 收集本人本周 计划-已批准 issue (multica issue list --label 计划-已批准 --assignee X)
       c. Detect SOP signals:
          - Today's `git log | grep -c "wip:"` for this author → /clear count
          - close issues 没 case_create → 'unwritten debrief' nudge

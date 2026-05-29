@@ -5,7 +5,7 @@
 > **Companion**: 你的角色文档 `onboarding/<role>.md`（DRI / Plan 1-3 EXEC 各一份）
 
 > **v2 (W5+) · control plane edition**: 不需要本地装飞书命令行 · 不需要扫码 · 不需要开 scope · 不需要拿 chat_id。
-> 远程 MCP server (`tcmcp-remote` · DRI 跑) 处理一切飞书相关 · 你只需要 multica bearer token + 一份本地 MCP local server。
+> 远程 MCP server (`tcmcp-remote` · 云端 Zeabur 跑) 处理一切飞书相关 · 你只需要 multica bearer token + 一份本地 MCP local server。
 > 接入时间从 30 min 降到 ~5 min。
 > 详见 `decisions/2026-05-29-multica-control-plane.md` · `standards/integration-overview.md`。
 
@@ -223,10 +223,10 @@ Step 6 · Broadcast
      multicaIssueId=<original project issue>
      reviewerEmail=<你自己 · 因为你是 DRI>
    工具会强制 Section 4 ≥ 100 chars (反"场面话")
-   通过后自动 addLabel `debrief-reviewed`
+   通过后自动 addLabel `复盘-已审`
 
 3. close 项目对应的 multica issue
-   (`debrief-reviewed` label 是 close 前置 · 没签字关不掉)
+   (`复盘-已审` label 是 close 前置 · 没签字关不掉)
 
 4. 飞书广播 case file 链接给团队 · demo + 庆祝
 ```
@@ -240,7 +240,7 @@ Step 6 · Broadcast
 | 时刻 | 自动发生 |
 |---|---|
 | 每个工作日 18:00 | `daily-summary` autopilot 自动写当日团队 summary 推飞书 · 你 30 秒过目 |
-| 周一 09:30 | `monday-kickoff` autopilot 自动汇总本周 plan-approved 列表 + 飞书 · 你参与 10:00 30-min Monday Kickoff |
+| 周一 09:30 | `monday-kickoff` autopilot 自动汇总本周 计划-已批准 列表 + 飞书 · 你参与 10:00 30-min Monday Kickoff |
 | 周三 09:00 | `wednesday-stats` autopilot 跑 skill_lint + CLAUDE.md 周变更 · 你看下 stale skill |
 | 周五 15:00 | 30-min Friday Demo · 你来 demo 你的产物 (没 PPT · 是真东西) |
 | 周五 15:30 | 15-min Friday Betting Table · 你提案下周做啥 · 5 人投票 |

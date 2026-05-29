@@ -6,7 +6,7 @@ set -euo pipefail
 # Required envs (TC-N1 + TC-N2): autopilots reach feishu via tcmcp-remote · NOT feishu-cli.
 # Secrets stay in multica; only TCMCP_REMOTE_URL + TCMCP_AGENT_TOKEN are injected into agent env.
 : "${MULTICA_WORKSPACE:?MULTICA_WORKSPACE must be set}"
-: "${TCMCP_REMOTE_URL:=http://host.docker.internal:8443/mcp}"
+: "${TCMCP_REMOTE_URL:=https://mcp.teamctx.actionow.ai/mcp}"
 : "${TCMCP_AGENT_TOKEN:?TCMCP_AGENT_TOKEN must be set — see TC-3.5 for how DRI issues this once}"
 export MULTICA_WORKSPACE
 

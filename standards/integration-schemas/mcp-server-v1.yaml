@@ -20,13 +20,13 @@ config_fields:
   multica_server_url:
     type: string
     required: false
-    default: "http://localhost:8083"
-    description: "Multica server URL (server-internal, may be docker-network specific)"
+    default: "https://api.teamctx.actionow.ai"
+    description: "Multica backend URL. On Zeabur, tcmcp-remote sets this via env (cloud API, or a Zeabur-internal service URL); this default is the public fallback."
   feishu_team_chat_id:
     type: string
     required: true
     pattern: "^oc_[a-f0-9]{20,}$"
-    description: "Team feishu group chat_id (oc_xxx). Discover via `feishu-cli msg search-chats` once."
+    description: "Team feishu group chat_id (oc_xxx). Discover via the `search_chat` MCP tool once."
   feishu_wiki_space_id:
     type: string
     required: false
@@ -74,7 +74,8 @@ secret_fields:
 deployment:
   image_registry: ghcr.io/feibo-ai/tcmcp-remote
   health_endpoint: /health
-  redeploy_webhook_template: "http://localhost:8083/api/integrations/{integration_id}/redeploy"
+  redeploy_webhook_template: "https://api.teamctx.actionow.ai/api/integrations/{integration_id}/redeploy"
   notes: |
-    Per Decision D-H · runs on DRI's mac as docker compose service · accessible at
-    http://localhost:8443 (or LAN IP for other team members on same network).
+    Runs on Zeabur cloud (project teamctx · service tcmcp-remote) · public endpoint
+    https://mcp.teamctx.actionow.ai. This superseded the original Decision D-H model
+    ("DRI's mac docker compose" at localhost:8443) after the W5 cloud migration.

@@ -1,6 +1,6 @@
 name: monday-kickoff
 description: |
-  Monday roundup. Creates issue with week's plan-approved items, pushes to feishu.
+  Monday roundup. Creates issue with week's 计划-已批准 items, pushes to feishu.
   SOP coverage: P-6 Weekly W-01
 
 trigger:
@@ -35,7 +35,7 @@ guardrails:
 prompt: |
   **输出语言要求：multica issue body + 飞书 card title/正文 全部用简体中文。** 命令行操作可英文，但用户看到的所有内容都是中文。
 
-  1. multica issue list --label plan-approved --status open
+  1. multica issue list --label 计划-已批准 --status open
   2. For each: title, DRI, appetite, last Current State handoff timestamp
   3. Identify cross-project boundaries
 
@@ -43,4 +43,4 @@ prompt: |
     notify_team({ card: <kickoff-card-json> })
 
   Card title: "Monday Kickoff · {{date}}"
-  Card body: top 5 plan-approved with DRI + appetite + handoff age.
+  Card body: top 5 计划-已批准 with DRI + appetite + handoff age.

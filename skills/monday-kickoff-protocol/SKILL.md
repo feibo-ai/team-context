@@ -7,7 +7,7 @@ description: "Use Monday 09:30 for the weekly 30-min kickoff meeting. Triggers '
 
 ## Setup (autopilot does this)
 By 09:30, `autopilots/monday-kickoff.yaml` posted to feishu:
-- All issues with label `plan-approved` from this week
+- All issues with label `计划-已批准` from this week
 - For each: title + DRI + appetite + last "Current State" handoff (if any)
 
 ## The 30-min protocol (DRI runs)
