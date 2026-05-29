@@ -39,7 +39,7 @@ prompt: |
     - "team"    → 全队本周计划
     - "<email>" → 只本人
 
-  1. 列 plan-approved issue
+  1. 列 计划-已批准 issue
        team:  multica issue list --label 计划-已批准 --status open
        个人:  multica issue list --label 计划-已批准 --status open --assignee "$AUTOPILOT_SCOPE"
   2. 每条: title · DRI · appetite · 最近一次 Current State handoff 时间戳
