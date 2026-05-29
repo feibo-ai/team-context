@@ -1,9 +1,9 @@
 name: daily-summary
 description: |
-  Workspace agent reads today's commits + multica issue updates,
-  composes a 200-word digest, sends a team summary to feishu group
-  AND per-user P2P summaries via MCP tools.
-  SOP coverage: P-6 Daily D-05 (per-user variant per W5 design)
+  Reads today's commits + multica issue updates, composes a digest,
+  pushes to the feishu team group via notify_team. Data scope (个人/全队)
+  is read from the AUTOPILOT_SCOPE env at runtime.
+  SOP coverage: P-6 Daily D-05 (notify_team only · P2P removed per 2026-05-28 spec §1.2)
 
 trigger:
   kind: schedule
@@ -35,29 +35,26 @@ guardrails:
   max_runtime_minutes: 10
 
 prompt: |
-  **输出语言要求：所有最终发送到飞书的内容（card title、各 section 标题与正文、fallback text）必须用简体中文。** 命令行操作和内部思考可用英文，但用户看到的所有文字都是中文。
+  **输出语言要求：所有最终发送到飞书的内容必须用简体中文。** 命令行操作和内部思考可用英文。
 
-  Generate today's team summary. Use the MCP tools (not shell-out).
+  读环境变量 AUTOPILOT_SCOPE 决定数据范围:
+    - "team"    → 全队今日数据
+    - "<email>" → 只本人 (assignee / commit author == $AUTOPILOT_SCOPE)
 
-  Step 1 · 收集团队数据
-    multica issue list --updated-after $(date -v-1d +%Y-%m-%d)
-    cd ~/projects && for r in */; do (cd $r && git log --since="midnight" --pretty=format:"- %s (%an)"); done
+  Step 1 · 收集数据 (用 MCP 工具 · 不 shell-out 飞书)
+    team:  multica issue list --updated-after $(date -v-1d +%Y-%m-%d)
+           cd ~/projects && for r in */; do (cd "$r" && git log --since="midnight" --pretty=format:"- %s (%an)"); done
+    个人:  multica issue list --assignee "$AUTOPILOT_SCOPE" --updated-after $(date -v-1d +%Y-%m-%d)
+           (commits 只统计 author 是本人的)
 
-  Step 2 · Compose team-group card (interactive · groups by member)
-    Format: card with sections per shipping member.
+  Step 2 · Compose card
+    team:  标题「全队 · 今日总结」· 按 shipping member 分 section
+    个人:  标题「${AUTOPILOT_SCOPE%@*} · 今日总结」· section: Shipped / In Progress / Tomorrow / Signals
+    Signals (个人): 今天 `git log | grep -c "wip:"` → /clear 次数 · close 了 issue 但没 case_create → "未写 debrief" 提醒
 
-  Step 3 · 推团队群
+  Step 3 · 推团队群 (唯一渠道)
     Call MCP tool: notify_team({ card: <card-json> })
-    (resolves feishu_team_chat_id from integration config · zero shell-out)
+    (feishu_team_chat_id 由 tcmcp-remote 从 integration config 解析 · zero shell-out)
+    返回 { messageId } 视为成功 · 失败记录不 crash。
 
-  Step 4 · 遍历 team_members (read from integration config)
-    For each member { email, display_name }:
-      a. 收集本人今天产出 (filter step 1 data by author=display_name)
-      b. 收集本人本周 plan-approved issue (multica issue list --label plan-approved --assignee X)
-      c. Detect SOP signals:
-         - Today's `git log | grep -c "wip:"` for this author → /clear count
-         - close issues 没 case_create → 'unwritten debrief' nudge
-      d. Compose personal card (sections: Shipped, In Progress, Tomorrow, Signals)
-      e. Call MCP tool: dm_member({ email, card: <personal-card-json> })
-
-  Verify: each MCP tool call should return { messageId: ... }. Log failures · don't crash on one member's send failure.
+  ⚠️ 绝不调用 dm_member 或任何 P2P (spec §1.2 · 一律 notify_team 推群 · 透明文化)。

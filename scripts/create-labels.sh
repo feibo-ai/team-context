@@ -6,17 +6,17 @@
 set -euo pipefail
 
 NAMES=(
-  plan-draft
-  plan-under-review
-  plan-approved
-  plan-upgraded
-  debrief
-  debrief-reviewed
-  ancient-impossible
-  betting-table
-  burnout-alert
-  code-review
-  research
+  计划-草稿
+  计划-评审中
+  计划-已批准
+  计划-已升级
+  复盘-待审
+  复盘-已审
+  古法不可能
+  投注表
+  倦怠预警
+  代码评审
+  研究
 )
 COLORS=(
   "#94A3B8"

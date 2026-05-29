@@ -3,7 +3,10 @@
 multica autopilot 的 YAML 模板。
 
 **重要 1**: `multica autopilot create` 不读取 YAML 文件 —— 它接收 CLI flags。
-模板要经 `scripts/apply-autopilots.sh` 解析,翻译成 `multica autopilot create + trigger-add` 调用。
+模板要经脚本解析成 `multica autopilot create + trigger-add` 调用(2026-05-28 spec · 个人/团队两版):
+- `scripts/team-autopilot.sh <kind|all> <provider>` —— 团队版(全队汇总 · DRI 跑)
+- `scripts/my-autopilot.sh <kind|all> <provider>` —— 个人版(只本人 · 成员跑)
+- `scripts/apply-autopilots.sh` —— ⚠️ DEPRECATED · 被 team-autopilot.sh 取代
 
 **重要 2** (v2 control plane edition · W5+): 这里 **不存任何 secret**,也 **不写 `FEISHU_*` env 变量**。所有飞书 secret 集中存活在 multica 的 `Secret` 对象(加密) · 所有 chat_id / wiki_space / team_members 等非 secret config 集中存活在 multica integration `team-context-mcp` 的 `config` 字段。
 
@@ -11,7 +14,7 @@ multica autopilot 的 YAML 模板。
 
 | 文件 | Cron(Asia/Shanghai) | Mode | 用途 |
 | --- | --- | --- | --- |
-| `daily-summary.yaml`   | 工作日 18:00 | `run_only`     | 每日 SOP 总结 → 飞书群 + per-user P2P |
+| `daily-summary.yaml`   | 工作日 18:00 | `run_only`     | 每日 SOP 总结 → 飞书群 (notify_team · 个人/全队 scope) |
 | `monday-kickoff.yaml`  | 周一 09:30   | `create_issue` | 周计划汇总 → 飞书群 + 创建 issue |
 | `wednesday-stats.yaml` | 周三 09:00   | `run_only`     | CLAUDE.md 周度统计 → 飞书群 |
 | `monthly-health.yaml`  | 月 1 号 10:00 | `run_only`     | 触发 `monthly_health_report` → 飞书 doc + wiki |
@@ -49,7 +52,8 @@ agent:
 3. 给 multica agent 注入两个 env: `TCMCP_REMOTE_URL` + `TCMCP_AGENT_TOKEN` (autopilot-bot 专用 PAT)
 4. **不**注入 `FEISHU_APP_SECRET` 等 secret —— tcmcp-remote 自己从 multica 拉
 
-agent 在 prompt 里调远程 MCP 工具(`notify_team` / `dm_member` / `archive_to_wiki` / `read_member_dm` / `search_chat`)推飞书 · feishu 连接全在 tcmcp-remote 进程里完成。
+agent 在 prompt 里调远程 MCP 工具(`notify_team` / `archive_to_wiki` / `search_chat` 等)推飞书 · feishu 连接全在 tcmcp-remote 进程里完成。
+(注:autopilot 一律用 `notify_team` 推群 · **不再用 `dm_member` P2P** —— 2026-05-28 spec §1.2。`dm_member` 工具本身仍在 tcmcp-remote 上,只是 autopilot 不调它。)
 
 ## EXEC workstation 装什么
 

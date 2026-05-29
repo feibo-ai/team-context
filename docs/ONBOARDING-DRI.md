@@ -78,7 +78,7 @@ curl -s -H "Authorization: Bearer $PAT" https://api.teamctx.actionow.ai/api/me |
 gh api -X PUT "/orgs/feibo-ai/memberships/<their-github-username>" \
   -f role=member 2>&1 | head -5
 ```
-他/她会收到 GitHub 邀请邮件。`team-context-mcp` 已 public 不需要 explicit access; `team-context` 是 private 但**新人不需要它** (skill 走 multica API)。
+他/她会收到 GitHub 邀请邮件。`team-context-mcp` 已 public 不需要 explicit access; `team-context` 是 private,**团队成员通过 org membership 有 read 权限** —— skill 本身走 multica API 不依赖它,但建个人 autopilot(`scripts/my-autopilot.sh`)需要 clone 本仓库。
 
 ### 1c · 飞书 + 文档发给他
 
@@ -171,20 +171,23 @@ echo -n "new_secret_value_here" | multica secret set FEISHU_APP_SECRET \
 
 ## 3 · Autopilot 管理
 
-### 3a · 加新 autopilot
+### 3a · 建 / 更新 autopilot (2026-05-28 spec · 个人版 + 团队版)
 
-1. 在 `team-context/autopilots/<name>.yaml` 写 YAML (拿现有 4 个之一 copy + 改)
-2. 必含 PB-04 guardrails (`forbidden_commands ≥ 5` 含 `git push` · `max_budget_usd ≤ 150`)
-3. 必含 `integration_ref: team-context-mcp`
-4. agent.name 要在 multica 里**已存在** (没有就先 `multica agent create --name <bot> --runtime-id <codex>` 建)
-5. apply:
+**个人 vs 团队是「数据范围」不是「推送渠道」**:两版都用 `notify_team` 推同一个群,区别只在范围(team=全队 / 个人=本人)和绑哪个 runtime。
+
 ```bash
 cd ~/feibo/team-context
-export MULTICA_WORKSPACE=team-context
-export TCMCP_REMOTE_URL=https://mcp.teamctx.actionow.ai/mcp
 export TCMCP_AGENT_TOKEN=$(cat /path/to/autopilot-bot-pat.txt)   # 一次性 ops · 不要 commit
-bash scripts/apply-autopilots.sh
+multica daemon start                                              # 常驻 runtime 在线
+
+# 团队版(全队汇总 · DRI 跑) —— 取代旧的 apply-autopilots.sh
+bash scripts/team-autopilot.sh all codex        # 或单个: monday-kickoff / daily-summary / wednesday-stats / monthly-health
 ```
+
+- 脚本自动:选在线 runtime → 建/复用 agent(注入 `AUTOPILOT_SCOPE`)→ 建/更新 autopilot + cron(幂等)。**不需要**手动先建 agent。
+- 团队成员自己跑 `bash scripts/my-autopilot.sh all codex` 建个人版(见 [`ONBOARDING-MEMBER.md`](./ONBOARDING-MEMBER.md) §6)。
+- 改 YAML(新 autopilot / 改 prompt):仍须含 PB-04 guardrails(`forbidden_commands ≥ 5` 含 `git push` · `max_budget_usd ≤ 150`)+ `integration_ref: team-context-mcp`;脚本会 lint,缺一拒建。
+- `apply-autopilots.sh` 已 **deprecated**(不注入 `AUTOPILOT_SCOPE` · 与 scope 分支 prompt 不兼容)。
 
 ### 3b · 加新 agent (autopilot bot)
 

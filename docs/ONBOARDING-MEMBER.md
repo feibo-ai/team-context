@@ -235,6 +235,24 @@ source ~/.zshrc
 
 ---
 
+## 6 · (可选) 建你的个人 autopilot
+
+接入完成后,可一键建你自己的 4 个 autopilot(日报 / 周一 / 周三 / 月度):数据范围只你自己 · 全部推团队群(卡片标题带你名字 · 不是私信)。
+
+**前提:** clone 本仓库(团队成员有 read 权限) —— 没 clone 过先 `git clone https://github.com/feibo-ai/team-context.git ~/team-context`。
+
+```bash
+cd ~/team-context && git pull
+export TCMCP_AGENT_TOKEN=$MULTICA_TOKEN   # 个人 autopilot 用你自己的 token 连飞书
+multica daemon start                       # autopilot 靠你这台机的 daemon 在线才跑
+bash scripts/my-autopilot.sh all codex     # provider: codex | claude | hermes
+```
+
+- ⚠️ **只在你 daemon 在线时跑** · 关机 / 睡眠日 cron 静默 skip(这是设计 · 不是 bug)。
+- 撤掉:`multica autopilot list | grep -- -<你的 email 前缀>` 找 id → `multica autopilot delete <id>`。
+
+---
+
 ## 故障速查
 
 | 症状 | 原因 | 修法 |
