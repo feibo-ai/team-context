@@ -1,6 +1,6 @@
 ---
 name: tc-health-check
-description: "Use when conversation shows signs of going in circles, model seems confused, or you suspect the session has entered SOP v0.4 'dumb zone'. Triggers '走偏了', '感觉不对', 'going in circles', '怎么回事', repeated rejected solutions in conversation, model agreeing too readily. Outputs explicit pollution signals detected and recommends invoke pre-clear or continue."
+description: "Use when conversation shows signs of going in circles, model seems confused, or you suspect the session has entered SOP v0.4 'dumb zone'. Triggers '走偏了', '感觉不对', 'going in circles', '怎么回事', repeated rejected solutions in conversation, model agreeing too readily. Outputs explicit pollution signals detected and recommends invoke tc-handoff or continue."
 ---
 
 # Context Pollution Detector
@@ -41,8 +41,8 @@ the earlier problem" when no such problem was raised?
 - Yes → POLLUTED
 
 ## Aggregation rule
-- Any signal POLLUTED → invoke pre-clear skill
-- Two signals "noted" → tell user, recommend pre-clear, let user decide
+- Any signal POLLUTED → invoke tc-handoff skill
+- Two signals "noted" → tell user, recommend tc-handoff, let user decide
 - Zero or one "noted" → continue
 
 ## Output
@@ -54,7 +54,7 @@ Pollution scan:
 - Signal 3 (wrong-question):    OK | noted | POLLUTED
 - Signal 4 (phantom-issue):     OK | noted | POLLUTED
 
-Verdict: continue | mention | pre-clear-now
+Verdict: continue | mention | tc-handoff-now
 ```
 
 ## Anti-patterns

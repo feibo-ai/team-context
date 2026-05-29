@@ -78,5 +78,5 @@ docs/research/research_YYYY-MM-DD_<topic>.md
 - ❌ Continue past 40% context (start over with a sharper question)
 
 ## Hand-off
-When done: invoke pre-clear skill → `/clear` → open Plan session with
+When done: invoke tc-handoff skill → `/clear` → open Plan session with
 `docs/research/research_<date>_<topic>.md` as primary input.

@@ -17,11 +17,11 @@ Post to team feishu: "I'm thinking about starting [X], because [Y]."
 Goal: let the team know, NOT commit. No formal plan yet.
 
 ### Step 2 — Research session (fresh session)
-INVOKE rpi-research skill. Output: docs/research/research_<date>_<topic>.md.
+INVOKE tc-2-research skill. Output: docs/research/research_<date>_<topic>.md.
 Critical: SEPARATE session from Step 3.
 
 ### Step 3 — Plan session (yet another fresh session)
-INVOKE rpi-plan-template skill. Read research file as input. Output: docs/plans/plan_<date>_<topic>.md with all 4 mandatory fields.
+INVOKE tc-3-plan skill. Read research file as input. Output: docs/plans/plan_<date>_<topic>.md with all 4 mandatory fields.
 Or call MCP `plan_create` for skeleton.
 
 ### Step 4 — Review by second session
@@ -38,7 +38,7 @@ Post to feishu: "Starting [project]. Plan: [link]. DRI: [me]. Appetite: [X]." Ta
 
 ## ⚠️ project_kickoff 是脚手架,不替代真做 — 真验证 (SOP P-7)
 `project_kickoff` MCP 工具是快捷方式:它建 project + research/plan issue + 文件 stub。但它**不替代真做**:
-- research/plan stub 是**空文件** —— 真调研 / 规划仍要各开 fresh session 跑 `rpi-research`(Step 2)/ `rpi-plan-template`(Step 3)深度填充。
+- research/plan stub 是**空文件** —— 真调研 / 规划仍要各开 fresh session 跑 `tc-2-research`(Step 2)/ `tc-3-plan`(Step 3)深度填充。
 - 它**不发** Step 1 / Step 6 的 `notify_team` 广播 —— 那两条要你**手动**调 `notify_team`。
 - **工具返回 success ≠ 做对了。** kickoff 后必须**真验证产物**(SOP P-7),逐项查:
   - issue 真挂到了 project 上?
@@ -47,7 +47,7 @@ Post to feishu: "Starting [project]. Plan: [link]. DRI: [me]. Appetite: [X]." Ta
 - 📌 2026-05-29 实测:上面这三处**都曾静默失败**(工具返回成功 · 产物却没到位)。
 
 ## Hand-off
-After all 6: invoke pre-clear → /clear → start Implementation per rpi-implement-discipline skill.
+After all 6: invoke tc-handoff → /clear → start Implementation per tc-4-build skill.
 
 ## Anti-patterns
 - ❌ Skip Step 1 (everyone surprised in Step 6)

@@ -30,7 +30,7 @@ The ONLY value the meeting adds beyond solo reading.
 - ❌ Daily standup format (dead — see SOP P-6 Daily)
 - ❌ Rehearse plan content (plans are already written)
 - ❌ Status reporting (autopilot daily summaries cover that)
-- ❌ Brainstorm new projects (those go through phase-01-kickoff)
+- ❌ Brainstorm new projects (those go through tc-1-start)
 
 ## End-state
 By 09:55, everyone knows what others work on this week, where boundaries are, who to ping for collaboration. No notes needed — it's all in the plans.

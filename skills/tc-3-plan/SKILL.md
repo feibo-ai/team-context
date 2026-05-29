@@ -71,7 +71,7 @@ docs/research/research_YYYY-MM-DD_<topic>.md
 - Reviewed: <YYYY-MM-DD>
 - Verdict: pending / approved / changes-requested
 
-## Current State (handoff slot — see pre-clear skill)
+## Current State (handoff slot — see tc-handoff skill)
 (empty until first handoff)
 ```
 
@@ -105,5 +105,5 @@ before coding.
 - ❌ Mix Research and Plan in same session
 
 ## Hand-off to Implement
-Plan reviewed and approved → invoke pre-clear → `/clear` → open Implement
+Plan reviewed and approved → invoke tc-handoff → `/clear` → open Implement
 session with the plan markdown as primary input.
