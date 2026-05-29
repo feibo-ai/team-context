@@ -106,7 +106,16 @@ ac_build_one() {
     [ -n "$agent_id" ] || ac_die "agent create 没返回 id: ${agent_name}"
     echo "  + agent ${agent_name} (${agent_id}) · runtime ${rid} · scope=${scope}"
   else
-    echo "  = agent ${agent_name} (${agent_id}) 复用"
+    # T2-6: 复用时检测 runtime 是否变了 (换机 / 换 provider / daemon 重启后 runtime id 会变)
+    local cur_rid
+    cur_rid=$(printf '%s' "$agents" | jq -r --arg n "$agent_name" '[.[] | select(.name==$n)][0].runtime_id // empty')
+    if [ -n "$cur_rid" ] && [ "$cur_rid" != "$rid" ]; then
+      echo "  ! agent ${agent_name} runtime 变了 (${cur_rid} → ${rid}) · 重绑"
+      multica agent update "$agent_id" --runtime-id "$rid" >/dev/null 2>&1 \
+        || echo "  ⚠️ 重绑失败 (multica agent update --runtime-id 可能不支持) · 手动: 删 agent 重跑 / web UI 改绑 · 否则任务可能绑到离线 runtime"
+    else
+      echo "  = agent ${agent_name} (${agent_id}) 复用 (runtime 未变)"
+    fi
   fi
 
   # prompt 注入 (照 apply-autopilots.sh): desc + prompt → autopilot --description

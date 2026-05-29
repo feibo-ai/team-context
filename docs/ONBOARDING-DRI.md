@@ -32,6 +32,10 @@ multica config set workspace_id b18d7b35-344a-4663-9ddc-00a71de89399
 multica login                    # 浏览器登 · 输 actionow.ai@gmail.com + 验证码
 
 zeabur auth login                # 浏览器登 actionow Zeabur 账号
+
+# 路径标准: autopilot YAML 与成员文档统一用 ~/team-context。
+# DRI 仓库若 clone 在别处 (如 ~/feibo/team-context),建 symlink 让路径解析一致 (一次性):
+[ -e ~/team-context ] || ln -s ~/feibo/team-context ~/team-context
 ```
 
 **验证:**
@@ -146,7 +150,8 @@ multica integration set team-context-mcp \
 multica integration set team-context-mcp \
   feishu_wiki_space_id=wkt_xxx
 
-# 加 team_members (dm_member · daily-summary per-user P2P)
+# (可选) team_members —— autopilot 已全去 P2P (notify_team only · spec §1.2),daily-summary 不再按人私信。
+# 仅当你手动调 dm_member / read_member_dm 时才需要这份 roster;否则可不配。
 multica integration set team-context-mcp \
   team_members='[{"email":"alice@actionow.ai","feishu_id":"ou_xxx","role":"member"},{...}]'
 ```
@@ -176,7 +181,7 @@ echo -n "new_secret_value_here" | multica secret set FEISHU_APP_SECRET \
 **个人 vs 团队是「数据范围」不是「推送渠道」**:两版都用 `notify_team` 推同一个群,区别只在范围(team=全队 / 个人=本人)和绑哪个 runtime。
 
 ```bash
-cd ~/feibo/team-context
+cd ~/team-context
 export TCMCP_AGENT_TOKEN=$(cat /path/to/autopilot-bot-pat.txt)   # 一次性 ops · 不要 commit
 multica daemon start                                              # 常驻 runtime 在线
 
@@ -195,9 +200,10 @@ bash scripts/team-autopilot.sh all codex        # 或单个: monday-kickoff / da
 # 找当前 Codex runtime ID
 CODEX_RUNTIME=$(multica runtime list --output json | jq -r '.[] | select(.provider=="codex") | .id' | head -1)
 
-# 准备 custom_env (TCMCP_AGENT_TOKEN + TCMCP_REMOTE_URL)
+# 准备 custom_env · ⚠️ AUTOPILOT_SCOPE 必填,否则 scope 分支 prompt 落到 undefined
+# (这正是 apply-autopilots.sh 废弃的原因)。多数情况用 team/my-autopilot.sh 自动注入,下面是手动 fallback。
 cat > /tmp/agent-env.json <<EOF
-{"TCMCP_REMOTE_URL":"https://mcp.teamctx.actionow.ai/mcp","TCMCP_AGENT_TOKEN":"$(cat /path/to/autopilot-bot-pat.txt)"}
+{"TCMCP_REMOTE_URL":"https://mcp.teamctx.actionow.ai/mcp","TCMCP_AGENT_TOKEN":"$(cat /path/to/autopilot-bot-pat.txt)","AUTOPILOT_SCOPE":"team"}
 EOF
 chmod 600 /tmp/agent-env.json
 
