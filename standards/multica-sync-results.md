@@ -17,18 +17,18 @@ plan 里原来的路径 —— `multica skill import --url https://github.com/fe
 
 | Skill | Multica ID |
 | --- | --- |
-| anti-pattern-self-check | `757e089c-516d-4bc5-a1b6-f408edec853c` |
-| conflict-adjudication | `c85b71c4-6f03-4977-9fcd-38acd447cf53` |
-| context-pollution-detector | `681944d5-09f6-4b73-bcaf-b4e292e30b30` |
-| debrief-template | `022135cb-4706-4fd7-9379-219edd9eb7a6` |
-| friday-demo-protocol | `e8974254-9cf5-411e-9553-8da0d2a634cb` |
-| monday-kickoff-protocol | `13dc900d-895f-49d1-af30-15027bc2a690` |
-| phase-01-kickoff | `41bff02d-396c-4805-9c25-40452955f263` |
-| pre-clear | `22df81c5-9337-4df2-9782-4c734d907632` |
-| role-assignment-protocol | `bbe4e0e4-9f63-487f-84aa-5f12c0a18c1e` |
-| rpi-implement-discipline | `293aa859-aee8-49e2-9294-0e336aa1ee2c` |
-| rpi-plan-template | `a6797576-09a5-4c41-b2a8-bf01a4ed56a0` |
-| rpi-research | `8cdfc6b3-8779-407a-8178-f3f02459227f` |
+| tc-self-check | `757e089c-516d-4bc5-a1b6-f408edec853c` |
+| tc-conflict | `c85b71c4-6f03-4977-9fcd-38acd447cf53` |
+| tc-health-check | `681944d5-09f6-4b73-bcaf-b4e292e30b30` |
+| tc-5-review | `022135cb-4706-4fd7-9379-219edd9eb7a6` |
+| tc-friday | `e8974254-9cf5-411e-9553-8da0d2a634cb` |
+| tc-monday | `13dc900d-895f-49d1-af30-15027bc2a690` |
+| tc-1-start | `41bff02d-396c-4805-9c25-40452955f263` |
+| tc-handoff | `22df81c5-9337-4df2-9782-4c734d907632` |
+| tc-roles | `bbe4e0e4-9f63-487f-84aa-5f12c0a18c1e` |
+| tc-4-build | `293aa859-aee8-49e2-9294-0e336aa1ee2c` |
+| tc-3-plan | `a6797576-09a5-4c41-b2a8-bf01a4ed56a0` |
+| tc-2-research | `8cdfc6b3-8779-407a-8178-f3f02459227f` |
 
 ## Agent 挂载 (Step 4) — DEFERRED
 

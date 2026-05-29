@@ -4,18 +4,18 @@
 
 | Skill | 触发短语 | 状态 |
 | --- | --- | --- |
-| pre-clear | "I want to /clear" | PENDING |
-| rpi-research | "Let's research X" | PENDING |
-| rpi-plan-template | "Write a plan for X" | PENDING |
-| rpi-implement-discipline | "Let's start implementing" | PENDING |
-| debrief-template | "Project done, debrief" | PENDING |
-| anti-pattern-self-check | "Am I doing this right?" | PENDING |
-| context-pollution-detector | "We're going in circles" | PENDING |
-| phase-01-kickoff | "启动新项目" / "kickoff new project" | PENDING |
-| monday-kickoff-protocol | "周一 kickoff" / "Monday meeting" | PENDING |
-| friday-demo-protocol | "周五 demo" / "betting table" | PENDING |
-| role-assignment-protocol | "认领角色" / "role assignment" | PENDING |
-| conflict-adjudication | "冲突" / "意见不合" | PENDING |
+| tc-handoff | "I want to /clear" | PENDING |
+| tc-2-research | "Let's research X" | PENDING |
+| tc-3-plan | "Write a plan for X" | PENDING |
+| tc-4-build | "Let's start implementing" | PENDING |
+| tc-5-review | "Project done, debrief" | PENDING |
+| tc-self-check | "Am I doing this right?" | PENDING |
+| tc-health-check | "We're going in circles" | PENDING |
+| tc-1-start | "启动新项目" / "kickoff new project" | PENDING |
+| tc-monday | "周一 kickoff" / "Monday meeting" | PENDING |
+| tc-friday | "周五 demo" / "betting table" | PENDING |
+| tc-roles | "认领角色" / "role assignment" | PENDING |
+| tc-conflict | "冲突" / "意见不合" | PENDING |
 
 **同步状态（机械检查，不含主观判断）：**
 - `~/team-context/scripts/sync-to-local.sh` 于 2026-05-27 14:10 执行完毕，12 个 skills 全部 symlink 到 `~/.claude/skills/`。

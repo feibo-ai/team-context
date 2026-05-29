@@ -1,5 +1,5 @@
 ---
-name: rpi-research
+name: tc-2-research
 description: "Use when entering Research phase of the RPI framework — before any plan or code work on a project-layer goal. Triggers: 'start research', 'let us understand', '调研', '研究一下', 'Research session', user explicitly invokes Phase 01 step 2. Orchestrates parallel subagent research with context budget discipline. Output goes to docs/research/research_YYYY-MM-DD_topic.md. Required for SOP v0.4 P-3 Phase 01."
 ---
 

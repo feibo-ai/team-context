@@ -1,5 +1,5 @@
 ---
-name: rpi-plan-template
+name: tc-3-plan
 description: "Use when entering Plan phase of RPI framework — after Research is done. Triggers: 'write a plan', 'let us plan', '做个 plan', 'Plan session', user invokes Phase 01 step 3. Generates plan markdown with the 4 mandatory SOP v0.4 fields (goal / completion criteria / who does what / appetite). Differs by layer: project plans get full markdown, task plans get 3-sentence mini-plan. Required for SOP non-negotiable #1 (Plan Mode — never vibe code)."
 ---
 

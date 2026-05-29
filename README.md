@@ -23,7 +23,7 @@ cd ~/team-context
 bash scripts/sync-to-local.sh
 ```
 
-完事。重启 Claude Code · 试 "我想 /clear" · 应该弹 pre-clear skill。
+完事。重启 Claude Code · 试 "我想 /clear" · 应该弹 tc-handoff skill。
 
 > feishu-cli 不再是团队成员入门前提 (W5+ 用 tcmcp-remote 集中处理飞书)。
 > `scripts/install-feishu-cli.sh` 已 deprecated · 只 DRI 排查飞书 OpenAPI 时偶尔用。
@@ -60,18 +60,18 @@ team-context/
 │   └── team_context_constitution.md   ← Agent 规则书 (给 Agent)
 │
 ├── skills/                            ← 12 个跨项目 SKILL.md
-│   ├── pre-clear/                     ← /clear 前 6 步检查
-│   ├── rpi-research/                  ← Research session 协议
-│   ├── rpi-plan-template/             ← Plan session · 4 必备字段
-│   ├── rpi-implement-discipline/      ← Implement 纪律
-│   ├── debrief-template/              ← case file 5 section
-│   ├── context-pollution-detector/    ← 浑浊 4 信号扫描
-│   ├── anti-pattern-self-check/       ← 10 反 pattern + 3 红线
-│   ├── phase-01-kickoff/              ← Phase 01 6 步 wizard
-│   ├── monday-kickoff-protocol/       ← 周一 30 分会引导
-│   ├── friday-demo-protocol/          ← 周五 demo + betting 双议程
-│   ├── role-assignment-protocol/      ← DRI/EXEC/COLLAB/REVIEW 认领
-│   └── conflict-adjudication/         ← 冲突 4 原则 → decisions/
+│   ├── tc-handoff/                     ← /clear 前 6 步检查
+│   ├── tc-2-research/                  ← Research session 协议
+│   ├── tc-3-plan/             ← Plan session · 4 必备字段
+│   ├── tc-4-build/      ← Implement 纪律
+│   ├── tc-5-review/              ← case file 5 section
+│   ├── tc-health-check/    ← 浑浊 4 信号扫描
+│   ├── tc-self-check/       ← 10 反 pattern + 3 红线
+│   ├── tc-1-start/              ← Phase 01 6 步 wizard
+│   ├── tc-monday/       ← 周一 30 分会引导
+│   ├── tc-friday/          ← 周五 demo + betting 双议程
+│   ├── tc-roles/      ← DRI/EXEC/COLLAB/REVIEW 认领
+│   └── tc-conflict/         ← 冲突 4 原则 → decisions/
 │
 ├── autopilots/                        ← 4 个 multica autopilot YAML
 │   ├── README.md                      ← YAML 不被 multica 直接读 · 必经 apply-autopilots.sh

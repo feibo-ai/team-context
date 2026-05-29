@@ -1,5 +1,5 @@
 ---
-name: conflict-adjudication
+name: tc-conflict
 description: "Use when team members disagree on a project decision. Triggers '冲突', '分歧', 'conflict', 'disagree', '意见不合', '谁说了算'. Walks through SOP v0.4 P-5 conflict 4 principles. Writes resolution to decisions/YYYY-MM-DD-<topic>.md regardless of outcome."
 ---
 

@@ -147,13 +147,13 @@ MULTICA_WORKSPACE_ID=$(multica config show | awk '/workspace_id:/{print $2}') \
 **验证 3:**
 ```bash
 ls ~/.claude/skills/ | wc -l       # 期望: 12
-ls ~/.claude/skills/                # 期望看到: pre-clear / rpi-research / ...
-head -3 ~/.claude/skills/pre-clear/SKILL.md
+ls ~/.claude/skills/                # 期望看到: tc-handoff / tc-2-research / ...
+head -3 ~/.claude/skills/tc-handoff/SKILL.md
 ```
 期望前 3 行:
 ```
 ---
-name: pre-clear
+name: tc-handoff
 description: "Use BEFORE running /clear...
 ```
 
@@ -270,9 +270,9 @@ bash scripts/my-autopilot.sh all codex     # provider: codex | claude | hermes
 ## 进阶 (按需 · 默认 DRI 已配)
 
 ### 启用 Skill 自动 fuzzy match (Claude Code)
-12 个 skill 已落 `~/.claude/skills/` · Claude Code 会自动按 SKILL.md `description` 字段触发(比如你说 `/clear` · `pre-clear` skill 自动启)。无需额外操作。
+12 个 skill 已落 `~/.claude/skills/` · Claude Code 会自动按 SKILL.md `description` 字段触发(比如你说 `/clear` · `tc-handoff` skill 自动启)。无需额外操作。
 
-Codex 暂不支持自动 fuzzy match · 工具仍可手动调:`/skill pre-clear`。
+Codex 暂不支持自动 fuzzy match · 工具仍可手动调:`/skill tc-handoff`。
 
 ### 本地跑 multica daemon (autopilot 执行环境)
 默认 DRI mac 跑 daemon · 4 个 autopilot 由 DRI 上注册的 Codex/Claude runtime 执行。**你不需要装。** 如果团队规模上去 · 多人跑 daemon 分担:

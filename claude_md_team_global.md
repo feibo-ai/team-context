@@ -7,10 +7,10 @@ AI MIQ — 5 人 AI-Native 团队。以 SOP v0.4 参考 Handbook 为准。通才
 
 ## 怎么工作 · 5 条核心规则
 
-1. **Research / Plan / Implement 是分离的 session。** 不要混。session 协议分别用 `rpi-research`、`rpi-plan-template`、`rpi-implement-discipline` 三个 skill。
-2. **Context pollution → 调 `pre-clear` skill → /clear。** 不要原地修。
-3. **每个项目 / 任务都要以 `cases/YYYY-MM-DD-*.md` 复盘收尾**，用 `debrief-template` skill。5 个必填段落。SOP 不可妥协 #2。
-4. **写代码前必须有 plan markdown，并由第二个 session 评审。** 用 `rpi-plan-template` skill。SOP 不可妥协 #1。
+1. **Research / Plan / Implement 是分离的 session。** 不要混。session 协议分别用 `tc-2-research`、`tc-3-plan`、`tc-4-build` 三个 skill。
+2. **Context pollution → 调 `tc-handoff` skill → /clear。** 不要原地修。
+3. **每个项目 / 任务都要以 `cases/YYYY-MM-DD-*.md` 复盘收尾**，用 `tc-5-review` skill。5 个必填段落。SOP 不可妥协 #2。
+4. **写代码前必须有 plan markdown，并由第二个 session 评审。** 用 `tc-3-plan` skill。SOP 不可妥协 #1。
 5. **底线规则：每段 AI 生成的 diff 在 commit 前都要过人眼。** 你来 ship。
 
 ## 跨项目技术规则
@@ -23,16 +23,16 @@ AI MIQ — 5 人 AI-Native 团队。以 SOP v0.4 参考 Handbook 为准。通才
 
 | 需求 | Skill |
 | --- | --- |
-| Research | `rpi-research` |
-| Plan | `rpi-plan-template` |
-| Implement | `rpi-implement-discipline` |
-| Debrief | `debrief-template` |
-| 自检 | `anti-pattern-self-check` |
-| 污染扫描 | `context-pollution-detector` |
-| /clear 之前 | `pre-clear` |
+| Research | `tc-2-research` |
+| Plan | `tc-3-plan` |
+| Implement | `tc-4-build` |
+| Debrief | `tc-5-review` |
+| 自检 | `tc-self-check` |
+| 污染扫描 | `tc-health-check` |
+| /clear 之前 | `tc-handoff` |
 
 ## 卡住的时候
-- 30 分钟没进展 → 调 `pre-clear` skill
+- 30 分钟没进展 → 调 `tc-handoff` skill
 - 同一个问题 3 次 handoff → 升级到 greenfield playbook (PB1)
 - 单周 5 次 handoff → 月度 review 时标 burnout 信号
 

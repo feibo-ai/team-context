@@ -1,7 +1,7 @@
 # 新人入职 · 第一周指南
 
 > **Audience**: 第一次加入 AI MIQ 团队的人
-> **Goal**: 5 天后你独立跑通一个 mini 项目，走完 phase-01-kickoff 全流程 + 写出自己的第一个 case file
+> **Goal**: 5 天后你独立跑通一个 mini 项目，走完 tc-1-start 全流程 + 写出自己的第一个 case file
 > **Companion**: 你的角色文档 `onboarding/<role>.md`（DRI / Plan 1-3 EXEC 各一份）
 
 > **v2 (W5+) · control plane edition**: 不需要本地装飞书命令行 · 不需要扫码 · 不需要开 scope · 不需要拿 chat_id。
@@ -51,9 +51,9 @@ DRI 在你来之前：
 ```bash
 # 测 SOP skill auto-trigger (Claude Code only · Codex 暂不支持 fuzzy match)
 ```
-新 Claude Code session · 输入 "I want to /clear" → 期望: `pre-clear` skill 自动激活 (frontmatter description 在「context restart」三字附近 fuzzy match)。
+新 Claude Code session · 输入 "I want to /clear" → 期望: `tc-handoff` skill 自动激活 (frontmatter description 在「context restart」三字附近 fuzzy match)。
 
-不激活 · `ls ~/.claude/skills/pre-clear/SKILL.md` 看文件在不在; Claude Code 设置里 skills 功能没禁用。
+不激活 · `ls ~/.claude/skills/tc-handoff/SKILL.md` 看文件在不在; Claude Code 设置里 skills 功能没禁用。
 
 ---
 
@@ -97,11 +97,11 @@ ls -t ~/team-context/cases/ 2>/dev/null | head -10
 
 | 输入 | 期望激活 |
 |---|---|
-| "I am stuck" | `pre-clear` |
-| "let's plan" | `rpi-plan-template` |
-| "am I doing this right" | `anti-pattern-self-check` |
-| "going in circles" | `context-pollution-detector` |
-| "let's debrief" | `debrief-template` |
+| "I am stuck" | `tc-handoff` |
+| "let's plan" | `tc-3-plan` |
+| "am I doing this right" | `tc-self-check` |
+| "going in circles" | `tc-health-check` |
+| "let's debrief" | `tc-5-review` |
 
 跑通后 17:00 飞书报 "Day 1 setup OK, ready for Day 2 shadow"。
 
@@ -144,9 +144,9 @@ DRI 给你一个 1-3 小时 task-layer 修复（不是 project-layer）。流程
 
 DRI 给你一个 project-layer 任务（3 天 - 1 周 appetite）。**你自己当 DRI**（实习生也可以是 DRI · SOP P-5）。
 
-### 用 `phase-01-kickoff` skill 走完 6 步
+### 用 `tc-1-start` skill 走完 6 步
 
-在 Claude Code 输入 "I want to start a new project" → 自动激活 `phase-01-kickoff` skill → 按 6 步：
+在 Claude Code 输入 "I want to start a new project" → 自动激活 `tc-1-start` skill → 按 6 步：
 
 ```
 Step 1 · 5-min 飞书声明意图
@@ -191,15 +191,15 @@ Step 6 · Broadcast
    24h 默认通过窗口 (无人反对就开干)
 ```
 
-### Implement 阶段（`rpi-implement-discipline` skill 守护）
+### Implement 阶段（`tc-4-build` skill 守护）
 
 每天遵守：
 - 任务前 30s 监督 CoT（chain of thought · Claude 的"心想"）· 方向不对立刻 ESC
-- 卡 30 分钟 → 触发 `pre-clear` skill → 调 `plan_upgrade` (bump v1.x · 强制重新 review) → /clear
+- 卡 30 分钟 → 触发 `tc-handoff` skill → 调 `plan_upgrade` (bump v1.x · 强制重新 review) → /clear
 - 每天 ≥ 3 次 `git commit + push`
 - 见 "You're absolutely right" 立即 /clear（context 浑浊信号）
 
-### Debrief 阶段（`debrief-template` skill + `case_create` 工具）
+### Debrief 阶段（`tc-5-review` skill + `case_create` 工具）
 
 完工后：
 
@@ -231,7 +231,7 @@ Step 6 · Broadcast
 4. 飞书广播 case file 链接给团队 · demo + 庆祝
 ```
 
-**Day 5 末**：你应该独立走完 phase-01-kickoff 全 6 步 + 一个 case file + Section 4 ≥ 100 字真实成败分析 + DRI（你自己）签字 + close。
+**Day 5 末**：你应该独立走完 tc-1-start 全 6 步 + 一个 case file + Section 4 ≥ 100 字真实成败分析 + DRI（你自己）签字 + close。
 
 ---
 
@@ -255,11 +255,11 @@ Step 6 · Broadcast
 |---|---|
 | Day 1 setup 卡 30 分钟 | 飞书 @ DRI · **不要硬扛** |
 | Day 2-3 跟车看不懂 | 飞书 @ DRI · 让他 5 min 口头讲一遍 |
-| Day 4-5 实施卡 30 分钟 | 触发 `pre-clear` → 调 `plan_upgrade` → /clear · **不要 fix** |
+| Day 4-5 实施卡 30 分钟 | 触发 `tc-handoff` → 调 `plan_upgrade` → /clear · **不要 fix** |
 | 同一 issue /clear 3 次 | 升级到 greenfield playbook · re-Research · re-Plan |
 | 一周内 /clear 5 次 | 跟 DRI 报 · 可能 burnout 早期信号 |
 | 觉得累 | 直接说 · **不等月度 burnout check** |
-| 跟 DRI 意见不一致 | 触发 `conflict-adjudication` skill · 走 4 原则 · 写到 `decisions/` |
+| 跟 DRI 意见不一致 | 触发 `tc-conflict` skill · 走 4 原则 · 写到 `decisions/` |
 
 ---
 
@@ -272,7 +272,7 @@ Step 6 · Broadcast
 - ✅ 5 个 case 读完 (Section 4 重点)
 - ✅ 跟车 1 个 Phase 01 + 1 个 Debrief
 - ✅ task-layer mini-fix 1 个完工 (跟周 case)
-- ✅ project-layer mini-project 1 个走完 phase-01-kickoff 全 6 步
+- ✅ project-layer mini-project 1 个走完 tc-1-start 全 6 步
 - ✅ 第一个自己的 case file · Section 4 ≥ 100 字真实分析 · DRI（你自己）签字
 
 不需要装啥都懂 · 只需要会走 SOP 的 RPI + Debrief 全流程**一次**。其他靠每周 case 累积。
