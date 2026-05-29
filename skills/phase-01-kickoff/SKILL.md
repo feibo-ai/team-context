@@ -36,6 +36,16 @@ If proceed: call MCP `plan_approve` → issue gets `计划-已批准` label. SOP
 Post to feishu: "Starting [project]. Plan: [link]. DRI: [me]. Appetite: [X]." Tag the team.
 24h default tacit approval.
 
+## ⚠️ project_kickoff 是脚手架,不替代真做 — 真验证 (SOP P-7)
+`project_kickoff` MCP 工具是快捷方式:它建 project + research/plan issue + 文件 stub。但它**不替代真做**:
+- research/plan stub 是**空文件** —— 真调研 / 规划仍要各开 fresh session 跑 `rpi-research`(Step 2)/ `rpi-plan-template`(Step 3)深度填充。
+- 它**不发** Step 1 / Step 6 的 `notify_team` 广播 —— 那两条要你**手动**调 `notify_team`。
+- **工具返回 success ≠ 做对了。** kickoff 后必须**真验证产物**(SOP P-7),逐项查:
+  - issue 真挂到了 project 上?
+  - research issue 真的在?
+  - 飞书群真收到 Step 1 / Step 6 广播?
+- 📌 2026-05-29 实测:上面这三处**都曾静默失败**(工具返回成功 · 产物却没到位)。
+
 ## Hand-off
 After all 6: invoke pre-clear → /clear → start Implementation per rpi-implement-discipline skill.
 
