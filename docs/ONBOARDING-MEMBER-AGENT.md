@@ -50,14 +50,18 @@ SKILLS_DIR  = $HOME/.claude/skills
 ```bash
 # macOS only · Linux: substitute apt/yum and ABORT if any tool absent
 command -v brew >/dev/null || { echo "ABORT_NEED_BREW"; exit 1; }
-brew tap multica-ai/tap 2>/dev/null
-brew install multica jq node@22 2>&1 | tail -3
+# jq / node via brew
+brew install jq node@22 2>&1 | tail -3
+# multica via official install.sh (NOT brew — brew multica is upstream CLI, missing control-plane subcommands).
+# install.sh self-detects upgrade, so re-running it is also the upgrade path.
+curl -fsSL https://raw.githubusercontent.com/feibo-ai/tc-multica/main/scripts/install.sh | bash
 command -v pnpm >/dev/null || npm install -g pnpm@11
 ```
 
 **VERIFY:**
 ```bash
 multica --version 2>&1 | grep -qE 'multica v[0-9]+\.[0-9]+' \
+ && multica integration --help >/dev/null 2>&1 \
  && node --version | grep -qE '^v2[2-9]\.' \
  && jq --version | grep -qE 'jq-1\.[7-9]' \
  && pnpm --version | grep -qE '^1[1-9]\.' \
@@ -65,7 +69,7 @@ multica --version 2>&1 | grep -qE 'multica v[0-9]+\.[0-9]+' \
 ```
 
 **Expected:** stdout contains `VERIFY_00_OK`.
-**ON_FAIL:** print which tool's version check failed, ABORT.
+**ON_FAIL:** print which tool's version check failed, ABORT. If `multica integration --help` errors, the wrong `multica` is installed (upstream brew CLI lacks control-plane subcommands) — re-run the install.sh curl from STEP-00.
 
 ---
 
@@ -344,7 +348,7 @@ echo "NEXT_HUMAN_EXPECT: chat_id == oc_035c15b7fb12fed8d0e022fe2f529553"
 ## DRY-RUN MODE (optional)
 
 If env `DRY_RUN=1`:
-- Skip `brew install`, `git clone`, `pnpm install`, `mkdir`, file writes
+- Skip `brew install`, the `install.sh` curl, `git clone`, `pnpm install`, `mkdir`, file writes
 - Still run all VERIFY commands (to assess current state)
 - Output: `WOULD_DO: <command>` instead of execution
 

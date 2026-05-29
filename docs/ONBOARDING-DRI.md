@@ -23,8 +23,12 @@
 ## 0 · 前置 (DRI 自己机器 · 一次性)
 
 ```bash
-brew tap multica-ai/tap && brew install multica
 brew install jq node@22 zeabur
+
+# multica 走官方 install.sh(NOT brew · brew multica 是 upstream CLI · 缺 control-plane 子命令)
+# install.sh 自带 upgrade 检测 · 升级 = 重跑同一条
+curl -fsSL https://raw.githubusercontent.com/feibo-ai/tc-multica/main/scripts/install.sh | bash
+multica setup                    # 装完配置环境
 
 multica config set server_url https://api.teamctx.actionow.ai
 multica config set app_url    https://teamctx.actionow.ai
@@ -289,7 +293,7 @@ zeabur -i=false variable list --id $TCMCP
 季度额外:
 - 老 autopilot run 历史归档 (`multica autopilot runs --since 90d` 之前的可考虑清掉)
 - 老 agent (archived) 真删 (目前需 web UI · CLI 无 hard-delete)
-- DRI mac daemon 升 multica binary (`multica update`)
+- DRI mac daemon 升 multica binary:`multica update`(内置 self-update · 从 tc-multica GitHub Releases 拉最新);等价做法是重跑 install.sh 一行(自带 upgrade 检测):`curl -fsSL https://raw.githubusercontent.com/feibo-ai/tc-multica/main/scripts/install.sh | bash`
 
 ---
 

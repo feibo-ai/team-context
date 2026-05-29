@@ -19,14 +19,22 @@
 ## 0 · 前置 (一次性 · 3 分钟)
 
 ```bash
-brew tap multica-ai/tap
-brew install multica
+# jq / node 用 brew
 brew install jq node@22
+
+# multica 走官方 install.sh(自带 upgrade 检测 · 升级 = 重跑同一条)
+curl -fsSL https://raw.githubusercontent.com/feibo-ai/tc-multica/main/scripts/install.sh | bash
+
+# 装完配置环境
+multica setup
 ```
+
+> ⚠️ **别用 `brew install multica`** —— 那会装到 upstream CLI,缺 control-plane 子命令(integration / secret / deployment)。只认上面这条 curl。
 
 **验证 0:**
 ```bash
-multica --version    # 期望: multica v0.3.x 或以上 · 不到 0.3 升级
+multica --version    # 期望: multica vX.Y.Z (fork build · 有 integration/secret/deployment 子命令)
+multica integration --help   # 应列出子命令 = 装对了 fork build,不是 upstream CLI
 node --version       # 期望: v22 或以上 (v22-v29 都行)
 jq --version         # 期望: jq-1.7+
 ```

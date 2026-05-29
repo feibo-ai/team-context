@@ -2,7 +2,7 @@
 
 > **Audience**: 第一次加入 AI MIQ 团队的人
 > **Goal**: 5 天后你独立跑通一个 mini 项目，走完 tc-1-start 全流程 + 写出自己的第一个 case file
-> **Companion**: 你的角色文档 `onboarding/<role>.md`（DRI / Plan 1-3 EXEC 各一份）
+> **Companion**: 你的角色文档（DRI / Plan 1-3 EXEC 各一份）—— 由 DRI 在欢迎私聊里把链接发给你（别去找本地路径,新人机器上没有）
 
 > **v2 (W5+) · control plane edition**: 不需要本地装飞书命令行 · 不需要扫码 · 不需要开 scope · 不需要拿 chat_id。
 > 远程 MCP server (`tcmcp-remote` · 云端 Zeabur 跑) 处理一切飞书相关 · 你只需要 multica bearer token + 一份本地 MCP local server。
@@ -74,13 +74,8 @@ DRI 在你来之前：
 
 ### 14:30–15:00 · 角色文档 + 速查卡（30 min）
 
-```bash
-# 你的角色（DRI 会告诉你是 DRI / Plan 1-3 EXEC 中哪个）
-open /Users/feibo/multica/docs/onboarding/<your-role>.md
-
-# 命令速查 · 8 个 starter 命令 + state machine + 常见错误
-open /Users/feibo/multica/docs/quick-reference.md
-```
+- **你的角色文档**（DRI 会告诉你是 DRI / Plan 1-3 EXEC 中哪个）：DRI 在欢迎私聊里把对应角色文档链接发给你 —— 这些文件在 DRI 机器上,新人本地没有,别自己拼路径。
+- **命令速查卡**（8 个 starter 命令 + state machine + 常见错误）：同样由 DRI 提供链接。
 
 ### 15:00–16:30 · 读最近 5 个 case（90 min · 最重要）
 
@@ -185,11 +180,18 @@ Step 5 · DRI 拍板(你自己!)
    (软 gate: 没 reviewer verdict 也能 approve · 但你应该等他)
 
 Step 6 · Broadcast
-   调 MCP `project_kickoff` · 返回 broadcastSuggestion (一段建议文案)
-   你自己评估 + 调 `notify_team` 推飞书 (含 step 1-5 全部信息)
+   调 MCP `project_kickoff` · 它会一次性建:
+     - 1 个 project
+     - 2 个 issue:研究 issue(打 `研究` label)+ 计划 issue(打 `计划-草稿` label · 引用研究 issue)
+     - 2 个空 stub 文件(research_YYYY-MM-DD_<slug>.md + 计划 markdown)
+   ⚠️ kickoff 只搭脚手架 —— 不跑深度 research · 不自动发广播 · 只返回 broadcastSuggestion (一段建议文案)
+   你自己评估 broadcastSuggestion + 调 `notify_team` 推飞书 (含 step 1-5 全部信息)
    或手动飞书发 "Starting [project]. Plan: [link]. DRI: me. Appetite: [X]."
    24h 默认通过窗口 (无人反对就开干)
 ```
+
+> **kickoff 跟 Step 2 的关系**:`project_kickoff` 是「快捷脚手架」—— 一条命令把 project + 研究 issue + 计划 issue + 空文件全建好。但它建的研究 issue 只是空壳,**深度 research 仍要另开一个 fresh session 去做**(填 research markdown 那 1-3 小时的活,见 Step 2)。
+> 跟 Step 2 的 `research_create` 二选一:① 要么 Step 2 单独 `research_create` 建研究 issue + Step 3 `plan_create` 建计划 issue(手动分步);② 要么直接用 `project_kickoff` 一把建齐(脚手架),再回到 fresh session 补深度 research。**别两条路都走**,否则会建出重复的研究 issue。
 
 ### Implement 阶段（`tc-4-build` skill 守护）
 
