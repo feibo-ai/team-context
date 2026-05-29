@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 # apply-autopilots.sh — translate autopilots/*.yaml into multica CLI calls
 # Idempotent: re-runnable to update existing autopilots.
+#
+# ⚠️ DEPRECATED (2026-05-28 spec §4.2 · 选项 A): superseded by team-autopilot.sh.
+#    This script assumes agents pre-exist and does NOT inject AUTOPILOT_SCOPE — but
+#    the YAML prompts now branch on AUTOPILOT_SCOPE, so autopilots applied via this
+#    script would run with scope undefined. Use instead:
+#        bash scripts/team-autopilot.sh all <provider>     # 全队
+#        bash scripts/my-autopilot.sh   all <provider>     # 个人
+#    Kept for reference / rollback only.
 set -euo pipefail
 
 # Required envs (TC-N1 + TC-N2): autopilots reach feishu via tcmcp-remote · NOT feishu-cli.

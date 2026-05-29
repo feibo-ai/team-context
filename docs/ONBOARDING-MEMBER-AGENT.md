@@ -291,6 +291,30 @@ curl -fsS https://mcp.teamctx.actionow.ai/health 2>&1 | \
 
 ---
 
+## STEP-06 · (OPTIONAL) personal autopilots — only if user opts in
+
+NOT part of `MEMBER_ONBOARD_OK`. Run ONLY if the user explicitly asks to set up their
+personal autopilots. Requires: the `team-context` repo (team members have read access
+via org membership), and the user's `multica daemon` staying online (offline days → cron silently skips).
+
+```bash
+# team members have read access via org; if clone fails it's a network issue → report & skip
+[ -d "$HOME/team-context/.git" ] || git clone https://github.com/feibo-ai/team-context.git "$HOME/team-context"
+cd "$HOME/team-context" && git pull --ff-only 2>/dev/null || true
+export TCMCP_AGENT_TOKEN="$MULTICA_TOKEN"
+multica daemon start
+bash scripts/my-autopilot.sh all codex   # provider = registered runtime: codex | claude | hermes
+```
+
+**VERIFY (optional):**
+```bash
+PREFIX=$(multica auth status 2>&1 | awk -F'[()]' '/User:/{print $2; exit}' | cut -d@ -f1)
+[ "$(multica autopilot list 2>/dev/null | grep -c -- "-${PREFIX}")" -ge 1 ] && echo VERIFY_06_OK || echo VERIFY_06_SKIP
+```
+**ON_FAIL:** not required for onboarding · print `VERIFY_06_SKIP` and continue to STEP-FINAL.
+
+---
+
 ## STEP-FINAL · Print success marker + next-human-action
 
 ```bash

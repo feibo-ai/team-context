@@ -32,15 +32,19 @@ guardrails:
   max_runtime_minutes: 15
 
 prompt: |
-  **输出语言要求：飞书 card title/各 section/正文全部用简体中文。** 命令行操作可英文，用户看到的所有内容都是中文。
+  **输出语言要求：飞书 card 全部用简体中文。** 命令行操作可英文。
+
+  读环境变量 AUTOPILOT_SCOPE 决定范围:
+    - "team"    → 全 workspace skill_lint 统计
+    - "<email>" → 只本人 owned skill
 
   1. cd ~/team-context && git log --since="last Sunday" claude_md_team_global.md
   2. Call MCP tool skill_lint (find stale + missing-owner)
+       个人: 只看 owner == $AUTOPILOT_SCOPE 的 skill
   3. Heuristic regex for duplicate rules
 
   Compose card:
-    - CLAUDE.md this week: <N> rules
-    - Stale skills: <N>, oldest: <name>
-    - Possible duplicates: <findings>
+    team:  标题「全队 · 周三统计」· CLAUDE.md 本周 <N> 条 / Stale skills <N> 最老 <name> / 可能重复 <findings>
+    个人:  标题「${AUTOPILOT_SCOPE%@*} · 周三统计」· 我 owned skill 健康 / 我对 claude_md 的本周改动
 
-  Push via MCP: notify_team({ card: <stats-card-json> })
+  Push via MCP: notify_team({ card: <stats-card-json> })。绝不 dm_member。
