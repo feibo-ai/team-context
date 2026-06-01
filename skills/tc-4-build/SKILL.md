@@ -1,6 +1,6 @@
 ---
 name: tc-4-build
-description: "Use during Implement phase of RPI framework — when actually writing or running code against an approved plan. Triggers: user enters execution session, '执行', 'implement', 'start coding', or you are in a Claude Code session with an approved plan markdown loaded. Enforces 30-second CoT supervision, ESC patterns, pollution signal detection, and the discipline checklist that prevents vibe code. Pairs with tc-handoff skill on context pollution."
+description: "Use during Implement phase of RPI framework — when actually writing or running code against an approved plan. Triggers: user enters execution session, '执行', 'implement', 'start coding', or you are in a Claude Code session with an approved plan doc (HTML) loaded. Enforces 30-second CoT supervision, ESC patterns, pollution signal detection, and the discipline checklist that prevents vibe code. Pairs with tc-handoff skill on context pollution."
 ---
 
 # RPI · Implement Session
@@ -12,7 +12,7 @@ to Plan session.
 
 ## Pre-flight check
 Confirm before first code action:
-- [ ] Plan markdown is loaded and READ in this session
+- [ ] Plan doc (HTML) is loaded and READ in this session
 - [ ] Plan has an "approved" marker OR 3-sentence task plan was reviewed
 - [ ] You can name goal and completion criteria back without rereading
 - [ ] You can name what is IN scope and what is OUT of scope

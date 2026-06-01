@@ -1,6 +1,6 @@
 ---
 name: tc-roles
-description: "Use when starting a project and assigning roles. Triggers '认领角色', 'role assignment', '谁做什么', 'DRI 是谁', '认领'. Walks through SOP v0.4 P-5: 4 role types (DRI/EXEC/COLLAB/REVIEW) + 6 assignment rules. Generates the 'How to split' section of plan markdown."
+description: "Use when starting a project and assigning roles. Triggers '认领角色', 'role assignment', '谁做什么', 'DRI 是谁', '认领'. Walks through SOP v0.4 P-5: 4 role types (DRI/EXEC/COLLAB/REVIEW) + 6 assignment rules. Generates the 'How to split' section of the plan doc."
 ---
 
 # Role Assignment — 4 types + 6 rules
@@ -34,7 +34,7 @@ Same person can hold multiple roles. Same role can be held by multiple people (e
 3. **认领即承诺** — Once accepted, can't ghost.
 4. **可以拒绝** — Being asked != obligated. Decline politely is OK.
 5. **可以交接** — Mid-project handoff allowed if proactively communicated.
-6. **认领记录** — All assignments written into plan markdown's "How to split" section. Visible to all.
+6. **认领记录** — All assignments written into the plan doc's "How to split" section. Visible to all.
 
 ## Output: How to split section
 

@@ -1,6 +1,6 @@
 ---
 name: tc-2-research
-description: "Use when entering Research phase of the RPI framework — before any plan or code work on a project-layer goal. Triggers: 'start research', 'let us understand', '调研', '研究一下', 'Research session', user explicitly invokes Phase 01 step 2. Orchestrates parallel subagent research with context budget discipline. Output goes to docs/research/research_YYYY-MM-DD_topic.md. Required for SOP v0.4 P-3 Phase 01."
+description: "Use when entering Research phase of the RPI framework — before any plan or code work on a project-layer goal. Triggers: 'start research', 'let us understand', '调研', '研究一下', 'Research session', user explicitly invokes Phase 01 step 2. Orchestrates parallel subagent research with context budget discipline. Output goes to docs/research/research_YYYY-MM-DD_topic.html (auto-uploaded to the issue · renders inline). Required for SOP v0.4 P-3 Phase 01."
 ---
 
 # RPI · Research Session
@@ -24,7 +24,7 @@ by 19 percentage points — BCG 2024).
 
 Spawn 2-4 independent subagents simultaneously. Each gets:
 - Specific scope: one dimension to research
-- Output target: a section in docs/research/research_<date>_<topic>.md
+- Output target: a section in docs/research/research_<date>_<topic>.html
 - Constraint: report findings, do not propose a solution
 
 Common dimension sets:
@@ -41,7 +41,7 @@ Subagents are separate — have them write to disk, you read summaries.
 ## Output
 
 ```
-docs/research/research_YYYY-MM-DD_<topic>.md
+docs/research/research_YYYY-MM-DD_<topic>.html
 
 # Research: <topic>
 
@@ -71,6 +71,8 @@ docs/research/research_YYYY-MM-DD_<topic>.md
 3. ...
 ```
 
+> Rendered to a 方案A HTML doc by `research_create` / `project_kickoff` and auto-uploaded to the research issue (renders inline in multica). Local `docs/research/*.html` kept for git / offline.
+
 ## What this session does NOT do
 - ❌ Pick a plan (Plan session does)
 - ❌ Write code (Implement session does)
@@ -79,4 +81,4 @@ docs/research/research_YYYY-MM-DD_<topic>.md
 
 ## Hand-off
 When done: invoke tc-handoff skill → `/clear` → open Plan session with
-`docs/research/research_<date>_<topic>.md` as primary input.
+`docs/research/research_<date>_<topic>.html` as primary input.

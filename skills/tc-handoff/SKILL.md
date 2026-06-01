@@ -1,6 +1,6 @@
 ---
 name: tc-handoff
-description: "Use BEFORE running /clear, starting a new Claude/Codex session, or whenever user signals context restart ('I am stuck', '走偏了', '换个 session', '重开', 'start over', 'restart', '浑浊了', 'new session', '/clear'). Captures handoff state to plan markdown and commits WIP so the new session can resume without losing work or repeating dead ends. Required for AI MIQ SOP v0.4 P-2 / P-4 / Daily 02 / Daily 03 compliance."
+description: "Use BEFORE running /clear, starting a new Claude/Codex session, or whenever user signals context restart ('I am stuck', '走偏了', '换个 session', '重开', 'start over', 'restart', '浑浊了', 'new session', '/clear'). Captures handoff state to the plan doc (HTML) + the multica issue, and commits WIP so the new session can resume without losing work or repeating dead ends. Required for AI MIQ SOP v0.4 P-2 / P-4 / Daily 02 / Daily 03 compliance."
 ---
 
 # Pre-Clear Handoff Protocol
@@ -28,11 +28,11 @@ Three options — ask user if not obvious:
 - **discard** — `git checkout .` — ONLY with explicit user confirmation,
   never default
 
-### 3. Locate active plan markdown
-Look in `docs/plans/` for the file with most recent mtime matching this
+### 3. Locate active plan doc
+Look in `docs/plans/` for the .html file with most recent mtime matching this
 work. If multiple plans or none, ask.
 
-### 4. Update plan markdown — append or replace this section
+### 4. Capture the Current State block
 
     ## Current State (handoff @ <YYYY-MM-DD HH:MM>)
 
@@ -52,10 +52,12 @@ work. If multiple plans or none, ask.
     **Context pollution signal** (why we are clearing):
     - <one sentence>
 
-### 5. Optional — post to multica issue
-If this work is tracked in a multica issue, post the same Current State
-block as a comment:
-`multica issue comment --issue <id> --body-file <path>`
+### 5. Persist to the multica issue
+Plan / research docs now live as HTML attachments on the issue. Post the
+Current State block as an issue comment; the `session_handoff` MCP tool
+also regenerates the plan HTML with this state folded in and uploads it
+as a NEW versioned attachment (old versions kept · evolution traceable).
+Manual fallback: `multica issue comment --issue <id> --body-file <path>`
 
 ### 6. Final confirmation
 Show user the updated plan + commit hash + (if posted) multica comment URL.
@@ -81,5 +83,5 @@ show the pattern.
 
 ## Cost reminder
 Each /clear ≈ 30-60s priming + lost prompt cache. Sometimes worth it.
-Often, what is needed is a 2-minute plan markdown rewrite, not a restart.
+Often, what is needed is a 2-minute plan doc rewrite, not a restart.
 Ask: would a sharper plan section save this session?
