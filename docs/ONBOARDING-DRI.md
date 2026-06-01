@@ -8,9 +8,9 @@
 
 | 资产 | 在哪 | UUID/标识 |
 |---|---|---|
-| Zeabur 项目 | server `AI-Gateway` (Aliyun SG · `server-69ad9804ea9fa7a75475eb45` · IP `43.106.62.232`) | `teamctx` |
+| Zeabur 项目 | 4C/8GB Aliyun Singapore server | `team-context` |
 | Zeabur services × 4 | 同上 | `postgresql / multica-backend / multica-web / tcmcp-remote-gres` |
-| Multica workspace | `https://teamctx.actionow.ai` | `team-context` (UUID `b18d7b35-...`) |
+| Multica workspace | `https://teamctx.actionow.ai` | `team-context` (UUID `fb23cf99-5f4c-4815-b2b3-8d5e323659f6`) |
 | 3 个 cloud 域名 | DNS @ Cloudflare actionow.ai 区 | `teamctx.actionow.ai` · `api.teamctx.actionow.ai` · `mcp.teamctx.actionow.ai` (全部 gray cloud) |
 | 飞书 integration | multica workspace `team-context-mcp` (UUID `ef5f21b9-...`) | 2 secret + chat_id config |
 | Multica daemon | 你 mac (本地 · `multica daemon status` pid) | runtime IDs: Claude/Codex/Hermes |
@@ -25,14 +25,15 @@
 ```bash
 brew install jq node@22 zeabur
 
-# multica 走官方 install.sh(NOT brew · brew multica 是 upstream CLI · 缺 control-plane 子命令)
+# multica CLI 当前 v0.4.6。DRI 走源码构建(官方 install.sh · NOT brew ·
+# 你需要完整 control-plane 子命令)。团队成员只需 brew install multica-ai/tap/multica。
 # install.sh 自带 upgrade 检测 · 升级 = 重跑同一条
 curl -fsSL https://raw.githubusercontent.com/feibo-ai/tc-multica/main/scripts/install.sh | bash
 multica setup                    # 装完配置环境
 
 multica config set server_url https://api.teamctx.actionow.ai
 multica config set app_url    https://teamctx.actionow.ai
-multica config set workspace_id b18d7b35-344a-4663-9ddc-00a71de89399
+multica config set workspace_id fb23cf99-5f4c-4815-b2b3-8d5e323659f6
 multica login                    # 浏览器登 · 输 actionow.ai@gmail.com + 验证码
 
 zeabur auth login                # 浏览器登 actionow Zeabur 账号
@@ -45,7 +46,7 @@ zeabur auth login                # 浏览器登 actionow Zeabur 账号
 **验证:**
 ```bash
 multica auth status              # 期望: Server/User/Token 三行 OK
-zeabur project list              # 期望: 包含 teamctx
+zeabur project list              # 期望: 包含 team-context
 multica autopilot list           # 期望: 4 个 active
 ```
 
@@ -93,7 +94,7 @@ gh api -X PUT "/orgs/feibo-ai/memberships/<their-github-username>" \
 飞书 DM 给他 4 条信息 + 1 个文档链接:
 - email: `<EMAIL>`
 - PAT: `<PAT>`
-- workspace_id: `b18d7b35-344a-4663-9ddc-00a71de89399`
+- workspace_id: `fb23cf99-5f4c-4815-b2b3-8d5e323659f6`
 - 飞书群:已邀请你进「Team Context」群
 - 文档: [`ONBOARDING-MEMBER.md`](./ONBOARDING-MEMBER.md) (普通团队成员) 或 [`ONBOARDING-NEW-HIRE.md`](./ONBOARDING-NEW-HIRE.md) (一周入职计划)
 
@@ -106,8 +107,9 @@ gh api -X PUT "/orgs/feibo-ai/memberships/<their-github-username>" \
 ### 2a · 看 autopilot 跑得怎么样
 
 ```bash
-multica autopilot list                                  # 4 个状态
-multica autopilot runs 4d4d1120 2>&1 | head -5          # monday-kickoff 历史 (替换 ID)
+multica autopilot list                                  # 列出 autopilot
+# ⚠️ 全新 workspace 暂无 autopilot — DRI 需重建:multica autopilot create(monday-kickoff / friday-betting 等)
+multica autopilot runs <autopilot-id> 2>&1 | head -5    # 跑历史(<autopilot-id> 从上面 list 取)
 ```
 
 **预期 STATUS:**
@@ -118,7 +120,7 @@ multica autopilot runs 4d4d1120 2>&1 | head -5          # monday-kickoff 历史 
 ### 2b · 手动触发 autopilot (测 / 重跑)
 
 ```bash
-multica autopilot trigger 4d4d1120                      # monday-kickoff (替换 ID)
+multica autopilot trigger <autopilot-id>                # 手动触发(<autopilot-id> 从 list 取)
 sleep 90
 tail -30 ~/.multica/daemon.log | grep -E "task=|agent finished"
 ```
@@ -173,7 +175,7 @@ echo -n "new_secret_value_here" | multica secret set FEISHU_APP_SECRET \
   --integration team-context-mcp --value-stdin
 
 # tcmcp-remote 5min cache TTL 内自动用新 secret (无需重启)
-# 想立即生效: zeabur service restart --id 6a1805b332700e299b750370
+# 想立即生效: zeabur service restart --id 6a1d38a87b87f0b64eed3235
 ```
 
 ---
@@ -235,15 +237,17 @@ multica autopilot delete <id>   # 整个删 · 触发器一起没
 ### 4a · 看服务状态
 
 ```bash
-zeabur project list                       # 包含 teamctx
-zeabur -i=false service list --project-id 6a1800dd7ba640a55b20bf41 --json | jq '.[] | {Name, ID}'
+zeabur project list                       # 包含 team-context
+# 取 team-context 的 project-id (新部署后 ID 变了 · 别 hardcode 旧值)
+PROJECT_ID=$(zeabur project list --json | jq -r '.[] | select(.Name=="team-context") | .ID')
+zeabur -i=false service list --project-id "$PROJECT_ID" --json | jq '.[] | {Name, ID}'
 zeabur -i=false service network --id <svc-id>     # 内部 DNS + 外部端口
 ```
 
 ### 4b · 看 build / runtime log
 
 ```bash
-TCMCP=6a1805b332700e299b750370
+TCMCP=6a1d38a87b87f0b64eed3235
 DEPLOY_ID=$(zeabur -i=false deployment list --service-id $TCMCP --json | jq -r '.[0].ID')
 
 # Runtime log (default)
@@ -288,7 +292,7 @@ zeabur -i=false variable list --id $TCMCP
 | Skill 健康检查 (90 天 stale) | `multica skill list --output json \| jq '.[] \| select(.last_reviewed_at == null) \| .name'` · 没 review 过的 |
 | Label 跟 standards 对齐 | `multica label list` 跟 `team-context/standards/labels.md` diff · 不一致更新代码或 label |
 | CLAUDE.md token check | `wc -w team-context/claude_md_team_global.md` · ≤ 2800 (CI 限);超了 prune |
-| Cost check | Zeabur dashboard → project teamctx → Resource Usage |
+| Cost check | Zeabur dashboard → project team-context → Resource Usage |
 
 季度额外:
 - 老 autopilot run 历史归档 (`multica autopilot runs --since 90d` 之前的可考虑清掉)
@@ -324,7 +328,7 @@ grep "task=" ~/.multica/daemon.log | grep -A20 "<task-id>"
 ### 6b · tcmcp /health 不通 / 返 Bad Gateway
 
 ```bash
-TCMCP=6a1805b332700e299b750370
+TCMCP=6a1d38a87b87f0b64eed3235
 zeabur -i=false deployment list --service-id $TCMCP | head -3   # 看 STATUS
 zeabur -i=false deployment log --service-id $TCMCP --deployment-id <latest> | tail -30
 ```
@@ -337,7 +341,7 @@ zeabur -i=false deployment log --service-id $TCMCP --deployment-id <latest> | ta
 ### 6c · multica-backend 挂
 
 ```bash
-BACKEND=6a1803627ba640a55b20c146
+BACKEND=6a1d33592cc61de70f4dca9b
 curl -s https://api.teamctx.actionow.ai/healthz
 # 不返 200:
 zeabur -i=false deployment log --service-id $BACKEND --deployment-id <latest> | grep -iE "error|fatal|panic|FATAL" | tail -10
@@ -368,23 +372,22 @@ multica runtime list                # 重启后应该 3 个 runtime 都 online
 
 ---
 
-## 7 · 紧急回退 (上线后 < 7 天可用)
+## 7 · 紧急恢复 (云端整体出大问题)
 
-如果云端整体出大问题 · 临时拉回 10.0.5.51 本地 multica:
+部署现在是 **Zeabur-only** —— 没有 10.0.5.51 本地 multica 兜底了。恢复 = 在 Zeabur 上重新部署 `team-context` 项目(4C/8GB · Aliyun Singapore)。
 
 ```bash
-# 1. 改本地 CLI 回老 server
-multica config set server_url http://10.0.5.51:8083
+# 1. 确认 / 重建 Zeabur 项目 team-context 的服务
+zeabur project list                       # 应含 team-context
+zeabur -i=false service redeploy --id <backend-svc-id> -y   # 重新部署 multica-backend
 
-# 2. 起 10.0.5.51 上的 docker compose
-cd ~/feibo/tc-multica
-docker compose -f docker-compose.selfhost.yml up -d
-
-# 3. 团队成员: 把他们 ~/.codex/config.toml 里 tcmcp-remote url 改回 http://10.0.5.51:8443/mcp
-#    (或 DRI 临时 ssh 到那台机器跑 docker compose -f team-context-mcp/docker-compose.yml up -d)
+# 2. 关键部署事实 (重建服务时核对):
+#    - multica-backend 镜像: ghcr.io/feibo-ai/multica-backend:latest
+#    - uploads 持久化: Zeabur volume 挂在容器内 /app/data/uploads (别忘了挂)
+#    - master key: MULTICA_SECRET_MASTER_KEY 必须是 `openssl rand -base64 32` 生成的 base64 32 字节
 ```
 
-**前提:** 10.0.5.51 上 `pgdata` volume 还在(我们承诺 7 天才删 · 上云后**不要立即清** docker volume)。
+**注意:** 数据库是这次新部署后全新的;没有旧 pgdata 可回滚。重建时务必挂上 uploads volume,否则历史附件丢失。
 
 ---
 
@@ -406,5 +409,6 @@ docker compose -f docker-compose.selfhost.yml up -d
 ---
 
 **Owner:** DRI
-**Last reviewed:** 2026-05-28
-**实测来源:** 本文档命令全部来自 2026-05-28 W5 cloud 部署 + 修 codex MCP wiring + bootstrap A-E 全过程 · `multica autopilot trigger monday-kickoff` 真送出飞书 card `om_xxx` 验证。
+**Last reviewed:** 2026-06-01
+**实测来源:** 命令最初来自 2026-05-28 W5 cloud 部署 + 修 codex MCP wiring + bootstrap A-E 全过程。
+**2026-06-01 更新:** multica 在 Zeabur 全新重部署(项目 `team-context` · 数据库全新)· 新 workspace UUID `fb23cf99-...` · CLI 升 v0.4.6 · §7 改为 Zeabur-only 恢复(已无 10.0.5.51 兜底)。

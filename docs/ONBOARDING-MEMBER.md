@@ -8,9 +8,11 @@
 | 物件 | 形式 | 干嘛用 |
 |---|---|---|
 | multica 账号 | email · 你常用的 | 登 web UI + CLI |
-| PAT token | `mul_xxxxxxxxxxxxxxxx` (44 字符) | CLI auth · MCP bearer |
-| workspace_id | UUID `b18d7b35-...` | 你属于哪个团队空间 |
+| token | `mul_xxxxxxxxxxxxxxxx` | CLI auth · MCP bearer |
+| workspace_id | UUID `fb23cf99-...` (slug `team-context`) | 你属于哪个团队空间 |
 | 飞书群邀请 | 「Team Context」群 | 接收 autopilot 推送 + DM |
+
+> DRI 会私信(DM)你 workspace UUID + 一个 `mul_...` token。
 
 如果缺任何一项 · 找 DRI 补 · 别自己试着注册。
 
@@ -22,19 +24,15 @@
 # jq / node 用 brew
 brew install jq node@22
 
-# multica 走官方 install.sh(自带 upgrade 检测 · 升级 = 重跑同一条)
-curl -fsSL https://raw.githubusercontent.com/feibo-ai/tc-multica/main/scripts/install.sh | bash
-
-# 装完配置环境
-multica setup
+# multica CLI 走官方 tap(升级 = brew upgrade multica-ai/tap/multica)
+brew install multica-ai/tap/multica
 ```
 
-> ⚠️ **别用 `brew install multica`** —— 那会装到 upstream CLI,缺 control-plane 子命令(integration / secret / deployment)。只认上面这条 curl。
+> 已装过想升级:`brew upgrade multica-ai/tap/multica`。当前版本 v0.4.x。
 
 **验证 0:**
 ```bash
-multica --version    # 期望: multica vX.Y.Z (fork build · 有 integration/secret/deployment 子命令)
-multica integration --help   # 应列出子命令 = 装对了 fork build,不是 upstream CLI
+multica --version    # 期望: multica v0.4.x
 node --version       # 期望: v22 或以上 (v22-v29 都行)
 jq --version         # 期望: jq-1.7+
 ```
@@ -46,16 +44,22 @@ jq --version         # 期望: jq-1.7+
 ## 1 · 连云 multica (1 分钟)
 
 ```bash
-multica config set server_url https://api.teamctx.actionow.ai
-multica config set app_url https://teamctx.actionow.ai
-multica config set workspace_id b18d7b35-344a-4663-9ddc-00a71de89399
+# 浏览器登录(会跳 teamctx.actionow.ai 授权)
+multica login
 
-# 3 个 env 都写 shell rc · 永久生效
-# (tcmcp-local 启动只读 env · 不读 multica config · 3 个都得 export)
+# 切到团队 workspace
+multica workspace switch team-context
+```
+
+> `multica login` 走浏览器授权到 `https://teamctx.actionow.ai`,搞定后再 `workspace switch team-context`。
+
+tcmcp-local 启动只读 env · 不读 multica config · 把 3 个都 export 写进 shell rc(永久生效):
+
+```bash
 cat >> ~/.zshrc <<EOF
 export MULTICA_SERVER_URL=https://api.teamctx.actionow.ai
-export MULTICA_WORKSPACE_ID=b18d7b35-344a-4663-9ddc-00a71de89399
-export MULTICA_TOKEN=<DRI 给你的 mul_xxx>
+export MULTICA_WORKSPACE_ID=fb23cf99-5f4c-4815-b2b3-8d5e323659f6
+export MULTICA_TOKEN=<DRI 给你的 token>
 EOF
 source ~/.zshrc
 ```

@@ -27,7 +27,7 @@
 | key | regex | how to obtain | example |
 |---|---|---|---|
 | `MULTICA_TOKEN` | `^mul_[a-f0-9]{40}$` | DRI 飞书 DM 给的 PAT | `mul_6f7119003c…` |
-| `MULTICA_WORKSPACE_ID` | `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$` | DRI 飞书 DM 给的 UUID | `b18d7b35-344a-4663-9ddc-00a71de89399` |
+| `MULTICA_WORKSPACE_ID` | `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$` | DRI 飞书 DM 给的 UUID (workspace slug `team-context`) | `fb23cf99-5f4c-4815-b2b3-8d5e323659f6` |
 | `CLI_TARGET` | enum: `codex` \| `claude-code` | 用户选 | `codex` |
 
 ---
@@ -35,12 +35,13 @@
 ## CONSTANTS (do not parameterize)
 
 ```
-CLOUD_API   = https://api.teamctx.actionow.ai
-CLOUD_WEB   = https://teamctx.actionow.ai
-CLOUD_MCP   = https://mcp.teamctx.actionow.ai/mcp
-TCMCP_REPO  = https://github.com/feibo-ai/team-context-mcp.git
-TCMCP_DIR   = $HOME/team-context-mcp
-SKILLS_DIR  = $HOME/.claude/skills
+CLOUD_API      = https://api.teamctx.actionow.ai
+CLOUD_WEB      = https://teamctx.actionow.ai
+CLOUD_MCP      = https://mcp.teamctx.actionow.ai/mcp
+WORKSPACE_SLUG = team-context        # MULTICA_WORKSPACE_ID resolves to this slug
+TCMCP_REPO     = https://github.com/feibo-ai/team-context-mcp.git
+TCMCP_DIR      = $HOME/team-context-mcp
+SKILLS_DIR     = $HOME/.claude/skills
 ```
 
 ---
@@ -79,6 +80,9 @@ multica --version 2>&1 | grep -qE 'multica v[0-9]+\.[0-9]+' \
 multica config set server_url  https://api.teamctx.actionow.ai >/dev/null
 multica config set app_url     https://teamctx.actionow.ai     >/dev/null
 multica config set workspace_id "$MULTICA_WORKSPACE_ID"         >/dev/null
+# Pin the active workspace to the team-context slug (idempotent · non-interactive).
+# `multica login` is the interactive equivalent; here we set workspace_id above and switch by slug.
+multica workspace switch team-context >/dev/null 2>&1 || true
 
 # Pick shell rc · prefer zsh on macOS · idempotent line replace
 # (tcmcp-local reads ALL 3 env vars at startup · multica config alone is not enough)
@@ -367,5 +371,6 @@ Orchestrators: grep for these literals; do not parse natural-language status mes
 
 **Owner:** DRI
 **Spec version:** 1
-**Last reviewed:** 2026-05-28
+**Last reviewed:** 2026-06-01
 **Tested:** all 5 steps' VERIFY commands ran during 2026-05-28 W5 cloud bootstrap (DRI mac · macOS) + STEP-03 + STEP-04a (Codex branch) re-validated with throwaway `teammate-test@actionow.ai` member PAT before doc commit.
+**2026-06-01 audit:** workspace migrated to UUID `fb23cf99-5f4c-4815-b2b3-8d5e323659f6` (slug `team-context`) — updated INPUTS example + added `WORKSPACE_SLUG` constant and STEP-01 `multica workspace switch`. CLI confirmed `multica v0.4.6`; env vars / MCP URL / regexes / 12-local + 10-remote tool counts unchanged and verified current. VERIFY commands not re-executed end-to-end this pass (values-only audit).
