@@ -38,7 +38,7 @@ DRI 在你来之前：
 | Step 5 | e2e 冒烟 `search_chat` 返 `oc_035c...` | 30 sec |
 
 **前置 (DRI 在你来之前应该已经做的):**
-- 飞书 DM 发给你: 你的 email · PAT (`mul_xxx`) · workspace_id (UUID `fb23cf99-5f4c-4815-b2b3-8d5e323659f6` · slug `team-context`)
+- 飞书 DM 发给你: workspace_id (UUID `fb23cf99-5f4c-4815-b2b3-8d5e323659f6` · slug `team-context`) + 群邀请 + 文档链接 —— **token 你自己 `multica login` 拿**(per-user · DRI 不发 token;DRI 侧只是 `multica user create` 把你加进 workspace。详见 MEMBER.md Step 1)
   - 域名(写进 `ONBOARDING-MEMBER.md` 的环境变量): web `https://teamctx.actionow.ai` · API `https://api.teamctx.actionow.ai` · remote MCP `https://mcp.teamctx.actionow.ai/mcp`
 - 把你加进 GitHub org `feibo-ai` ·`team-context-mcp` (public · clone OK) ·`team-context` (private · 你**不用**仓库权限 · skill 走 multica API)
 - 把你加进 AI MIQ 飞书群 (「Team Context」)

@@ -26,7 +26,7 @@
 
 | key | regex | how to obtain | example |
 |---|---|---|---|
-| `MULTICA_TOKEN` | `^mul_[a-f0-9]{40}$` | DRI 飞书 DM 给的 PAT | `mul_6f7119003c…` |
+| `MULTICA_TOKEN` | `^mul_[a-f0-9]{40}$` | **非输入** —— STEP-01 跑 `multica login`(成员自己账号)后从 `~/.multica/config.json` 读出(per-user · 非 DRI 发) | `mul_…`(你自己的) |
 | `MULTICA_WORKSPACE_ID` | `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$` | DRI 飞书 DM 给的 UUID (workspace slug `team-context`) | `fb23cf99-5f4c-4815-b2b3-8d5e323659f6` |
 | `CLI_TARGET` | enum: `codex` \| `claude-code` | 用户选 | `codex` |
 
@@ -80,19 +80,29 @@ multica --version 2>&1 | grep -qE 'multica v[0-9]+\.[0-9]+' \
 multica config set server_url  https://api.teamctx.actionow.ai >/dev/null
 multica config set app_url     https://teamctx.actionow.ai     >/dev/null
 multica config set workspace_id "$MULTICA_WORKSPACE_ID"         >/dev/null
-# Pin the active workspace to the team-context slug (idempotent · non-interactive).
-# `multica login` is the interactive equivalent; here we set workspace_id above and switch by slug.
+
+# AUTH = per-user. The member authenticates as THEMSELVES; the token is NOT
+# handed over by the DRI. `multica login` is interactive (opens a browser) —
+# prompt the human to complete it, THEN continue. (Only non-human service/bot
+# accounts use a DRI-issued PAT via `multica auth issue-token`.)
+multica login                                    # human finishes browser auth → token → ~/.multica/config.json
 multica workspace switch team-context >/dev/null 2>&1 || true
+
+# Read the member's OWN token from the CLI config (NOT a DRI DM).
+MULTICA_TOKEN="$(jq -r '.token // empty' "$HOME/.multica/config.json")"
+[ -n "$MULTICA_TOKEN" ] || { echo "ABORT_NO_TOKEN: run 'multica login' first"; exit 1; }
 
 # Pick shell rc · prefer zsh on macOS · idempotent line replace
 # (tcmcp-local reads ALL 3 env vars at startup · multica config alone is not enough)
 RC="$HOME/.zshrc"; [ -n "$BASH_VERSION" ] && [ ! -f "$RC" ] && RC="$HOME/.bashrc"
 touch "$RC"
 grep -vE '^export (MULTICA_TOKEN|MULTICA_SERVER_URL|MULTICA_WORKSPACE_ID)=' "$RC" > "$RC.tmp" && mv "$RC.tmp" "$RC"
+# token line stays as a literal $(jq …) (\$ escaped) → each new shell re-reads
+# the member's current token from config.json, auto-syncing after re-login.
 cat >> "$RC" <<RCEOF
 export MULTICA_SERVER_URL=https://api.teamctx.actionow.ai
 export MULTICA_WORKSPACE_ID=$MULTICA_WORKSPACE_ID
-export MULTICA_TOKEN=$MULTICA_TOKEN
+export MULTICA_TOKEN=\$(jq -r .token ~/.multica/config.json 2>/dev/null)
 RCEOF
 export MULTICA_SERVER_URL=https://api.teamctx.actionow.ai
 export MULTICA_WORKSPACE_ID
@@ -106,9 +116,9 @@ multica auth status 2>&1 | awk '/^User:/ {found=1} END {exit found?0:1}' \
 ```
 
 **Expected:** stdout contains `VERIFY_01_OK`.
-**ON_FAIL:** PAT invalid OR cloud unreachable. Do not retry.
+**ON_FAIL:** not logged in OR cloud unreachable. Do not retry blindly.
 - diagnose: `curl -fsS https://api.teamctx.actionow.ai/healthz` (must return 200 with `{"status":"ok"}`)
-- if cloud OK but auth fails → token invalid · ask DRI to re-issue · ABORT
+- if cloud OK but auth fails → token 失效/未登录 · re-run `multica login` (member's own account) · ABORT this run
 - if cloud unreachable → network · ABORT
 
 ---

@@ -56,30 +56,34 @@ multica autopilot list           # 期望: 4 个 active
 
 每次有新人加入,你做 3 件事:
 
-### 1a · 在 multica 建 user + 发 PAT
+### 1a · 把成员加进 workspace(per-user · 你不经手 token)
+
+multica 是 **per-user 认证** —— 成员用**自己的** token(ta 自己 `multica login` 拿,存进 `~/.multica/config.json`)。你只负责把 ta 加进 workspace,**不发 token**。
 
 ```bash
 EMAIL="newbie@actionow.ai"
-NAME="Newbie Display Name"
 
-# 建 user (默认 role=member · admin 操作)
-multica user create --email "$EMAIL" --name "$NAME" --role member 2>&1 | head -5
-
-# 给他/她 issue 个 PAT (实测命令)
-PAT=$(multica auth issue-token \
-  --user-email "$EMAIL" \
-  --name "${EMAIL%@*}-onboarding" \
-  --output token | tail -1)
-echo "PAT len=${#PAT} · prefix=${PAT:0:14}..."
-echo "$PAT"   # 复制给本人 · 不要留在你 shell history
+# 顺序:① 成员先自己 `multica login`(浏览器 + 邮箱验证)拿到自己的 token → 把 email 告诉你
+#       ② 你(确认当前在 team-context workspace 下)把 ta 加进本 workspace。
+#          user create 幂等 —— 用户已存在(已 login)则「只补 workspace membership」,不重建。
+multica user create --email "$EMAIL" --role member 2>&1 | head -5
 ```
 
 **验证 1a:**
 ```bash
-# 用刚发的 PAT 试 /api/me
-curl -s -H "Authorization: Bearer $PAT" https://api.teamctx.actionow.ai/api/me | jq .email
-# 期望: "newbie@actionow.ai"
+multica workspace member list 2>&1 | grep -i "$EMAIL" && echo "✓ 已是 team-context 成员"
+# 成员侧自验:ta 现在能 `multica workspace switch team-context`,并用自己的 token 通过 /api/me
 ```
+
+> ⚠️ **不要私信 token 给人** —— token 归属本人(可审计),由 ta 自己 `multica login` 拿。你只给 workspace UUID(见 1c)。
+>
+> **兜底 —— service / bot 账号(如 autopilot),或确实无法自助登录的人**:这类才由你发 PAT。
+> ```bash
+> multica user create --email bot@actionow.ai --name autopilot-bot --role member   # 建 + 入 workspace
+> PAT=$(multica auth issue-token --user-email bot@actionow.ai \
+>   --name "autopilot-bot-2026-q2" --output token | tail -1)   # admin-only · 一次性打印 · 要求已是 member
+> echo "$PAT"   # 立刻存进 secret manager / multica secret set · 别留 shell history
+> ```
 
 ### 1b · GitHub 加他到 org
 
@@ -91,14 +95,13 @@ gh api -X PUT "/orgs/feibo-ai/memberships/<their-github-username>" \
 
 ### 1c · 飞书 + 文档发给他
 
-飞书 DM 给他 4 条信息 + 1 个文档链接:
-- email: `<EMAIL>`
-- PAT: `<PAT>`
-- workspace_id: `fb23cf99-5f4c-4815-b2b3-8d5e323659f6`
+飞书 DM 给他(**不含 token** —— token ta 自己 `multica login` 拿):
+- workspace_id: `fb23cf99-5f4c-4815-b2b3-8d5e323659f6`(slug `team-context`)
+- 域名:web `https://teamctx.actionow.ai` · API `https://api.teamctx.actionow.ai` · remote MCP `https://mcp.teamctx.actionow.ai/mcp`
 - 飞书群:已邀请你进「Team Context」群
 - 文档: [`ONBOARDING-MEMBER.md`](./ONBOARDING-MEMBER.md) (普通团队成员) 或 [`ONBOARDING-NEW-HIRE.md`](./ONBOARDING-NEW-HIRE.md) (一周入职计划)
 
-`ONBOARDING-MEMBER.md` 是技术接入 30 min 跑完 · 文档第一页就告诉他要"DRI 给你 4 样东西" · 你刚刚给的 4 样跟它一对。
+`ONBOARDING-MEMBER.md` 30 min 跑完 · 第一页就告诉 ta「token 自己 `multica login` 拿 · DRI 只给 workspace UUID + 群 + 文档」 —— 跟你这里发的一对。
 
 ---
 

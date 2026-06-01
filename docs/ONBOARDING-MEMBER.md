@@ -7,14 +7,16 @@
 
 | 物件 | 形式 | 干嘛用 |
 |---|---|---|
-| multica 账号 | email · 你常用的 | 登 web UI + CLI |
-| token | `mul_xxxxxxxxxxxxxxxx` | CLI auth · MCP bearer |
+| multica 账号 | email · 你常用的 | 登 web UI + CLI(**你自己的身份**) |
+| token | `mul_...` · **你自己 `multica login` 拿的** | CLI auth · MCP bearer(归属你本人 · 可审计) |
 | workspace_id | UUID `fb23cf99-...` (slug `team-context`) | 你属于哪个团队空间 |
 | 飞书群邀请 | 「Team Context」群 | 接收 autopilot 推送 + DM |
 
-> DRI 会私信(DM)你 workspace UUID + 一个 `mul_...` token。
+> **DRI 给你**:① 你先 `multica login` 拿到自己的 token,把 email 给 DRI → DRI 跑 `multica user create --email <你的 email> --role member` 把你加进 workspace ② workspace UUID + 飞书群邀请。
+> **token 不是 DRI 发的** —— 你自己 `multica login`(你自己的账号)拿;每个人用自己的 token,操作都归属到本人(per-user 审计)。
+> (例外:无法自助登录的服务/bot 账号,才由 DRI 用 `multica auth issue-token` 发 PAT。)
 
-如果缺任何一项 · 找 DRI 补 · 别自己试着注册。
+如果 `multica login` 后 `multica workspace list` 看不到 `team-context` · 找 DRI 把你加进 workspace。
 
 ---
 
@@ -53,16 +55,18 @@ multica workspace switch team-context
 
 > `multica login` 走浏览器授权到 `https://teamctx.actionow.ai`,搞定后再 `workspace switch team-context`。
 
-tcmcp-local 启动只读 env · 不读 multica config · 把 3 个都 export 写进 shell rc(永久生效):
+`multica login` 把**你自己的 token** 存进 `~/.multica/config.json`。tcmcp-local 启动只读 env(不读 multica config),所以把 3 个 export 写进 shell rc —— token 直接从你的 login 结果读出来(**不用任何人发给你**):
 
 ```bash
-cat >> ~/.zshrc <<EOF
+cat >> ~/.zshrc <<'EOF'
 export MULTICA_SERVER_URL=https://api.teamctx.actionow.ai
 export MULTICA_WORKSPACE_ID=fb23cf99-5f4c-4815-b2b3-8d5e323659f6
-export MULTICA_TOKEN=<DRI 给你的 token>
+export MULTICA_TOKEN=$(jq -r .token ~/.multica/config.json 2>/dev/null)
 EOF
 source ~/.zshrc
 ```
+> `<<'EOF'` 让那行 `$(jq …)` 原样写进 rc —— 每开新 shell 自动从 config.json 读你当前 login 的 token。重新 `multica login` 后无需改 rc。
+> MCP 配置文件(`~/.claude.json` / `~/.codex/config.toml`)是 JSON/TOML,不能跑 `$(…)`,需把 token **实值**填进去:`jq -r .token ~/.multica/config.json` 取值粘贴(见下「MCP 接入」)。
 
 **验证 1:**
 ```bash
@@ -75,7 +79,8 @@ User:    <你的 name> (<你的 email>)
 Token:   mul_xxxxxxxx...
 ```
 
-报 `invalid token` · PAT 抄错了 · 找 DRI 重发。
+报 `invalid token` · 你的 token 失效 / 没 login · 重新 `multica login`(拿你自己的新 token)再 `source ~/.zshrc`。
+报 `User:` 那行不是你本人 / 看不到 `team-context` · 你还没被加进 workspace · 找 DRI 跑 `multica user create --email <你的 email> --role member`。
 报 `connection refused` · 网络问题 · curl 一下 `https://api.teamctx.actionow.ai/healthz` 应该返 `{"status":"ok"...}`。
 
 ---
@@ -269,7 +274,7 @@ bash scripts/my-autopilot.sh all codex     # provider: codex | claude | hermes
 
 | 症状 | 原因 | 修法 |
 |---|---|---|
-| `multica auth status` → invalid token | PAT 错 | 找 DRI 重发 |
+| `multica auth status` → invalid token | 你的 token 失效 / 没 login | 重新 `multica login`(拿你自己的新 token)· 再 `source ~/.zshrc` |
 | `multica auth status` → connection refused | DNS/网络 | `curl https://api.teamctx.actionow.ai/healthz` 应返 200 |
 | Step 2 jq 验证返回 ≠ 12 | tcmcp-local build 失败 | `cd ~/team-context-mcp && pnpm install --frozen-lockfile && pnpm --filter @tcmcp/local build` 重跑 |
 | Step 3 同步 0 个 skill | workspace_id 抄错 | `multica config show` 看;DRI 给的应是 UUID 36 字符 |

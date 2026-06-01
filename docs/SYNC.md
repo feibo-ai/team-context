@@ -31,13 +31,13 @@ bash scripts/sync-team-config.sh
 **要点**
 - **Skills**:Claude Code / Desktop 走 `~/.claude/skills/`(软链=自动最新)。**Codex 没有 Claude 式 skill 机制** —— AGENTS.md 把 tc-* 当“流程描述”读,需要 skill 正文时经 multica registry 或读 repo。所有界面经 MCP 连 multica 都能发现 registry 里的 skill。
 - **全局规则**:Claude Code / Codex 软链同一个源 → 改一处全更新。Claude Desktop 无 CLAUDE.md 机制 → 需手动把内容贴进“自定义指令/Project”(变更少,手动可接受)。
-- **MCP**:三处配置文件已含 `tcmcp-local` + `tcmcp-remote`;新成员按下方模板配,token 由 DRI 私信。
+- **MCP**:三处配置文件已含 `tcmcp-local` + `tcmcp-remote`;新成员按下方模板配,**token 由成员自己 `multica login` 拿**(`jq -r .token ~/.multica/config.json`),不是 DRI 私信(per-user 审计)。
 
 ## MCP 配置(每界面一次 · token 占位)
 **值(固定)**:
 - `MULTICA_SERVER_URL = https://api.teamctx.actionow.ai`
 - `MULTICA_WORKSPACE_ID = fb23cf99-5f4c-4815-b2b3-8d5e323659f6`(slug `team-context`)
-- `MULTICA_TOKEN = <DRI 私信给你的 mul_ token>`
+- `MULTICA_TOKEN = <你自己 multica login 拿的 mul_ token>`(取值:`jq -r .token ~/.multica/config.json` · 非 DRI 发)
 - tcmcp-remote:`https://mcp.teamctx.actionow.ai/mcp`,头 `Authorization: Bearer <同一 token>`
 
 **Claude Code** `~/.claude.json`(或项目 `.mcp.json`):
@@ -65,5 +65,5 @@ bearer_token_env_var = "TCMCP_AGENT_TOKEN"   # export TCMCP_AGENT_TOKEN=mul_… 
 
 ## 改了东西怎么办
 - 改 skill / 全局规则:编辑 repo 内的源 → 软链处自动最新;skill 正文还要 `multica skill update` 推 registry(或重跑同步脚本,新增的会自动建)。
-- 加新成员:发 token + 让其 clone 本 repo + 跑 `scripts/sync-team-config.sh` + 按上表配 MCP。
+- 加新成员:成员自己 `multica login` 拿 token → 把 email 告诉 DRI → DRI 跑 `multica user create --email <email> --role member` 把其加进 workspace(幂等 · **不发 token**)+ 给 workspace UUID;成员再 clone 本 repo → 跑 `scripts/sync-team-config.sh` → 按上表配 MCP。
 - 换 token / workspace:更新各界面 MCP 配置的 `MULTICA_TOKEN` / `MULTICA_WORKSPACE_ID`(共 3-4 处:Claude Code / Desktop / Codex / shell rc 的 `TCMCP_AGENT_TOKEN`)。
