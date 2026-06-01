@@ -86,7 +86,7 @@ docs/research/research_YYYY-MM-DD_<topic>.html
 **Boundary:** <what is out of scope, 1 sentence>
 ```
 
-> **Output is HTML, not a hand-written file.** The `plan_create` / `project_kickoff` MCP tool renders these fields to a 方案A HTML doc and auto-uploads it to the multica issue (renders inline). Local `docs/plans/*.html` is kept for git history / offline reading.
+> **Output is HTML, not a hand-written file.** The `plan_create` / `project_kickoff` MCP tool renders these fields to a 方案A HTML doc and posts it as a **comment** on the plan issue (`!file` inline render · append-only). Updates go through `plan_upgrade`, which posts a **new comment** (v2, v3…) — it never mutates an attachment or rewrites the issue description (the CLI can't re-upload an attachment anyway). Local `docs/plans/*.html` is kept for git history / offline reading.
 
 ## Review gate (non-negotiable)
 

@@ -71,7 +71,8 @@ docs/research/research_YYYY-MM-DD_<topic>.html
 3. ...
 ```
 
-> Rendered to a 方案A HTML doc by `research_create` / `project_kickoff` and auto-uploaded to the research issue (renders inline in multica). Local `docs/research/*.html` kept for git / offline.
+> **文档怎么进 issue(append-only · 评论制)**:`research_create` 只建 issue + **本地骨架** HTML(`docs/research/*.html`),**不上传**(此刻还没发现)。把发现填进本地 HTML 后,用 **`doc_publish`** 工具发布为一条**评论**(`!file` 内联渲染 · 方案A)。
+> 之后每次更新 = **再发一条评论**(新文件名)。**永不**「更新附件」(CLI 只能下载,传不回)或把文档内容塞进 issue 描述 —— 那正是之前卡死的弯路。本地 `docs/research/*.html` 仍留作 git / 离线副本。
 
 ## What this session does NOT do
 - ❌ Pick a plan (Plan session does)
