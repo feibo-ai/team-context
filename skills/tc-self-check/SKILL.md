@@ -34,7 +34,7 @@ Read this list. For each, ask "am I doing this RIGHT NOW?"
   Hint: feel pressured to always keep all agents busy. Fix: monthly
   burnout check 3 questions, reduce to 3-5 active if any yes.
 - **❌10 Project without DRI**
-  Hint: no one's name on the plan markdown. Fix: assign or refuse to
+  Hint: no one's name on the plan doc. Fix: assign or refuse to
   start.
 
 ## 3 red lines for AI MIQ specifically

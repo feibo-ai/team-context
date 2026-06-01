@@ -1,6 +1,6 @@
 ---
 name: tc-5-review
-description: "Use when project or task is wrapping up. Triggers: 'let us debrief', '收尾', 'wrap up', '写 case', 'project done', user marks completion criteria met. Generates a case file at cases/YYYY-MM-DD-<slug>.md with the 5 mandatory SOP v0.4 sections. Required for SOP non-negotiable #2 (every project/task ends with debrief)."
+description: "Use when project or task is wrapping up. Triggers: 'let us debrief', '收尾', 'wrap up', '写 case', 'project done', user marks completion criteria met. Generates a case file at cases/YYYY-MM-DD-<slug>.html with the 5 mandatory SOP v0.4 sections. Required for SOP non-negotiable #2 (every project/task ends with debrief)."
 ---
 
 # Debrief / Case File Template
@@ -11,13 +11,15 @@ Not a status report. Not "and then we did X, and then Y." A causal chain
 of key judgments.
 
 ## Filename
-- Project: `cases/YYYY-MM-DD-<project-slug>.md`
-- Task batch (lightweight): `cases/YYYY-MM-WW-tasks.md` (week-bucketed, append)
+- Project: `cases/YYYY-MM-DD-<project-slug>.html`
+- Task batch (lightweight): `cases/YYYY-MM-WW-tasks.html` (week-bucketed, append)
+
+> The project case is rendered to a 方案A HTML file by `case_create` and auto-uploaded to the case issue (renders inline in multica). Local `cases/*.html` kept for git / offline.
 
 ## The 5 mandatory sections
 
 ### 1. Goal (paste from plan)
-Copy the original goal from the plan markdown verbatim.
+Copy the original goal from the plan doc (HTML) verbatim.
 
 ### 2. What actually happened (≤ 200 words)
 Compressed timeline. Not blow-by-blow. Just the structurally important

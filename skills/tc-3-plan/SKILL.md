@@ -1,6 +1,6 @@
 ---
 name: tc-3-plan
-description: "Use when entering Plan phase of RPI framework — after Research is done. Triggers: 'write a plan', 'let us plan', '做个 plan', 'Plan session', user invokes Phase 01 step 3. Generates plan markdown with the 4 mandatory SOP v0.4 fields (goal / completion criteria / who does what / appetite). Differs by layer: project plans get full markdown, task plans get 3-sentence mini-plan. Required for SOP non-negotiable #1 (Plan Mode — never vibe code)."
+description: "Use when entering Plan phase of RPI framework — after Research is done. Triggers: 'write a plan', 'let us plan', '做个 plan', 'Plan session', user invokes Phase 01 step 3. Generates a plan doc (HTML) with the 4 mandatory SOP v0.4 fields (goal / completion criteria / who does what / appetite). Differs by layer: project plans get a full plan doc, task plans get a 3-sentence mini-plan. Required for SOP non-negotiable #1 (Plan Mode — never vibe code)."
 ---
 
 # RPI · Plan Session
@@ -12,7 +12,7 @@ instances.
 
 ## Discrete session
 This is a fresh session with NO Research conversation context. Read
-`docs/research/research_<date>_<topic>.md` as input. Re-read it. Do not
+`docs/research/research_<date>_<topic>.html` as input. Re-read it. Do not
 trust conversational memory.
 
 ## The 4 mandatory fields (SOP v0.4)
@@ -61,7 +61,7 @@ Observable signals, not "done when good".
 <days / week / month>
 
 ## Research input
-docs/research/research_YYYY-MM-DD_<topic>.md
+docs/research/research_YYYY-MM-DD_<topic>.html
 
 ## Approach
 <3-10 paragraphs explaining the chosen direction>
@@ -86,6 +86,8 @@ docs/research/research_YYYY-MM-DD_<topic>.md
 **Boundary:** <what is out of scope, 1 sentence>
 ```
 
+> **Output is HTML, not a hand-written file.** The `plan_create` / `project_kickoff` MCP tool renders these fields to a 方案A HTML doc and auto-uploads it to the multica issue (renders inline). Local `docs/plans/*.html` is kept for git history / offline reading.
+
 ## Review gate (non-negotiable)
 
 Before writing ANY code, the plan must be reviewed by a SECOND session
@@ -106,4 +108,4 @@ before coding.
 
 ## Hand-off to Implement
 Plan reviewed and approved → invoke tc-handoff → `/clear` → open Implement
-session with the plan markdown as primary input.
+session with the plan doc (HTML) as primary input.
