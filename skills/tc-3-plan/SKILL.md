@@ -88,6 +88,8 @@ docs/research/research_YYYY-MM-DD_<topic>.html
 
 > **Output is HTML, not a hand-written file.** The `plan_create` / `project_kickoff` MCP tool renders these fields to a 方案A HTML doc and posts it as a **comment** on the plan issue (`!file` inline render · append-only). Updates go through `plan_upgrade`, which posts a **new comment** (v2, v3…) — it never mutates an attachment or rewrites the issue description (the CLI can't re-upload an attachment anyway). Local `docs/plans/*.html` is kept for git history / offline reading.
 
+> ⚠️ **项目归属(必填)**:`plan_create` 的 `projectId` 已是必填。建计划 issue 前先 `multica project list` 选定项目;**拿不准就问用户**(对不对?要不要 `multica project create` 新建?)。绝不建无项目的孤儿 issue。(team-global rule #6)
+
 ## Review gate (non-negotiable)
 
 Before writing ANY code, the plan must be reviewed by a SECOND session
