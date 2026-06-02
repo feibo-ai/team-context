@@ -53,11 +53,12 @@ work. If multiple plans or none, ask.
     - <one sentence>
 
 ### 5. Persist to the multica issue
-Plan / research docs now live as HTML attachments on the issue. Post the
-Current State block as an issue comment; the `session_handoff` MCP tool
-also regenerates the plan HTML with this state folded in and uploads it
-as a NEW versioned attachment (old versions kept · evolution traceable).
-Manual fallback: `multica issue comment --issue <id> --body-file <path>`
+If this work is tracked in a multica issue, post the Current State block as
+an issue comment. The `session_handoff` MCP tool does this for you, and also
+regenerates the plan HTML with this state folded in and posts it as a NEW
+comment (append-only · renders inline via `!file` · old versions kept ·
+evolution traceable).
+Manual fallback: `multica issue comment add <id> --content-file <path>`
 
 ### 6. Final confirmation
 Show user the updated plan + commit hash + (if posted) multica comment URL.

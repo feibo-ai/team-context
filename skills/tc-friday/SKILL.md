@@ -6,9 +6,8 @@ description: "Use Friday afternoon for the 30-min demo + 15-min betting table do
 # Friday Demo + Betting Table — 45-min protocol
 
 ## Pre-flight (DRI does, 1 hr before)
-Query multica for this week's closed issues with label `复盘-待审`:
-`multica issue list --status closed` then client-side filter for `复盘-待审` label.
-(Server-side `--label` filter pending Plan 3 PR C.)
+Query this week's done issues awaiting debrief review (label `复盘-待审`):
+`multica issue list --status done --label 复盘-待审`
 
 For each: identify demo-worthy artifact (deployed feature, completed migration, working prototype).
 
