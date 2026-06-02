@@ -6,7 +6,7 @@ AI MIQ 团队跨项目方法学的唯一权威来源。
 
 > **v2 (W5+) · Multica control plane**: integration configs + secrets 集中存活在 multica。
 > 本仓库 `autopilots/*.yaml` 通过 `integration_ref: team-context-mcp` 引用 (不再含 secret)，
-> apply 时由 `scripts/apply-autopilots.sh` 在 multica 解析；运行时 tcmcp-remote 启动时拉 + WS 订阅 hot-reload。
+> apply 时由 `scripts/team-autopilot.sh`（全队）/ `my-autopilot.sh`（个人）解析成 multica CLI 调用；运行时 tcmcp-remote 启动时拉 + WS 订阅 hot-reload。
 > 见 [decisions/2026-05-29-multica-control-plane.md](decisions/2026-05-29-multica-control-plane.md) (rationale) ·
 > [standards/integration-overview.md](standards/integration-overview.md) (operator 用法)。
 > 团队成员**不再**需要本地装 feishu-cli。
@@ -19,8 +19,8 @@ AI MIQ 团队跨项目方法学的唯一权威来源。
 git clone https://github.com/<your-org>/team-context ~/team-context
 cd ~/team-context
 
-# 同步 12 个 skill 到本地 Claude Code
-bash scripts/sync-to-local.sh
+# 同步 skills + 全局规则到本地各 agent 界面 (Claude Code / Codex · 统一入口)
+bash scripts/sync-team-config.sh
 ```
 
 完事。重启 Claude Code · 试 "我想 /clear" · 应该弹 tc-handoff skill。
@@ -40,11 +40,11 @@ bash scripts/sync-to-multica.sh https://github.com/<your-org>/team-context
 # 一次性把飞书 secret 从 env-file 推到 multica · 替代旧的散户配置流程
 bash scripts/multica-secrets-bootstrap.sh team-context-mcp
 
-# 部署 4 个 autopilot (apply-autopilots.sh 含 PB-04 guardrails 预检 · 含 integration_ref 解析)
-bash scripts/apply-autopilots.sh
+# 部署 5 个全队 autopilot (含 PB-04 guardrails 预检 + integration_ref 解析)
+bash scripts/team-autopilot.sh all codex   # 个人版: bash scripts/my-autopilot.sh all codex
 ```
 
-apply-autopilots.sh **不再注入 secret 到 agent env** —— 它只注入 `TCMCP_REMOTE_URL` + `TCMCP_AGENT_TOKEN`,agent 调用远程 MCP 工具时由 tcmcp-remote 内部用 multica 拉到的 secret 完成飞书连接。详见 `autopilots/README.md`。
+team-autopilot.sh / my-autopilot.sh **不再注入 secret 到 agent env** —— 只注入 `TCMCP_REMOTE_URL` + `TCMCP_AGENT_TOKEN`,agent 调远程 MCP 工具时由 tcmcp-remote 内部用 multica 拉到的 secret 完成飞书连接。(`apply-autopilots.sh` 已 deprecated。)详见 `autopilots/README.md`。
 
 ## 目录结构
 
@@ -73,9 +73,10 @@ team-context/
 │   ├── tc-roles/      ← DRI/EXEC/COLLAB/REVIEW 认领
 │   └── tc-conflict/         ← 冲突 4 原则 → decisions/
 │
-├── autopilots/                        ← 4 个 multica autopilot YAML
-│   ├── README.md                      ← YAML 不被 multica 直接读 · 必经 apply-autopilots.sh
-│   ├── daily-summary.yaml             ← 工作日 18:00 → 飞书
+├── autopilots/                        ← 5 个 multica autopilot YAML
+│   ├── README.md                      ← YAML 不被 multica 直接读 · 必经 team/my-autopilot.sh
+│   ├── daily-kickoff.yaml             ← 工作日 09:00 → 飞书 (今日聚焦)
+│   ├── daily-summary.yaml             ← 工作日 18:00 → 飞书 (今日回顾)
 │   ├── monday-kickoff.yaml            ← 周一 09:30 → 飞书 + 建 issue
 │   ├── wednesday-stats.yaml           ← 周三 09:00 → 飞书
 │   └── monthly-health.yaml            ← 月 1 号 10:00 → 触发 monthly_health_report
@@ -97,9 +98,12 @@ team-context/
 │   └── burnout/                       ← 月度 burnout check 匿名聚合
 │
 ├── scripts/                           ← 运维脚本
-│   ├── sync-to-local.sh               ← symlink skills/* 到 ~/.claude/skills/
-│   ├── sync-to-multica.sh             ← multica skill import × 12
-│   ├── apply-autopilots.sh            ← YAML → CLI flag 翻译器 + autopilot_lint 预检 + integration_ref 解析
+│   ├── sync-team-config.sh            ← skills + 全局 md → 各 agent 界面 + multica registry (统一入口)
+│   ├── team-autopilot.sh              ← 全队 autopilot: YAML → multica CLI (PB-04 预检 + integration_ref)
+│   ├── my-autopilot.sh                ← 个人 autopilot (同上 · 只本人 scope)
+│   ├── _autopilot-common.sh           ← 上两者共享逻辑 (ac_lint_yaml 等)
+│   ├── sync-to-local.sh · sync-to-multica.sh ← 分项 sync (统一入口见 sync-team-config.sh)
+│   ├── apply-autopilots.sh            ← DEPRECATED · 被 team/my-autopilot.sh 取代
 │   ├── create-labels.sh               ← 11 个标准 label 创建
 │   ├── multica-secrets-bootstrap.sh   ← v2 · env-file → multica secret upsert (DRI 一次性)
 │   └── install-feishu-cli.sh          ← DEPRECATED · 仅 DRI 排查保留 · 团队成员不需要

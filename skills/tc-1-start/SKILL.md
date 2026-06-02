@@ -24,6 +24,8 @@ Critical: SEPARATE session from Step 3.
 INVOKE tc-3-plan skill. Read research file as input. Output: docs/plans/plan_<date>_<topic>.html with all 4 mandatory fields (posted as a comment on the plan issue · `!file` inline render · updates via plan_upgrade = a new comment).
 Or call MCP `plan_create` for skeleton.
 
+> ⚠️ **每个 issue 必须挂项目**:`project_kickoff` 会自己建 project 并把 issue 挂好;若手动用 `research_create` / `plan_create`,必须先 `multica project list` 选定 `projectId`(必填),拿不准问用户(对不对?要不要新建?)。(team-global rule #6)
+
 ### Step 4 — Review by second session
 Spawn NEW session with role = staff engineer. Hand it the plan. Wait for verdict.
 Or call MCP `plan_request_review` — labels issue `计划-评审中`.

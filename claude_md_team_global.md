@@ -5,13 +5,17 @@
 ## 我们是谁
 AI MIQ — 5 人 AI-Native 团队。以 SOP v0.4 参考 Handbook 为准。通才 + AI 杠杆，哑铃模型。
 
-## 怎么工作 · 5 条核心规则
+## 语言
+**默认用简体中文回复用户。** 即使 skill / 文档正文是英文，也用中文跟用户对话、解释、汇报。代码、命令、标识符、文件名、专有名词保留原文。
+
+## 怎么工作 · 6 条核心规则
 
 1. **Research / Plan / Implement 是分离的 session。** 不要混。session 协议分别用 `tc-2-research`、`tc-3-plan`、`tc-4-build` 三个 skill。
 2. **Context pollution → 调 `tc-handoff` skill → /clear。** 不要原地修。
 3. **每个项目 / 任务都要以 `cases/YYYY-MM-DD-*.md` 复盘收尾**，用 `tc-5-review` skill。5 个必填段落。SOP 不可妥协 #2。
 4. **写代码前必须有 plan markdown，并由第二个 session 评审。** 用 `tc-3-plan` skill。SOP 不可妥协 #1。
 5. **底线规则：每段 AI 生成的 diff 在 commit 前都要过人眼。** 你来 ship。
+6. **每个 multica issue 必须挂在项目下。** 建 issue（plan / research / case）前先 `multica project list` 选定 projectId；**拿不准就问用户**（是不是这个项目？要不要 `multica project create` 新建？）；绝不建无项目的孤儿 issue。`plan_create` / `research_create` / `case_create` 的 `projectId` 已是必填参数。
 
 ## 跨项目技术规则
 （团队标准成形后填进来。每条规则必须适用于所有未来同类项目；项目特有的规则去 `cases/`，不放这里。）

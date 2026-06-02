@@ -16,6 +16,8 @@ of key judgments.
 
 > The project case is rendered to a 方案A HTML file by `case_create` and posted as a **comment** on the case issue (`!file` inline render · append-only — never an attachment-update or description rewrite). Local `cases/*.html` kept for git / offline.
 
+> ⚠️ **项目归属(必填)**:`case_create` 的 `projectId` 已是必填(归到被复盘的那个项目)。拿不准先 `multica project list` 核对、或问用户。绝不建无项目的孤儿 issue。(team-global rule #6)
+
 ## The 5 mandatory sections
 
 ### 1. Goal (paste from plan)

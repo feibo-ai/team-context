@@ -3,9 +3,9 @@
 #   绑常驻 runtime · 汇总全队 · 全部推团队群 (notify_team · 无 P2P)。
 #
 # 用法:
-#   bash scripts/team-autopilot.sh all codex            # 建全队 4 个汇总
+#   bash scripts/team-autopilot.sh all codex            # 建全队 5 个汇总
 #   bash scripts/team-autopilot.sh monday-kickoff codex # 或单个
-#     kind:     daily-summary | monday-kickoff | wednesday-stats | monthly-health | all
+#     kind:     daily-summary | daily-kickoff | monday-kickoff | wednesday-stats | monthly-health | all
 #     provider: codex | claude | hermes
 #
 # 前置: multica login + 常驻 daemon 在线 + export TCMCP_AGENT_TOKEN=<autopilot-bot PAT 或 $MULTICA_TOKEN>

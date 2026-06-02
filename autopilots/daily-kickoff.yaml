@@ -1,0 +1,69 @@
+name: daily-kickoff
+description: |
+  Weekday-morning kickoff. Reads today's focus (in_progress + 计划-已批准 待启动
+  + 待评审 + 卡住的 handoff) and pushes a 今日开工 card to the feishu team group
+  via notify_team. Forward-looking morning counterpart to daily-summary (evening
+  recap). Data scope (个人/全队) is read from AUTOPILOT_SCOPE at runtime.
+  SOP coverage: P-6 Daily D-01 (morning kickoff · notify_team only · 透明文化)
+
+trigger:
+  kind: schedule
+  cron: "0 9 * * 1-5"
+  timezone: Asia/Shanghai
+
+mode: run_only
+
+agent:
+  name: daily-kickoff-bot-codex
+  integration_ref: team-context-mcp  # resolved at apply time
+
+# PB-04 guardrails (autopilot_lint enforces)
+guardrails:
+  forbidden_commands:
+    - "git push"
+    - "git push --force"
+    - "git commit"
+    - "npm publish"
+    - "rm -rf"
+    - "psql.* drop"
+    - "* db migrate"
+  forbidden_paths:
+    - ".env*"
+    - ".ssh/*"
+    - "secrets/*"
+    - "~/.multica/config.json"
+  max_budget_usd: 5
+  max_runtime_minutes: 10
+
+prompt: |
+  **输出语言要求：所有最终发送到飞书的内容必须用简体中文。** 命令行操作和内部思考可用英文。
+
+  读环境变量 AUTOPILOT_SCOPE 决定数据范围:
+    - "team"    → 全队
+    - "<email>" → 只本人 (assignee == $AUTOPILOT_SCOPE)
+
+  这是【早晨开工】卡片 —— 前瞻「今天该推进什么」,不是回顾(回顾是傍晚的 daily-summary)。
+  与周一的 monday-kickoff 互补:那条讲「本周计划」,这条讲「今日聚焦」。
+
+  Step 1 · 收集今日聚焦 (用 MCP / multica CLI · 不 shell-out 飞书)
+    进行中:   multica issue list --status in_progress
+    待启动:   multica issue list --label 计划-已批准 --status todo
+    待评审:   multica issue list --label 计划-评审中
+    (个人版每条加 --assignee "$AUTOPILOT_SCOPE")
+    卡住信号: 进行中 issue 里,最近一次 Current State handoff 时间戳 > 24h 的标出来
+              (multica issue get <id> 看最新 handoff 评论时间)
+
+  Step 2 · Compose card
+    team:  标题「全队 · 今日开工 {{date}}」· sections:
+             🔵 进行中(title · DRI · handoff age)
+             🟡 待启动(已批准未开工:title · DRI · appetite)
+             🟣 待评审(等谁 review)
+             ⚠️ 卡住(handoff > 24h 的,提醒该 handoff/换 session)
+    个人:  标题「${AUTOPILOT_SCOPE%@*} · 今日开工 {{date}}」· sections: 今日聚焦 / 待启动 / 卡住
+
+  Step 3 · 推团队群 (唯一渠道)
+    Call MCP tool: notify_team({ card: <card-json> })
+    (feishu_team_chat_id 由 tcmcp-remote 从 integration config 解析 · zero shell-out)
+    返回 { messageId } 视为成功 · 失败记录不 crash。
+
+  ⚠️ 绝不调用 dm_member 或任何 P2P (spec §1.2 · 一律 notify_team 推群)。run_only · 不建 issue。

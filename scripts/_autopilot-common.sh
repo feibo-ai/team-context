@@ -16,7 +16,7 @@ set -euo pipefail
 
 AC_REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 AC_AUTOPILOTS_DIR="${AC_REPO_DIR}/autopilots"
-AC_KINDS=(daily-summary monday-kickoff wednesday-stats monthly-health)
+AC_KINDS=(daily-summary daily-kickoff monday-kickoff wednesday-stats monthly-health)
 
 # tcmcp-remote lives in the cloud (Zeabur) since W5 · agents reach feishu through it.
 : "${TCMCP_REMOTE_URL:=https://mcp.teamctx.actionow.ai/mcp}"
@@ -63,7 +63,7 @@ ac_lint_yaml() {
   { [ "$fp_count" = null ] || (( fp_count < 1 )); } && ac_die "${name}: forbidden_paths 需 ≥ 1 条"
   budget=$(yq eval '.guardrails.max_budget_usd' "$yaml")
   [[ -z "$budget" || "$budget" == null ]] && ac_die "${name}: 缺 max_budget_usd"
-  (( budget > 150 )) && ac_die "${name}: max_budget_usd ${budget} > 150 硬上限 (PB-04)"
+  if (( budget > 150 )); then ac_die "${name}: max_budget_usd ${budget} > 150 硬上限 (PB-04)"; fi
 }
 
 # $1=kind $2=runtime-id $3=scope $4=suffix

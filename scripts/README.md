@@ -9,7 +9,7 @@
 - `team-autopilot.sh <kind|all> <provider>` — DRI 建「团队版」autopilot(绑常驻 runtime · 汇总全队 · 推团队群)
 - `_autopilot-common.sh` — 上面两个共享逻辑(被 `source` · 非独立运行)
 - `apply-autopilots.sh` — ⚠️ DEPRECATED · 被 `team-autopilot.sh` 取代(不注入 `AUTOPILOT_SCOPE`,与 scope 分支 prompt 不兼容)
-  - `kind`: daily-summary | monday-kickoff | wednesday-stats | monthly-health | all
+  - `kind`: daily-summary | daily-kickoff | monday-kickoff | wednesday-stats | monthly-health | all
   - `provider`: codex | claude | hermes
 
 ## 其他
