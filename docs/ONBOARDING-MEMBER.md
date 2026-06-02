@@ -85,7 +85,7 @@ Token:   mul_xxxxxxxx...
 
 ---
 
-## 2 · 装 tcmcp-local (本地 12 工具 · 2 分钟)
+## 2 · 装 tcmcp-local (本地 SOP 工具 · 2 分钟)
 
 ```bash
 cd ~
@@ -276,7 +276,7 @@ bash scripts/my-autopilot.sh all codex     # provider: codex | claude | hermes
 |---|---|---|
 | `multica auth status` → invalid token | 你的 token 失效 / 没 login | 重新 `multica login`(拿你自己的新 token)· 再 `source ~/.zshrc` |
 | `multica auth status` → connection refused | DNS/网络 | `curl https://api.teamctx.actionow.ai/healthz` 应返 200 |
-| Step 2 jq 验证返回 ≠ 12 | tcmcp-local build 失败 | `cd ~/team-context-mcp && pnpm install --frozen-lockfile && pnpm --filter @tcmcp/local build` 重跑 |
+| Step 2 验证缺核心工具(missing:…)| tcmcp-local build 失败 | `cd ~/team-context-mcp && pnpm install --frozen-lockfile && pnpm --filter @tcmcp/local build` 重跑 |
 | Step 3 同步 0 个 skill | workspace_id 抄错 | `multica config show` 看;DRI 给的应是 UUID 36 字符 |
 | Step 4 MCP 工具找不到 | config 路径里 `<把-我换成你的用户名>` 没改 | 改成 `whoami` 输出的真实用户名 |
 | Codex 4a 验证看不到 search_chat | 没重启 Codex | 完全退出再开 |
