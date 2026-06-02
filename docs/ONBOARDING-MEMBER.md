@@ -26,17 +26,18 @@
 # jq / node 用 brew
 brew install jq node@22
 
-# multica CLI 走官方 tap(升级 = brew upgrade multica-ai/tap/multica)
-brew install multica-ai/tap/multica
+# multica 走官方 install.sh(fork build · 自带 upgrade 检测 · 升级 = 重跑同一条)
+curl -fsSL https://raw.githubusercontent.com/feibo-ai/tc-multica/main/scripts/install.sh | bash
 ```
 
-> 已装过想升级:`brew upgrade multica-ai/tap/multica`。当前版本 v0.4.x。
+> ⚠️ **别用 `brew install multica`** —— 那会装到 upstream CLI,缺 control-plane 子命令(integration / secret / deployment)。只认上面这条 install.sh,升级也是重跑它。
 
 **验证 0:**
 ```bash
-multica --version    # 期望: multica v0.4.x
-node --version       # 期望: v22 或以上 (v22-v29 都行)
-jq --version         # 期望: jq-1.7+
+multica --version           # 期望: multica vX.Y.Z (fork build)
+multica integration --help  # 能列出子命令 = 装对了 fork(不是 upstream CLI)
+node --version              # 期望: v22 或以上 (v22-v29 都行)
+jq --version                # 期望: jq-1.7+
 ```
 
 3 个命令任何一个报 not found · 装它再继续。
@@ -99,15 +100,17 @@ pnpm --filter @tcmcp/local  build
 
 **验证 2:** (会等 ~4 秒 · 起 server → 列工具 → 杀掉)
 ```bash
-# 这里 sleep 不能省 · 给 server 时间响应
+# sleep 不能省 · 给 server 时间响应。notifications/initialized 不能漏,
+# 否则严格/慢的 server 不回 tools/list。
 {
   echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"v","version":"0"}}}'
+  echo '{"jsonrpc":"2.0","method":"notifications/initialized"}'
   echo '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
   sleep 2
 } | node ~/team-context-mcp/packages/local/dist/server.js 2>/dev/null \
-  | jq -r 'select(.id==2)|.result.tools|length'
+  | jq -r 'select(.id==2)|.result.tools[].name'
 ```
-期望:`12`
+期望:列出 `plan_create` / `research_create` / `case_create` / `doc_publish` / `plan_approve` 等核心工具(**数量随版本增长 · 不必纠结具体数字**)。
 
 返回 `0 / empty / error`:
 - 报 `multica config missing. Set MULTICA_SERVER_URL/MULTICA_TOKEN/MULTICA_WORKSPACE_ID` → 你 Step 1 那 3 个 env 没 source · 跑 `source ~/.zshrc` 或重开 terminal
@@ -161,20 +164,22 @@ MULTICA_WORKSPACE_ID=$(multica config show | awk '/workspace_id:/{print $2}') \
   bash ~/.local/bin/sync-skills.sh
 ```
 
-**验证 3:**
+**验证 3:** (别数整个目录 —— 你机器上本来就有个人 skill;只看这 12 个 tc-* 团队 skill 到没到)
 ```bash
-ls ~/.claude/skills/ | wc -l       # 期望: 12
-ls ~/.claude/skills/                # 期望看到: tc-handoff / tc-2-research / ...
+for nm in tc-1-start tc-2-research tc-3-plan tc-4-build tc-5-review tc-handoff \
+          tc-health-check tc-self-check tc-roles tc-conflict tc-monday tc-friday; do
+  [ -s ~/.claude/skills/$nm/SKILL.md ] && echo "✓ $nm" || echo "✗ $nm 缺"
+done
 head -3 ~/.claude/skills/tc-handoff/SKILL.md
 ```
-期望前 3 行:
+期望:12 行全 `✓`,且 head 前 3 行是:
 ```
 ---
 name: tc-handoff
 description: "Use BEFORE running /clear...
 ```
 
-少于 12 个目录 · 重跑 sync 脚本 · 仍少看 stderr 哪个 skill 失败。
+出现 `✗` · 重跑 sync 脚本 · 仍缺看 stderr 哪个 skill 失败。
 
 ---
 
@@ -252,7 +257,51 @@ source ~/.zshrc
 
 ---
 
-## 6 · (可选) 建你的个人 autopilot
+## 6 · 用 12 个 skill 开发一个项目(使用流程)
+
+接入完成 = 工具到位。这一节讲**怎么用这 12 个 skill 把一个项目从想法做到收尾** —— 就是团队的 **RPI(Research → Plan → Implement)** 工作法。
+
+> **一条铁律先记住**:R / P / I 是**三个分离的 session**,不要混在一个里。每个阶段用对应的 skill 起头,Claude Code 会按 skill 的 `description` 自动激活(说一句话就触发)。
+
+**主线 · 开一个新项目(按顺序走)**
+
+| # | 阶段 | skill | 你说 / 它干啥 | 产物 |
+|---|---|---|---|---|
+| 1 | 启动 | `tc-1-start` | 「我想启动一个新项目」→ 走 Phase 01 六步 | project + 研究/计划 issue |
+| 2 | **Research**(新 session) | `tc-2-research` | 并行子代理调研 · 只汇报发现、不做决策 | `docs/research/*.html`(发到研究 issue 评论) |
+| 3 | **Plan**(再新 session) | `tc-3-plan` | 读 research 当输入,写计划(目标 / 完成标准 / 谁做什么 / appetite 四个必填)→ `plan_create` → 第二个 session 评审 → `plan_approve` | `docs/plans/*.html` · issue `计划-已批准` |
+| 4 | **Implement** | `tc-4-build` | 对着**已批准的 plan** 写代码 · 30 秒 CoT 监督 · 方向不对就 ESC | 代码 + commit |
+| 5 | 收尾 | `tc-5-review` | 写复盘 case(5 个必填段)→ `case_create` → `case_review` | `cases/*.html` |
+
+```
+[ tc-1-start ] → [ tc-2-research ] → [ tc-3-plan ] → [ tc-4-build ] → [ tc-5-review ]
+   启动            R · 调研            P · 计划+评审      I · 实施          收尾 · case
+```
+
+**辅助 skill(随时按需)**
+
+| 何时 | skill | 干啥 |
+|---|---|---|
+| 卡住 30 分钟 / context 浑浊(见「你说得对」连环)/ `/clear` 前 | `tc-handoff` | 把当前状态写进 issue 评论 + commit WIP,新 session 接得上 |
+| 想自检做得对不对 | `tc-self-check` | 对照 10 个反 pattern + 3 条红线 |
+| 感觉「走偏了 / 在原地转」 | `tc-health-check` | 扫 context 污染 4 信号 |
+| 分角色 | `tc-roles` | DRI / EXEC / COLLAB / REVIEW 谁做什么 |
+| 意见不合 | `tc-conflict` | 走冲突 4 原则,结论写进 `decisions/` |
+| 周一 / 周五 | `tc-monday` / `tc-friday` | 周一 30 分对齐 · 周五 demo + betting table 定下周做什么 |
+
+**这套流程的灵魂(4 条非妥协 + 1 个习惯)**
+
+1. **R / P / I 分离 session**,不混。
+2. **写代码前必须有 plan + 第二 session 评审**(SOP 非妥协 #1 · 别 vibe code)。
+3. **每个项目以 case 收尾**(SOP 非妥协 #2)。
+4. **每段 AI 生成的 diff,commit 前过人眼** —— 你来 ship。
+5. **真验证(P-7)**:工具/命令返回 success ≠ 做对了 —— kickoff/create 后亲自验产物(issue 真挂到 project?文档真渲染?广播真发出?)。
+
+> 想深挖每个 skill:`~/.claude/skills/<name>/SKILL.md` 就是它的完整说明;或在对话里直接问「tc-3-plan 怎么用」。
+
+---
+
+## 7 · (可选) 建你的个人 autopilot
 
 接入完成后,可一键建你自己的 4 个 autopilot(日报 / 周一 / 周三 / 月度):数据范围只你自己 · 全部推团队群(卡片标题带你名字 · 不是私信)。
 
@@ -298,12 +347,11 @@ multica daemon start
 multica runtime list   # 应看到你 mac 的 runtime
 ```
 
-### 创建自己的 PAT (轮换 / 重发)
-DRI 给的 PAT 应该够用半年。需要新的:
-1. 浏览器开 https://teamctx.actionow.ai
-2. 右上 Settings → API Tokens → Generate
-3. 抄出来 · 覆盖 `~/.zshrc` 的 `MULTICA_TOKEN`
-4. `source ~/.zshrc`
+### 换 token(失效 / 轮换)
+token 是你自己 `multica login` 拿的 —— 失效或想换,**直接重新 `multica login`**:
+1. `multica login`(浏览器 · 你自己的账号)→ 新 token 写进 `~/.multica/config.json`
+2. shell rc 里那行 `export MULTICA_TOKEN=$(jq -r .token ~/.multica/config.json)` 会自动读到新 token —— **rc 不用改**,开新 terminal 或 `source ~/.zshrc` 即生效
+3. MCP 配置文件里是 token **实值**(JSON/TOML 跑不了 `$()`):Claude Code 重跑 `claude mcp add tcmcp-remote …`;Codex 走 `TCMCP_AGENT_TOKEN` env(跟着 rc 自动更新)
 
 ---
 
