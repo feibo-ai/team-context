@@ -14,7 +14,7 @@ of key judgments.
 - Project: `cases/YYYY-MM-DD-<project-slug>.html`
 - Task batch (lightweight): `cases/YYYY-MM-WW-tasks.html` (week-bucketed, append)
 
-> The project case is rendered to a 方案A HTML file by `case_create` and auto-uploaded to the case issue (renders inline in multica). Local `cases/*.html` kept for git / offline.
+> The project case is rendered to a 方案A HTML file by `case_create` and posted as a **comment** on the case issue (`!file` inline render · append-only — never an attachment-update or description rewrite). Local `cases/*.html` kept for git / offline.
 
 ## The 5 mandatory sections
 

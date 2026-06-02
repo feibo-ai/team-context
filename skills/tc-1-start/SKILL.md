@@ -17,11 +17,11 @@ Post to team feishu: "I'm thinking about starting [X], because [Y]."
 Goal: let the team know, NOT commit. No formal plan yet.
 
 ### Step 2 — Research session (fresh session)
-INVOKE tc-2-research skill. Output: docs/research/research_<date>_<topic>.html (auto-uploaded to the research issue · renders inline in multica).
+INVOKE tc-2-research skill. Output: docs/research/research_<date>_<topic>.html. project_kickoff creates the research issue + a LOCAL skeleton only (no upload); after findings are filled, publish them with `doc_publish` (a comment · `!file` inline render). Never update an attachment / rewrite the description.
 Critical: SEPARATE session from Step 3.
 
 ### Step 3 — Plan session (yet another fresh session)
-INVOKE tc-3-plan skill. Read research file as input. Output: docs/plans/plan_<date>_<topic>.html with all 4 mandatory fields (auto-uploaded to the plan issue · renders inline in multica).
+INVOKE tc-3-plan skill. Read research file as input. Output: docs/plans/plan_<date>_<topic>.html with all 4 mandatory fields (posted as a comment on the plan issue · `!file` inline render · updates via plan_upgrade = a new comment).
 Or call MCP `plan_create` for skeleton.
 
 ### Step 4 — Review by second session
