@@ -3,9 +3,9 @@
 #   绑你这台机的 runtime · 只汇报你自己 · 全部推团队群 (notify_team · 无 P2P)。
 #
 # 用法:
-#   bash scripts/my-autopilot.sh all codex            # 一键建你的全部 4 个
+#   bash scripts/my-autopilot.sh all codex            # 一键建你的全部 5 个
 #   bash scripts/my-autopilot.sh daily-summary codex  # 或单个
-#     kind:     daily-summary | monday-kickoff | wednesday-stats | monthly-health | all
+#     kind:     daily-summary | daily-kickoff | monday-kickoff | wednesday-stats | monthly-health | all
 #     provider: codex | claude | hermes
 #
 # 前置: multica login + multica daemon start + export TCMCP_AGENT_TOKEN=$MULTICA_TOKEN

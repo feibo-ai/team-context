@@ -10,10 +10,11 @@ multica autopilot 的 YAML 模板。
 
 **重要 2** (v2 control plane edition · W5+): 这里 **不存任何 secret**,也 **不写 `FEISHU_*` env 变量**。所有飞书 secret 集中存活在 multica 的 `Secret` 对象(加密) · 所有 chat_id / wiki_space / team_members 等非 secret config 集中存活在 multica integration `team-context-mcp` 的 `config` 字段。
 
-## 4 个 autopilot
+## 5 个 autopilot
 
 | 文件 | Cron(Asia/Shanghai) | Mode | 用途 |
 | --- | --- | --- | --- |
+| `daily-kickoff.yaml`   | 工作日 09:00 | `run_only`     | 每日早晨开工:今日聚焦(进行中 / 待启动 / 待评审 / 卡住)→ 飞书群 (notify_team · 个人/全队 scope) |
 | `daily-summary.yaml`   | 工作日 18:00 | `run_only`     | 每日 SOP 总结 → 飞书群 (notify_team · 个人/全队 scope) |
 | `monday-kickoff.yaml`  | 周一 09:30   | `create_issue` | 周计划汇总 → 飞书群 + 创建 issue |
 | `wednesday-stats.yaml` | 周三 09:00   | `run_only`     | CLAUDE.md 周度统计 → 飞书群 |
