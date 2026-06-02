@@ -14,7 +14,7 @@
 | 3 个 cloud 域名 | DNS @ Cloudflare actionow.ai 区 | `teamctx.actionow.ai` · `api.teamctx.actionow.ai` · `mcp.teamctx.actionow.ai` (全部 gray cloud) |
 | 飞书 integration | multica workspace `team-context-mcp` (UUID `ef5f21b9-...`) | 2 secret + chat_id config |
 | Multica daemon | 你 mac (本地 · `multica daemon status` pid) | runtime IDs: Claude/Codex/Hermes |
-| 4 个 autopilot | multica workspace | `daily-summary / monday-kickoff / wednesday-stats / monthly-health` |
+| 5 个 autopilot | multica workspace | `daily-kickoff / daily-summary / monday-kickoff / wednesday-stats / monthly-health` |
 
 记下来 / 收藏。出事时这张表是 ground truth。
 
@@ -26,7 +26,7 @@
 brew install jq node@22 zeabur
 
 # multica CLI 当前 v0.4.6。DRI 走源码构建(官方 install.sh · NOT brew ·
-# 你需要完整 control-plane 子命令)。团队成员只需 brew install multica-ai/tap/multica。
+# 你需要完整 control-plane 子命令)。团队成员也走同一条 install.sh(见 ONBOARDING-MEMBER §0 · 别用 brew install multica)。
 # install.sh 自带 upgrade 检测 · 升级 = 重跑同一条
 curl -fsSL https://raw.githubusercontent.com/feibo-ai/tc-multica/main/scripts/install.sh | bash
 multica setup                    # 装完配置环境
@@ -47,7 +47,7 @@ zeabur auth login                # 浏览器登 actionow Zeabur 账号
 ```bash
 multica auth status              # 期望: Server/User/Token 三行 OK
 zeabur project list              # 期望: 包含 team-context
-multica autopilot list           # 期望: 4 个 active
+multica autopilot list           # 期望: 5 个 active(全新 workspace 需先重建 · 见 §3a)
 ```
 
 ---

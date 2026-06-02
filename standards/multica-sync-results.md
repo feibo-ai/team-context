@@ -1,5 +1,7 @@
 # Multica skill 同步结果 — 2026-05-27
 
+> ⚠️ **历史快照**(2026-05-27 · 旧本地 Docker 部署)。W5 已迁 Zeabur 云:现 workspace `fb23cf99-5f4c-4815-b2b3-8d5e323659f6` · server `https://api.teamctx.actionow.ai` · 5 个 autopilot。以下数值为当时记录,不代表现状。
+
 **Workspace**: `team-context` (slug: `team-context`, id: `766a0455-62d4-4454-b8b3-1794e2e92864`)
 **Server**: `http://localhost:8080` (本地 Docker)
 **导入的 skills**: 12 / 12

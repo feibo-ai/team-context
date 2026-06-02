@@ -1,6 +1,6 @@
 ---
 name: tc-2-research
-description: "Use when entering Research phase of the RPI framework — before any plan or code work on a project-layer goal. Triggers: 'start research', 'let us understand', '调研', '研究一下', 'Research session', user explicitly invokes Phase 01 step 2. Orchestrates parallel subagent research with context budget discipline. Output goes to docs/research/research_YYYY-MM-DD_topic.html (auto-uploaded to the issue · renders inline). Required for SOP v0.4 P-3 Phase 01."
+description: "Use when entering Research phase of the RPI framework — before any plan or code work on a project-layer goal. Triggers: 'start research', 'let us understand', '调研', '研究一下', 'Research session', user explicitly invokes Phase 01 step 2. Orchestrates parallel subagent research with context budget discipline. Output: a local skeleton at docs/research/research_YYYY-MM-DD_topic.html; filled findings are published as an issue COMMENT via doc_publish (!file inline render) — never auto-uploaded to the description. Required for SOP v0.4 P-3 Phase 01."
 ---
 
 # RPI · Research Session
