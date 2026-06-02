@@ -123,7 +123,7 @@ multica auth status 2>&1 | awk '/^User:/ {found=1} END {exit found?0:1}' \
 
 ---
 
-## STEP-02 · tcmcp-local build (12 stdio tools)
+## STEP-02 · tcmcp-local build (stdio SOP tools)
 
 ```bash
 TCMCP_DIR="$HOME/team-context-mcp"
@@ -137,25 +137,35 @@ pnpm --filter @tcmcp/shared build 2>&1 | tail -3
 pnpm --filter @tcmcp/local  build 2>&1 | tail -3
 ```
 
-**VERIFY:** (spawns server, sends MCP init+tools/list, parses count, kills)
+**VERIFY:** (spawns server, completes the MCP handshake, asserts the core tools exist, kills)
 ```bash
-count=$({
+names=$({
   printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"v","version":"0"}}}'
+  printf '%s\n' '{"jsonrpc":"2.0","method":"notifications/initialized"}'
   printf '%s\n' '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
   sleep 2
 } | node "$TCMCP_DIR/packages/local/dist/server.js" 2>/dev/null \
-  | jq -r 'select(.id==2)|.result.tools|length')
-[ "$count" = "12" ] && echo VERIFY_02_OK || echo "VERIFY_02_FAIL got=$count expected=12"
+  | jq -r 'select(.id==2)|.result.tools[].name' 2>/dev/null)
+# Assert the core SOP tools are present — NOT a hardcoded count. The tool set
+# grows (e.g. doc_publish took it 12→13); pinning an exact number false-FAILs a
+# correct build. The `notifications/initialized` line is required — a stricter /
+# slower server won't answer tools/list without it (else it races the sleep).
+missing=""
+for t in plan_create plan_approve plan_upgrade case_create case_review research_create doc_publish session_handoff project_kickoff; do
+  printf '%s\n' "$names" | grep -qx "$t" || missing="$missing $t"
+done
+n=$(printf '%s\n' "$names" | grep -c .)
+[ -z "$missing" ] && echo "VERIFY_02_OK ($n tools)" || echo "VERIFY_02_FAIL ($n tools · missing:$missing)"
 ```
 
 **Expected:** stdout contains `VERIFY_02_OK`.
 **ON_FAIL:**
-- `count = 0` or empty → build broke. Run `pnpm install --frozen-lockfile` again, then VERIFY.
-- After 2 attempts still ≠ 12 → ABORT, attach `pnpm install` output to report.
+- empty output / `missing:` lists core tools → build broke OR handshake didn't complete. Run `pnpm install --frozen-lockfile` again, then VERIFY.
+- After 2 attempts still missing core tools → ABORT, attach `pnpm install` output to report.
 
 ---
 
-## STEP-03 · Sync 12 team skills from multica
+## STEP-03 · Sync the team skills from multica
 
 ```bash
 SKILLS_DIR="$HOME/.claude/skills"
@@ -188,8 +198,17 @@ echo "synced=$n"
 
 **VERIFY:**
 ```bash
-count=$(ls "$HOME/.claude/skills" 2>/dev/null | wc -l | tr -d ' ')
-[ "$count" = "12" ] && echo VERIFY_03_OK || echo "VERIFY_03_FAIL got=$count expected=12"
+# Don't count the whole ~/.claude/skills dir — members already have personal
+# skills, so a total count never equals the team count (issue #6 ②). Verify each
+# TEAM skill (pulled from the registry above) actually landed as a non-empty file.
+ok=0; tot=0
+for nm in $(curl -fsS -H "Authorization: Bearer $MULTICA_TOKEN" \
+    "https://api.teamctx.actionow.ai/api/skills?workspace_id=$MULTICA_WORKSPACE_ID" \
+    | jq -r '.[].name'); do
+  tot=$((tot+1))
+  [ -s "$HOME/.claude/skills/$nm/SKILL.md" ] && ok=$((ok+1))
+done
+{ [ "$tot" -ge 12 ] && [ "$ok" = "$tot" ]; } && echo "VERIFY_03_OK ($ok/$tot)" || echo "VERIFY_03_FAIL ($ok/$tot landed)"
 ```
 
 **Expected:** stdout contains `VERIFY_03_OK`.
@@ -350,9 +369,9 @@ echo "NEXT_HUMAN_EXPECT: chat_id == oc_035c15b7fb12fed8d0e022fe2f529553"
 | Failure class | Action |
 |---|---|
 | Tool missing (STEP-00 verify) | ABORT · name the tool · do not auto-install via sudo |
-| Token invalid (STEP-01/03 verify with 401-shape error) | ABORT · ask user to re-obtain PAT from DRI · do not retry |
+| Token invalid (STEP-01/03 verify with 401-shape error) | ABORT · re-run `multica login` (member's own account) · do not retry |
 | Cloud unreachable (curl exit 6/7) | Retry once after 5s · still fail → ABORT |
-| Build broken (STEP-02 verify count ≠ 12) | Retry STEP-02 once · still fail → ABORT with `pnpm install` output |
+| Build broken (STEP-02 verify lists missing core tools) | Retry STEP-02 once · still fail → ABORT with `pnpm install` output |
 | Config file invalid JSON/TOML (STEP-04) | Restore from `.bak.<ts>` · ABORT |
 | `[mcp_servers.tcmcp-remote]` already exists with conflicting url (STEP-04a) | Warn but **do not** modify · let user decide |
 | `feishu_ready=false` (STEP-05) | Cloud-side issue · ABORT · tell user to contact DRI |

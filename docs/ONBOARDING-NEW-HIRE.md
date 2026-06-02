@@ -32,7 +32,7 @@ DRI 在你来之前：
 |---|---|---|
 | Step 0 | brew 装 multica/jq/node | 3 min |
 | Step 1 | 连云 multica · `multica auth status` 三行匹配 | 1 min |
-| Step 2 | tcmcp-local build · stdio tools/list = 12 | 5 min (含 pnpm install 网络等) |
+| Step 2 | tcmcp-local build · stdio tools/list 含核心工具 | 5 min (含 pnpm install 网络等) |
 | Step 3 | sync 12 skill 到 `~/.claude/skills/` | 1 min |
 | Step 4a/4b | Codex 或 Claude Code MCP config | 2 min |
 | Step 5 | e2e 冒烟 `search_chat` 返 `oc_035c...` | 30 sec |
