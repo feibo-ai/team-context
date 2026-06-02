@@ -40,8 +40,8 @@ prompt: |
     - "<email>" → 只本人
 
   1. 列 计划-已批准 issue
-       team:  multica issue list --label 计划-已批准 --status open
-       个人:  multica issue list --label 计划-已批准 --status open --assignee "$AUTOPILOT_SCOPE"
+       team:  multica issue list --label 计划-已批准
+       个人:  multica issue list --label 计划-已批准 --assignee "$AUTOPILOT_SCOPE"
   2. 每条: title · DRI · appetite · 最近一次 Current State handoff 时间戳
   3. (仅 team) 识别跨项目边界
 

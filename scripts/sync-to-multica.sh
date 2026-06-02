@@ -30,7 +30,7 @@ multica skill import --url "${REPO_URL}"
 
 echo ""
 echo "Now applying autopilots (requires daemon running)..."
-~/team-context/scripts/apply-autopilots.sh
+~/team-context/scripts/team-autopilot.sh all codex   # apply-autopilots.sh 已弃用 → team-autopilot.sh
 
 echo ""
 echo "Skills imported. Verify with: multica skill list"

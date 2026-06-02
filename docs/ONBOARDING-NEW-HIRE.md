@@ -30,7 +30,7 @@ DRI 在你来之前：
 
 | step | 干嘛 | 期望时间 |
 |---|---|---|
-| Step 0 | brew 装 multica/jq/node | 3 min |
+| Step 0 | brew 装 jq/node · install.sh 装 multica(别 brew 装 multica) | 3 min |
 | Step 1 | 连云 multica · `multica auth status` 三行匹配 | 1 min |
 | Step 2 | tcmcp-local build · stdio tools/list 含核心工具 | 5 min (含 pnpm install 网络等) |
 | Step 3 | sync 12 skill 到 `~/.claude/skills/` | 1 min |
@@ -152,21 +152,24 @@ Step 1 · 5-min 飞书声明意图
    (chat_id 由 tcmcp-remote 从 multica integration 配置中解析 · 你不需要拿 chat_id)
 
 Step 2 · Research session (fresh Claude Code session)
-   触发 `tc-2-research` skill · 调 MCP `research_create`:
+   先 `multica project list` 选定项目 · 触发 `tc-2-research` skill · 调 MCP `research_create`:
+     projectId=<选定项目 id · 必填 · 拿不准问 DRI>
      slug=<short-slug>
      question="<one paragraph: what we are trying to understand>"
-   产出 docs/research/research_YYYY-MM-DD_<slug>.html (方案A · 自动上传研究 issue · multica 内联渲染)
+   research_create 只建研究 issue + 本地骨架 docs/research/research_YYYY-MM-DD_<slug>.html(**不上传**)·
+   发现填好后用 MCP `doc_publish` 发为研究 issue 的**评论**(方案A · `!file` 内联渲染)
    (花 1-3 小时 · 用 subagent 并行调研多维度)
 
 Step 3 · Plan session (yet another fresh session)
    触发 `tc-3-plan` skill · 读 research .html 当输入 · 调 MCP `plan_create`:
+     projectId=<同上项目 id · 必填>
      slug=<same-slug>
      layer=project
      dri=<your-email>
      goal="<specific verifiable>"
      completionCriteria=["<signal 1>", "<signal 2>"]
      appetite="1 week"
-   产出 docs/plans/plan_YYYY-MM-DD_<slug>.html (方案A · 4 必填字段 · 自动上传计划 issue · 内联渲染 · 加 `计划-草稿` label)
+   产出 docs/plans/plan_YYYY-MM-DD_<slug>.html(方案A · 4 必填字段)· 以**评论**形式发到计划 issue(`!file` 内联)· 加 `计划-草稿` label
 
 Step 4 · Request review
    调 MCP `plan_request_review`:
@@ -212,6 +215,7 @@ Step 6 · Broadcast
 
 ```
 1. 调 MCP `case_create`:
+     projectId=<项目 id · 必填>
      slug=<same-slug>
      goal=<paste from plan>
      whatHappened="<≤ 200 words compressed timeline>"
@@ -223,7 +227,7 @@ Step 6 · Broadcast
        ancientImpossible:"yes/no — explanation"
      }, ...]   # 2-5 个非 obvious decisions
      ruleCandidates=["<0-3 candidates>"]
-   产出 cases/YYYY-MM-DD-<slug>.html (方案A · 5 sections 强制 · 自动上传 case issue · multica 内联渲染)
+   产出 cases/YYYY-MM-DD-<slug>.html(方案A · 5 sections 强制)· 以**评论**形式发到 case issue(`!file` 内联)
    (case_create 自动加 `复盘-待审` label)
 
 2. 调 MCP `case_review`:
@@ -275,7 +279,7 @@ Step 6 · Broadcast
 
 **5 天后你的可见产出：**
 
-- ✅ 4 工具装完 + multica token 拿到 + tcmcp-remote /health 通 + 22 个 MCP 工具齐
+- ✅ 4 工具装完 + `multica login` 拿到自己的 token + tcmcp-remote /health 通 + 23 个 MCP 工具齐(13 local + 10 remote)
 - ✅ SOP v0.4 通读 1 遍
 - ✅ 5 个 case 读完 (Section 4 重点)
 - ✅ 跟车 1 个 Phase 01 + 1 个 Debrief
@@ -304,6 +308,6 @@ Step 6 · Broadcast
 
 ---
 
-**本文件版本**: v0.2 · 2026-06-01 · 同步 workspace UUID `fb23cf99…` + teamctx.actionow.ai 域名 + SOP 中间产物 md→html(方案A 内联渲染) + issue label 生命周期 · 接住第一个新人后写 case 再修订
+**本文件版本**: v0.3 · 2026-06-02 · 同步 self-login 认证 + workspace UUID `fb23cf99…` + teamctx.actionow.ai 域名 + SOP 中间产物**评论制发布**(`doc_publish` · `!file` 内联)+ `projectId` 必填 + 23 MCP 工具 + 5 autopilot · 接住第一个新人后写 case 再修订
 **Owner**: DRI
 **Last reviewed**: 2026-06-01

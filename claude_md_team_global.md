@@ -12,8 +12,8 @@ AI MIQ — 5 人 AI-Native 团队。以 SOP v0.4 参考 Handbook 为准。通才
 
 1. **Research / Plan / Implement 是分离的 session。** 不要混。session 协议分别用 `tc-2-research`、`tc-3-plan`、`tc-4-build` 三个 skill。
 2. **Context pollution → 调 `tc-handoff` skill → /clear。** 不要原地修。
-3. **每个项目 / 任务都要以 `cases/YYYY-MM-DD-*.md` 复盘收尾**，用 `tc-5-review` skill。5 个必填段落。SOP 不可妥协 #2。
-4. **写代码前必须有 plan markdown，并由第二个 session 评审。** 用 `tc-3-plan` skill。SOP 不可妥协 #1。
+3. **每个项目 / 任务都要以 `cases/YYYY-MM-DD-*.html` 复盘收尾**（方案A HTML · 经 `case_create` 发为 issue 评论），用 `tc-5-review` skill。5 个必填段落。SOP 不可妥协 #2。
+4. **写代码前必须有 plan 文档（方案A HTML），并由第二个 session 评审。** 用 `tc-3-plan` skill。SOP 不可妥协 #1。
 5. **底线规则：每段 AI 生成的 diff 在 commit 前都要过人眼。** 你来 ship。
 6. **每个 multica issue 必须挂在项目下。** 建 issue（plan / research / case）前先 `multica project list` 选定 projectId；**拿不准就问用户**（是不是这个项目？要不要 `multica project create` 新建？）；绝不建无项目的孤儿 issue。`plan_create` / `research_create` / `case_create` 的 `projectId` 已是必填参数。
 
@@ -27,10 +27,14 @@ AI MIQ — 5 人 AI-Native 团队。以 SOP v0.4 参考 Handbook 为准。通才
 
 | 需求 | Skill |
 | --- | --- |
+| 启动新项目 (Phase 01) | `tc-1-start` |
 | Research | `tc-2-research` |
 | Plan | `tc-3-plan` |
 | Implement | `tc-4-build` |
 | Debrief | `tc-5-review` |
+| 认领角色 | `tc-roles` |
+| 冲突 / 分歧 | `tc-conflict` |
+| 周一对齐 / 周五 demo+betting | `tc-monday` / `tc-friday` |
 | 自检 | `tc-self-check` |
 | 污染扫描 | `tc-health-check` |
 | /clear 之前 | `tc-handoff` |
@@ -47,7 +51,7 @@ AI MIQ — 5 人 AI-Native 团队。以 SOP v0.4 参考 Handbook 为准。通才
 | 跨项目 Skills | `~/.claude/skills/`（从 team-context repo 同步） |
 | 项目内 plans | `<project>/docs/plans/` |
 | 项目内 research | `<project>/docs/research/` |
-| 项目 cases (L2) | `<project>/cases/YYYY-MM-DD-*.md` |
+| 项目 cases (L2) | `<project>/cases/YYYY-MM-DD-*.html` |
 | 团队 SOP | team-context repo，`sop/group_sop_v0.4.html` |
 | 团队标准 | team-context repo，`standards/` |
 | 架构决策 | `<project>/decisions/` + team-context `decisions/` |

@@ -303,7 +303,7 @@ source ~/.zshrc
 
 ## 7 · (可选) 建你的个人 autopilot
 
-接入完成后,可一键建你自己的 4 个 autopilot(日报 / 周一 / 周三 / 月度):数据范围只你自己 · 全部推团队群(卡片标题带你名字 · 不是私信)。
+接入完成后,可一键建你自己的 5 个 autopilot(早会 / 日报 / 周一 / 周三 / 月度):数据范围只你自己 · 全部推团队群(卡片标题带你名字 · 不是私信)。
 
 **前提:** clone 本仓库(团队成员有 read 权限) —— 没 clone 过先 `git clone https://github.com/feibo-ai/team-context.git ~/team-context`。
 
@@ -341,7 +341,7 @@ bash scripts/my-autopilot.sh all codex     # provider: codex | claude | hermes
 Codex 暂不支持自动 fuzzy match · 工具仍可手动调:`/skill tc-handoff`。
 
 ### 本地跑 multica daemon (autopilot 执行环境)
-默认 DRI mac 跑 daemon · 4 个 autopilot 由 DRI 上注册的 Codex/Claude runtime 执行。**你不需要装。** 如果团队规模上去 · 多人跑 daemon 分担:
+默认 DRI mac 跑 daemon · 5 个 autopilot 由 DRI 上注册的 Codex/Claude runtime 执行。**你不需要装。** 如果团队规模上去 · 多人跑 daemon 分担:
 ```bash
 multica daemon start
 multica runtime list   # 应看到你 mac 的 runtime
