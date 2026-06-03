@@ -40,7 +40,7 @@ prompt: |
   另读 AUTOPILOT_SCOPE_NAME = 显示名(个人版如「付雨生」· 全队版为「全队」)。
   卡片标题/正文里标注身份(范围 / owner / 负责人)一律用 AUTOPILOT_SCOPE_NAME,绝不出现邮箱原文;
   AUTOPILOT_SCOPE(邮箱)仅用于过滤查询与文件名。
-  卡片里的日期一律用 {{date}}(系统注入,形如 2026-06-03)· 阿拉伯数字,绝不写成中文数字(如「二零二六年六月三日」)。
+  卡片里如显示日期,用阿拉伯数字 ISO 格式(形如 2026-06-03):prompt 有 {{date}} 就用其值、没有就用当天日期,别因缺参数省略;绝不写成中文数字(如「二零二六年六月三日」)。
 
   1. cd ~/team-context && git log --since="last Sunday" claude_md_team_global.md
   2. Call MCP tool skill_lint (find stale + missing-owner)
