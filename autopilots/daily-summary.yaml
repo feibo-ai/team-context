@@ -40,6 +40,9 @@ prompt: |
   读环境变量 AUTOPILOT_SCOPE 决定数据范围:
     - "team"    → 全队今日数据
     - "<email>" → 只本人 (assignee / commit author == $AUTOPILOT_SCOPE)
+  另读 AUTOPILOT_SCOPE_NAME = 显示名(个人版如「付雨生」· 全队版为「全队」)。
+  卡片标题/正文里标注身份(范围 / owner / 负责人)一律用 AUTOPILOT_SCOPE_NAME,绝不出现邮箱原文;
+  AUTOPILOT_SCOPE(邮箱)仅用于过滤查询与文件名。
 
   Step 1 · 收集数据 (用 MCP 工具 · 不 shell-out 飞书)
     team:  multica issue list --updated-after $(date -v-1d +%Y-%m-%d)
@@ -49,7 +52,7 @@ prompt: |
 
   Step 2 · Compose card
     team:  标题「全队 · 今日总结」· 按 shipping member 分 section
-    个人:  标题「${AUTOPILOT_SCOPE%@*} · 今日总结」· section: Shipped / In Progress / Tomorrow / Signals
+    个人:  标题「${AUTOPILOT_SCOPE_NAME} · 今日总结」· section: Shipped / In Progress / Tomorrow / Signals
     Signals (个人): 今天 `git log | grep -c "wip:"` → /clear 次数 · close 了 issue 但没 case_create → "未写 debrief" 提醒
 
   Step 3 · 推团队群 (唯一渠道)

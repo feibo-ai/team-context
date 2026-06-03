@@ -37,6 +37,9 @@ prompt: |
   读环境变量 AUTOPILOT_SCOPE 决定范围:
     - "team"    → 全 workspace skill_lint 统计
     - "<email>" → 只本人 owned skill
+  另读 AUTOPILOT_SCOPE_NAME = 显示名(个人版如「付雨生」· 全队版为「全队」)。
+  卡片标题/正文里标注身份(范围 / owner / 负责人)一律用 AUTOPILOT_SCOPE_NAME,绝不出现邮箱原文;
+  AUTOPILOT_SCOPE(邮箱)仅用于过滤查询与文件名。
 
   1. cd ~/team-context && git log --since="last Sunday" claude_md_team_global.md
   2. Call MCP tool skill_lint (find stale + missing-owner)
@@ -45,6 +48,6 @@ prompt: |
 
   Compose card:
     team:  标题「全队 · 周三统计」· CLAUDE.md 本周 <N> 条 / Stale skills <N> 最老 <name> / 可能重复 <findings>
-    个人:  标题「${AUTOPILOT_SCOPE%@*} · 周三统计」· 我 owned skill 健康 / 我对 claude_md 的本周改动
+    个人:  标题「${AUTOPILOT_SCOPE_NAME} · 周三统计」· 我 owned skill 健康 / 我对 claude_md 的本周改动
 
   Push via MCP: notify_team({ card: <stats-card-json> })。绝不 dm_member。

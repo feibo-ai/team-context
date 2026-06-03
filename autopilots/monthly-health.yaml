@@ -41,6 +41,9 @@ prompt: |
   读环境变量 AUTOPILOT_SCOPE 决定范围:
     - "team"    → 全队 monthly_health_report
     - "<email>" → 本人月度切片
+  另读 AUTOPILOT_SCOPE_NAME = 显示名(个人版如「付雨生」· 全队版为「全队」)。
+  卡片正文里标注身份(范围 / owner / 负责人)一律用 AUTOPILOT_SCOPE_NAME,绝不出现邮箱原文;
+  AUTOPILOT_SCOPE(邮箱)仅用于过滤查询与文件名(如 /tmp/monthly-personal-${AUTOPILOT_SCOPE%@*}-... 保持不变)。
 
   Step 1 · 生成报告
     team:  Call MCP tool monthly_health_report({ teamContextRepo: ~/team-context, projectRepos: [...] })
