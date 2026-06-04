@@ -23,6 +23,8 @@ AI MIQ — 5 人 AI-Native 团队。以 SOP v0.4 参考 Handbook 为准。通才
 ## Claude 不能再犯的错
 （通过 `case_promote_rule` MCP 工具从 case file 提升上来。）
 
+- 本机开发依赖(DB/Redis/端口)用 docker-compose 起时,默认改用非标准避让端口并写进 .env.example/compose 注释,避免与开发机上其他项目的运行服务冲突。(来源:case TEA-40 · actionow-foundation-week1)
+
 ## 怎么叫起其他 Claude session
 
 | 需求 | Skill |
