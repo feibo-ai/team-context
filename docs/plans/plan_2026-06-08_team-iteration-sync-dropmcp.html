@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>team-iteration-sync-dropmcp</title>
+<style>
+:root{--ink:#1A1A1A;--ink2:#2D2D2D;--paper:#F5F2EB;--paper2:#EDE8DC;--accent:#C73E1D;--gray:#8B8680;--border:#D4CFC4;--green:#4A6B3A;--gold:#B8862E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Songti SC","Noto Serif SC",Georgia,serif;background:var(--paper);color:var(--ink);line-height:1.8;font-size:15px;padding:48px 40px;max-width:760px;margin:0 auto}
+.eyebrow{font-family:"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:14px}
+h1{font-weight:900;font-size:40px;line-height:1.15;letter-spacing:-1px;margin-bottom:18px;border-bottom:3px double var(--ink);padding-bottom:20px}
+.meta{display:flex;gap:32px;flex-wrap:wrap;font-family:"SF Mono",Menlo,monospace;font-size:12px;color:var(--gray);margin-bottom:36px}
+.meta b{color:var(--ink);font-weight:600}
+h2{font-weight:700;font-size:22px;margin:36px 0 14px;padding-left:14px;border-left:4px solid var(--accent)}
+.field{background:#fff;border:1px solid var(--border);padding:18px 22px;margin-bottom:14px}
+.field-label{font-family:"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1.5px;color:var(--gray);text-transform:uppercase;margin-bottom:6px}
+ul{list-style:none;margin:8px 0}
+li{padding:6px 0 6px 24px;position:relative}
+li::before{content:"▸";position:absolute;left:4px;color:var(--accent)}
+.crit li::before{content:"☐";color:var(--green)}
+code{font-family:"SF Mono",Menlo,monospace;background:var(--paper2);padding:1px 6px;border-radius:2px;font-size:13px}
+.callout{background:var(--paper2);border-left:4px solid var(--gold);padding:14px 18px;margin:18px 0;font-size:14px}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--gray)}
+</style></head>
+<body>
+<div class="eyebrow">PLAN · 计划 · project</div>
+<h1>team-iteration-sync-dropmcp</h1>
+<div class="meta"><span>DRI <b>曾振华</b></span><span>Layer <b>project</b></span><span>Appetite <b>~1.5周(迭代1·8-9人日)。拆:软链转换(清自指软链脏态+独立备份+冒烟)~1人日 / tc-multica B(~40-70行 mini-publishDoc 重写+测试+理 docs/cli-install-feibo-ai 分支+发版)~1.5人日 / 共享 tc-render(CSS+4模板+PUBLISH.md 写死A真实序列)~1.5-2人日 / 命门A端到端验~0.5人日 / 4个tc-*改写~2-3人日(worktree并行·人眼review串行) / registry同步~0.25人日 / Codex指针+冒烟~0.5人日 / 双端验证+截图~1人日 ≈ 8-9人日。tc-render是4 skill地基单点——先做完+命门A验通+冒烟再开4个。超时触发plan_upgrade(砍范围:保plan+research+handoff,case让迭代2)。</b></span></div>
+<h2>目标</h2><div class="field"><div class="field-label">Goal</div>去本地MCP·迭代1:把日常RPI全程(plan/research/case/handoff四类文档生成与方案A内联渲染)迁到「Claude skills+Codex AGENTS.md prose指针+multica CLI+agent raw HTTP」,渲染/发布逻辑单源在repo(tc-render/)并经multica skill update同步registry,两端共享。使Claude侧日常RPI零local MCP调用(可验证闭环);Codex侧建成prose渲染路径并冒烟(零local闭环=迭代2)。命门(doc_publish内联渲染)以A=agent raw HTTP为版本无关默认——实测真实序列须upload带issue_id+X-Workspace-Id header+raw POST /api/issues/{id}/comments(naive路径attachment静默不绑、产无渲染脏评论),PUBLISH.md逐字写死+上线前端到端验;B=tc-multica CLI --inline(~40-70行mini-publishDoc重写·非~10行)为能力收口。低频工具+删整包+删两端注册延至迭代2。可验证:Claude跑完整RPI闭环transcript grep零mcp__tcmcp-local__*;Codex prose 1次冒烟渲染成功;四类文档内联渲染与现MCP版视觉一致;新建issue均grep到非空projectId(完整UUID)。</div>
+<h2>完成标准</h2><div class="field crit"><ul><li>共享tc-render建成:assets/style.css(1775B单源)+plan/research/case/handoff四类HTML骨架(须复刻2处动态注入:日期+空列表→(无)分支,否则空字段渲染有diff)+PUBLISH.md逐字写死命门A真实序列(upload带issue_id+X-Workspace-Id header+raw POST /api/issues/{id}/comments+attachment_ids·失败静默须自检attachments已绑);写完跑真skill_lint确认SKILL.md body&lt;2000 token。</li><li>[前置·严格顺序]软链转换:先cp -R物理副本到repo外独立备份(~/.claude/skills不在git·git stash救不了)→删整个物理目录(含live的&#39;物理SKILL.md+自指子软链&#39;脏态·不能叠)→建顶层软链→team-context/skills/&lt;name&gt;→单个tc-*冒烟确认Claude仍发现(目标指team-context/skills·与ljg的.agents/skills不同)。注:worktree里改的skill软链看不到(软链指主checkout非worktree),须合回main才能冒烟。</li><li>命门A端到端验证(上线前blocking·先于4 skill改写):真发一条经A渲染成功的评论(attachments已绑+!file渲染),确认PUBLISH.md序列可复现;不通不准开skill改写。</li><li>Claude侧:tc-3-plan/tc-2-research/tc-5-review/tc-handoff改写完成,各产方案A HTML经tc-render(命门A)发布内联渲染;同一plan走旧MCP+新skill各发一条并排截图存case。</li><li>Codex侧:AGENTS.md(=团队全局claude_md_team_global.md·与~/.claude/CLAUDE.md同物理文件·改它即改每个Claude session全局)仅加≤2行中性指针到repo tc-render/PUBLISH.md(不内联多步骤·防污染);本期保留Codex ~/.codex/config.toml的tcmcp-local注册作兜底(删除挪迭代2)。</li><li>registry同步:4改写skill+tc-render经multica skill update推到registry(消除registry描述仍指doc_publish的漂移·sync脚本对已存在skill跳过不更新);验收multica skill list描述与repo源一致。</li><li>双端验收:Claude跑完整RPI闭环(research→plan→handoff→case)transcript grep零mcp__tcmcp-local__*命中;Codex prose路径1次冒烟(单篇doc渲染成功截图);新建issue均grep到非空projectId完整UUID(接管退化的规则#6护栏)。Codex零local闭环=迭代2删整包前硬门槛。</li><li>tc-multica fork:cmd_issue.go runIssueCommentAdd加--inline(~40-70行:换UploadFileWithURL+content拼装+attachment_ids绑定+flag注册+stdin/多附件交互+url空降级+json输出·含cmd_issue测试;当前在docs/cli-install-feibo-ai分支须先理回主干),发版到feibo-ai fork GitHub Releases;5人multica update(DRI dev-symlink单列:或排除或换release二进制)。!file用相对url原样不拼域名。</li><li>净损失复刻(6条·对抗验收非grep):plan goal≥10/criteria≥1/case keyJudgments≥1/case_review第4段≥100字符+handoff的confirmDiscard门(discard前用户显式确认)+&lt;60s防重复handoff警告(两条破坏性护栏prose里彻底蒸发须补)+projectId完整UUID确认。验收用对抗测试(喂违约输入确认被挡/报错),非grep字符串。每个skill/prose改写diff过人眼后commit(SOP底线#5)。</li><li>守门+回滚:本期不删@tcmcp/local包、不删两端local注册;软链转换留物理副本独立备份;脏渲染评论用multica issue comment delete撤回重发;CLI发版留旧版本号回滚路径;禁跑sync-to-multica.sh的autopilot段(会team-autopilot.sh all重建全部5 autopilot连带触发引用local工具的);改claude_md_team_global.md前注意它已dirty(M)+双端同文件无单端回滚。</li><li>迭代2收口issue已创建:删@tcmcp/local整包+删Claude与Codex两端local注册+tc-1-start/project_kickoff迁移+受影响autopilot改prompt+A→B切换(触发器=5人全部确认update到含--inline的fork release版·责任人DRI·从raw HTTP改--inline·防A永久驻留)+Codex零local闭环硬验;标blocked-on「全13迁完+全员切换确认」。</li></ul></div>
+<h2>分工</h2><div class="field"><div class="field-label">Roles</div>DRI <code>曾振华</code> · EXEC <code>曾振华(多 Claude/Codex session;仓内 skill 改写 git worktree 隔离并行·改完合回 main 才冒烟·人眼 review 串行)</code> · COLLAB <code>团队5人(迭代尾 multica update 到含 --inline 的 fork release 版 + 切换确认;Codex 注册删除留迭代2)</code> · REVIEW <code>第二 Claude session(staff-engineer)+ 4-agent panel — 三轮:v1.0 changes-requested → 复核 approved-with-nits → panel 2 blocking 实测收口 → v1.3;每个 skill/prose diff 过人眼</code></div>
+<h2>投入预算</h2><div class="callout"><b>~1.5周(迭代1·8-9人日)。拆:软链转换(清自指软链脏态+独立备份+冒烟)~1人日 / tc-multica B(~40-70行 mini-publishDoc 重写+测试+理 docs/cli-install-feibo-ai 分支+发版)~1.5人日 / 共享 tc-render(CSS+4模板+PUBLISH.md 写死A真实序列)~1.5-2人日 / 命门A端到端验~0.5人日 / 4个tc-*改写~2-3人日(worktree并行·人眼review串行) / registry同步~0.25人日 / Codex指针+冒烟~0.5人日 / 双端验证+截图~1人日 ≈ 8-9人日。tc-render是4 skill地基单点——先做完+命门A验通+冒烟再开4个。超时触发plan_upgrade(砍范围:保plan+research+handoff,case让迭代2)。</b> · 超时触发 plan_upgrade(升版强制重审)。</div>
+<h2>方案</h2><div class="field">【v1.3·panel三轮+实测收口】评审轨迹:v1.0 changes-requested→v1.1(扩双端+5b前置)→复核approved-with-nits→v1.2→4-agent panel(源码/可执行/SOP/对抗)+主session实测→v1.3。panel实测纠正2个blocking、补2条未声明净损失、纠B工作量、上浮appetite。决策1-5方向无一推翻,findings全是补洞/纠数/写精确。
+
+【一句话】日常RPI迁到Claude skills+Codex prose指针+CLI+agent raw HTTP,渲染逻辑单源repo并同步registry两端共享。Claude零local闭环可验;Codex建成prose路径+冒烟。命门A默认B收口。低频+删整包+删两端注册=迭代2。
+
+【决策1·命门A·实测真实序列(纠正&#39;已实测绿灯&#39;误判)】之前只测upload-200=误判。实测:plan写的`comment add --attachment`跑不通(CLI cmd_issue.go:662/1108拒url形attachment·attachment_ids非用户flag)。真正可用A=纯raw HTTP两步+3硬要求:①两请求带X-Workspace-Id header②upload时带issue_id(否则url是/uploads/users/·attachment_ids静默不绑attachments:[]·产无渲染脏评论;带issue_id则url是/uploads/workspaces/·绑定成功)③raw POST /api/issues/{id}/comments body{content:&#39;…!file[name](相对url)&#39;,attachment_ids:[id]}。失败静默→PUBLISH.md逐字写死3要求+发布步骤自检attachments已绑+上线前端到端验一条真渲染。A为团队其他4名装release成员托底(DRI本机dev-build·B对DRI近零成本)。B收口:tc-multica fork改runIssueCommentAdd——实测纠偏~40-70行(UploadFileWithURL不带issueID·换它=Go里重写mini-publishDoc:content拼装+attachment_ids+flag+stdin/多附件+url空降级+json+测试),非~10行。A→B切换入迭代2·触发器=全员确认update到fork release·责任人DRI。
+
+【决策2·渲染承载·共享逻辑单源】repo内tc-render/含assets/style.css(1775B单源)+4类HTML骨架(须复刻2处动态注入:日期new Date+空列表→(无)分支)+PUBLISH.md(写死命门A真实序列)。Claude经tc-render skill引用;Codex经AGENTS.md(=团队全局CLAUDE.md同物理文件)仅加≤2行中性指针(不内联·防污染每个Claude session)。SKILL.md body仅触发器骨架·写完跑真skill_lint确认&lt;2000。
+
+【决策3·迁移范围·分阶段双端高频先行】本期in-scope:tc-render(地基)+Claude 4 skill+Codex prose指针+命门B+registry同步。out-of-scope留迭代2:tc-1-start(project_kickoff)+*_lint/monthly+删@tcmcp/local整包+删两端local注册。两端本期均保留local注册作兜底(消除&#39;留低频却删兜底&#39;自相矛盾)。命名空间不冲突可并存。
+
+【决策4·issue拆分+编排】TEA-79=父(挂d47d2c07·引TEA-78·已实证project_id已挂非孤儿)+3子按仓:子1 tc-multica(命门B+发版)·子2 team-context(tc-render+4 tc-*改写+Codex指针+registry同步+sync/软链+文档)·子3 team-context-mcp(删整包=迭代2)。编排:子1与子2(起步用A)起步可并发·收尾串行(A→B join等子1发版+全员update);子2内严格序:①软链转换(先清自指软链脏态+独立备份+删物理目录建顶层软链·前置否则改写被stale遮蔽)→②tc-render先做完+命门A端到端验通+冒烟(4 skill地基单点·设计错连环返工)→③4个tc-*+Codex指针worktree隔离局部并行(改完合回main才冒烟)·每diff过人眼。3子issue为build期产物执行时建。
+
+【决策5·跨切面+registry纠正】5a真相不是单源是三份(repo+物理~/.claude+registry):软链解决物理遮蔽·DRI拍板本期multica skill update同步registry(消除registry描述仍指doc_publish·sync step3对已存在skill跳过不更新)。5b整目录软链→team-context/skills(实证Claude跟随顶层软链·但须先清live&#39;物理SKILL.md+自指子软链&#39;脏态);物理副本cp独立备份(不在git)。5c新skill必tc-前缀=tc-render。
+
+【净损失复刻·6条(panel补2条)·对抗验收】原4条zod硬约束(plan goal≥10/criteria≥1/case keyJudgments≥1/case_review第4段≥100)+新增:handoff的confirmDiscard门(discard前用户显式确认)+&lt;60s防重复handoff警告(两条破坏性护栏prose里彻底蒸发)+projectId完整UUID(required退化无人接管·威胁规则#6)。验收改对抗测试(喂违约输入确认被挡)非grep字符串。commit前人眼diff搬后反更好。
+
+【回滚+守门(panel补全)】本期不删@tcmcp/local包、不删两端注册;物理副本独立备份(git stash救不了~/.claude/skills);脏渲染评论multica issue comment delete撤回重发(实测可删);CLI发版留旧版本号回滚;禁跑sync-to-multica.sh的autopilot段(重建全部5 autopilot);改claude_md_team_global.md注意它已dirty+双端同文件无单端回滚。
+
+【Dead ends】projectId用完整UUID;拉评论multica issue comment list &lt;id&gt; --output json 2&gt;/dev/null;别再调研local改HTTP transport/local远程化/doc_publish纯CLI单命令复现内联渲染(均已证不行);纯机械同步别塞autopilot;remote域名=Zeabur公网mcp.teamctx.actionow.ai非self-host 10.0.5.51。</div>
+
+<footer>team-context · RPI Plan phase · multica issue 内渲染</footer>
+</body></html>
