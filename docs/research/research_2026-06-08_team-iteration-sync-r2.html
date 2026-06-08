@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>team-iteration-sync · 去本地 MCP 可行性(第二轮)</title>
+<style>
+:root{--ink:#1A1A1A;--ink2:#2D2D2D;--paper:#F5F2EB;--paper2:#EDE8DC;--accent:#C73E1D;--gray:#8B8680;--border:#D4CFC4;--green:#4A6B3A;--gold:#B8862E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Songti SC","Noto Serif SC",Georgia,serif;background:var(--paper);color:var(--ink);line-height:1.8;font-size:15px;padding:48px 40px;max-width:860px;margin:0 auto}
+.eyebrow{font-family:"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:14px}
+h1{font-weight:900;font-size:38px;line-height:1.15;letter-spacing:-1px;margin-bottom:18px;border-bottom:3px double var(--ink);padding-bottom:20px}
+.meta{display:flex;gap:28px;flex-wrap:wrap;font-family:"SF Mono",Menlo,monospace;font-size:12px;color:var(--gray);margin-bottom:36px}
+.meta b{color:var(--ink);font-weight:600}
+h2{font-weight:700;font-size:22px;margin:40px 0 14px;padding-left:14px;border-left:4px solid var(--accent)}
+h3{font-weight:700;font-size:16px;margin:24px 0 8px;color:var(--ink2)}
+.field{background:#fff;border:1px solid var(--border);padding:18px 22px;margin-bottom:14px}
+.field-label{font-family:"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1.5px;color:var(--gray);text-transform:uppercase;margin-bottom:6px}
+ul{list-style:none;margin:8px 0}
+li{padding:6px 0 6px 24px;position:relative}
+li::before{content:"\25B8";position:absolute;left:4px;color:var(--accent)}
+.crit li::before{content:"\2610";color:var(--green)}
+code{font-family:"SF Mono",Menlo,monospace;background:var(--paper2);padding:1px 6px;border-radius:2px;font-size:12.5px}
+.callout{background:var(--paper2);border-left:4px solid var(--gold);padding:14px 18px;margin:18px 0;font-size:14px}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:12.5px;background:#fff}
+th,td{border:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--paper2);font-family:"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--ink2)}
+.v-yes{color:var(--green);font-weight:700}
+.v-no{color:var(--accent);font-weight:700}
+.v-mid{color:var(--gold);font-weight:700}
+.tag{display:inline-block;font-family:"SF Mono",Menlo,monospace;font-size:10px;padding:1px 7px;border-radius:3px;letter-spacing:.5px;vertical-align:middle}
+.tag.ok{background:#E3EDDD;color:var(--green)}
+.tag.fix{background:#F6E0DA;color:var(--accent)}
+.tag.new{background:#F2E7CC;color:#8a6518}
+.opt{background:#fff;border:1px solid var(--border);padding:14px 18px;margin:10px 0}
+.opt .field-label{margin-bottom:8px}
+.lean{font-size:13px;color:var(--ink2);margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}
+.lean b{color:var(--accent)}
+strong{font-weight:700}
+.pin{background:#FBEEEA;border:1px solid var(--accent);border-left:5px solid var(--accent);padding:14px 18px;margin:18px 0}
+.pin .field-label{color:var(--accent)}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--gray)}
+</style></head>
+<body>
+<div class="eyebrow">RESEARCH · 研究 · 第二轮(重新调研)</div>
+<h1>team-iteration-sync · 去本地 MCP 可行性</h1>
+<div class="meta"><span>Phase <b>RPI Research R2</b></span><span>Project <b>Multica 迭代</b></span><span>DRI <b>曾振华</b></span><span>Date <b>2026-06-08</b></span><span>引用 <b>TEA-74</b>(原研究)· <b>TEA-75</b>(plan/pivot,已作废)</span></div>
+
+<h2>问题</h2>
+<div class="field"><div class="field-label">Question</div>
+第一轮 Research+Plan 后,Plan 阶段 DRI 拍板 <b>pivot</b>:本期不要本地 MCP。核心新问题——能否把 <code>@tcmcp/local</code> 的 <b>13 个工具</b>迁到 <b>skills + multica CLI + agent 自己跑</b>(git / 写文件 / 建 issue),本期<b>消除本地 MCP server</b>?是否可行、成本几何、什么会破?新方向不是「怎么同步本地 MCP」,而是「怎么<b>消除</b>它让同步变简单」。<b>本 session 只测绘、不决策</b>(决策属下一轮 Plan)。
+</div>
+<div class="callout">
+方法:主 session 亲读<b>渲染管线源码</b>(<code>render/*.ts</code> + <code>doc_publish.ts</code> + 代表性 create 工具)建立第一手判断;并行派 <b>4 个只读子代理</b>分头实测——① 13 工具分类 ② CLI 覆盖度 + MCP 注册 ③ 校验链路 + SOP 纪律 + token 成本 ④ 残余同步面 + 引擎重估 + 迁移成本。所有结论带 <code>file:line</code> 证据;与第一轮一致标 <span class="tag ok">证实</span>,不符标 <span class="tag fix">纠偏</span>,新增标 <span class="tag new">新增</span>。
+</div>
+
+<div class="pin"><div class="field-label">一句话裁决(供 Plan)</div>
+<b>去 local MCP 技术可行,且是同步问题的「釜底抽薪」</b>——本机侧 MCP 同步难点归零,launchd 引擎与 tag 闸门双双降级。<b>唯一硬约束</b>:<code>doc_publish</code> 的「上传 HTML + <code>!file</code> 内联渲染」<b>现成 CLI 单命令做不到</b>,必须靠 agent 跑一步 raw HTTP(或给 CLI 加 flag)——这是可行性的关键前提,不是 blocker。纪律不退化、渲染可保真,代价是 5 个 skill + 8 个 autopilot 改写(~6-9 人日)。
+</div>
+
+<h2>7 子问题 · 裁决总表</h2>
+<table>
+<tr><th style="width:20%">子问题</th><th style="width:13%">裁决</th><th>核心证据(带 file:line)</th></tr>
+<tr>
+<td>① 13 工具分类</td>
+<td><span class="v-yes">已分类 · 证实</span></td>
+<td><b>9 写本地 FS · 1 纯渲染+API · 3 纯本地校验/读</b>。唯一「读→渲染→只调 API、零本地副作用」的是 <code>doc_publish</code>;<code>session_handoff</code> 是唯一真动 git(<code>git.ts:42-43</code> <code>add -A</code>+<code>commit</code>)。<span class="tag fix">纠偏</span> <code>plan_create</code>/<code>case_create</code>/<code>project_kickoff</code> <b>都额外写本地 HTML</b>,不算「纯渲染+API」。</td>
+</tr>
+<tr>
+<td>② 渲染保真</td>
+<td><span class="v-yes">可保真</span></td>
+<td>渲染本质=<b>纯字符串拼接</b>(<code>template-base.ts:45-62</code> <code>renderShell</code> + 写死 CSS 常量 + <code>esc()</code>),零运行时依赖。CSS 仅 <b>1775 字节</b>。<b>agent 早已在手工复现</b>:第一轮那份 research HTML 的 CSS 与 <code>template-base</code> 几乎逐字一致。</td>
+</tr>
+<tr>
+<td>③ CLI 覆盖度</td>
+<td><span class="v-no">有命门缺口</span></td>
+<td><b>publishDoc(内联渲染)CLI 单命令做不到</b>:<code>issue comment add --attachment</code> 能上传但<b>不注入 <code>!file</code></b>,且命令层 <code>UploadFile</code>(<code>client.go:383</code>)<b>只取 id、吞掉 url</b>,agent 拿不到 url 自拼。其余写操作 CLI 基本覆盖(label 需自查 UUID)。</td>
+</tr>
+<tr>
+<td>④ agent 接管 + SOP 纪律</td>
+<td><span class="v-mid">基本不退化</span></td>
+<td>「4 要素」本就只 2 条 zod 硬约束(<code>plan_create.ts:15-16</code> goal≥10 / criteria≥1),appetite/分工<b>从来 optional + 占位符兜底</b>。「commit 前人眼 diff」<b>现状根本无代码强制</b>(<code>git.ts:42-43</code> 默认自动 commit 不看 diff),搬到 agent+Bash <b>反而更易做对</b>。净损失仅 <b>4 条硬约束 + plan_upgrade 状态机</b>。</td>
+</tr>
+<tr>
+<td>⑤ 注册变更</td>
+<td><span class="v-yes">改动极小</span></td>
+<td>两端 remote 都是 <b>HTTP url 直连</b>(非 stdio):Claude <code>~/.claude.json</code> 删 <code>tcmcp-local</code> stdio 块(~9 行);Codex <code>config.toml:221-223</code> 删 3 行。<span class="tag new">坑</span> Codex remote 靠 env <code>TCMCP_AGENT_TOKEN</code> 认证 + 无单 server 重连,去 local 后成唯一通道、单点暴露。</td>
+</tr>
+<tr>
+<td>⑥ 残余同步面 + 引擎重估</td>
+<td><span class="v-yes">大幅简化</span></td>
+<td><b>本机侧 MCP 难点归零</b>:local 删除;remote 在 Zeabur「push main→自动重建→client HTTP 自动重连」<b>本机零操作</b>(<code>DEPLOY.md:18-30</code>)。残余仅 skills/CLAUDE.md(软链免费)+ SKILL.md 副本(会 stale)+ registry(CLI)+ CLI(<code>multica update</code>)。<b>launchd 轮询降为可选、tag 闸门缩到几乎为零</b>。</td>
+</tr>
+<tr>
+<td>⑦ 迁移成本 + 什么会破</td>
+<td><span class="v-mid">~6-9 人日 · 可平滑</span></td>
+<td>skill 版与 MCP 版 <b>命名空间不同、可无冲突共存</b>(平滑过渡)。<b>会破</b>:5 个 skill 引用 local 工具名须改写(tc-1-start 最重);8 个 autopilot(monthly-health×4 + wednesday-stats×4)引用 <code>monthly_health_report</code>/<code>skill_lint</code> 会断(但 last_run 多为 None,影响小)。</td>
+</tr>
+</table>
+
+<h2>发现 · 按维度</h2>
+
+<h3>A · 13 工具分类(子问题①)</h3>
+<div class="field"><div class="field-label">Findings — tool taxonomy</div>
+<table>
+<tr><th style="width:20%">工具</th><th style="width:14%">分类</th><th>multica API / 本地副作用(file:line)</th><th style="width:8%">迁移难度</th></tr>
+<tr><td><code>doc_publish</code></td><td><span class="v-yes">纯渲染+API</span></td><td><code>readFile</code>→<code>publishDoc</code>(<code>doc_publish.ts:38,40</code>)。<b>唯一</b>零本地写副作用的发布工具</td><td>1</td></tr>
+<tr><td><code>autopilot_lint</code></td><td>纯校验(无 API)</td><td>仅 <code>readFile</code>(<code>autopilot_lint.ts:46</code>)</td><td>1</td></tr>
+<tr><td><code>skill_lint</code></td><td>纯校验(无 API)</td><td>仅 <code>readdir/readFile</code>(<code>skill_lint.ts:25,35</code>)</td><td>1</td></tr>
+<tr><td><code>monthly_health_report</code></td><td>纯本地读+聚合</td><td>git <b>只读</b> <code>simpleGit().log()</code>(<code>monthly_health_report.ts:42</code>);无写、无 API</td><td>2</td></tr>
+<tr><td><code>research_create</code></td><td>真本地副作用</td><td>写 <code>docs/research/*.html</code>(<code>research_create.ts:43</code>)+ <code>createIssue</code>(:46);故意不发 doc</td><td>2</td></tr>
+<tr><td><code>plan_create</code></td><td>真本地副作用</td><td>写 <code>docs/plans/*.html</code>(<code>plan_create.ts:60</code>)+ <code>createIssue</code>+<code>publishDoc</code></td><td>2</td></tr>
+<tr><td><code>case_create</code></td><td>真本地副作用</td><td>写 <code>cases/*.html</code>(<code>case_create.ts:62</code>)+ <code>createIssue</code>+<code>updateIssue</code>+<code>publishDoc</code></td><td>2</td></tr>
+<tr><td><code>plan_approve</code></td><td>真本地副作用</td><td>写回 plan 评审段(<code>plan_approve.ts:35</code>)+ label 状态机</td><td>2</td></tr>
+<tr><td><code>case_review</code></td><td>真本地副作用</td><td>写回 review block(<code>case_review.ts:34</code>)+ 5 API 状态机(含父 issue 级联关闭)</td><td>3</td></tr>
+<tr><td><code>plan_upgrade</code></td><td>真本地副作用</td><td>覆写 plan HTML(<code>plan_upgrade.ts:59</code>)+ 状态回退 + publishDoc 失败降级 commentOnIssue</td><td>3</td></tr>
+<tr><td><code>case_promote_rule</code></td><td>真本地副作用(<b>无 API</b>)</td><td>双写 <code>CLAUDE.md</code> 追加规则 + <code>casePath</code> 标记(<code>case_promote_rule.ts:72,80</code>);HTML/md 双格式解析 + token 预算</td><td>3</td></tr>
+<tr><td><code>session_handoff</code></td><td>真本地副作用(<b>唯一动 git</b>)</td><td><code>git add -A</code>+<code>commit "wip:"</code>(<code>git.ts:42-43</code>)/ <code>stash push</code>(:47);写 md/html plan(<code>session_handoff.ts:115,142</code>);&lt;60s 防重 + discard 拒动</td><td>5</td></tr>
+<tr><td><code>project_kickoff</code></td><td>真本地副作用</td><td>写 research+plan 双文件(<code>project_kickoff.ts:51,52</code>)+ 裸 <code>req('/api/projects')</code> 建 project + 2 issue + publishDoc</td><td>4</td></tr>
+</table>
+<ul>
+<li><span class="tag ok">证实</span> <b>恰好 9 个写本地 FS</b>:case_create / case_promote_rule(写2文件)/ case_review / plan_approve / plan_create / plan_upgrade / research_create / project_kickoff(写2文件)/ session_handoff。不写 FS 的 4 个:autopilot_lint / doc_publish / monthly_health_report / skill_lint。</li>
+<li><span class="tag ok">证实</span> <code>session_handoff</code> 在 <code>:54/:56</code> 调 git;底层经 <code>@tcmcp/shared</code> 的 <code>GitOps</code>(<b>simple-git 库,非 child_process</b>),<code>commitWip</code>=<code>git add -A</code>+<code>commit</code>、<code>stashWip</code>=<code>git stash push</code>;<code>discard</code> 刻意拒绝自动执行(要求手动 <code>git checkout .</code>)。<b>全程无 <code>git push</code></b>。</li>
+<li><b>MulticaClient 写端点全集(CLI 必须覆盖的)</b>:POST <code>/api/issues</code> · POST <code>comments</code>(字段 <code>content</code>)· POST <code>upload-file</code> · POST/DELETE <code>labels</code> · PUT <code>issues</code> · POST <code>projects</code>。<b>复合命脉 <code>publishDoc = uploadFile + commentOnIssue</code></b>(带 <code>!file</code> 嵌入 + <code>attachment_ids</code>),被 <b>6 个</b>工具调用。</li>
+</ul>
+</div>
+
+<h3>B · CLI 覆盖度 与 pivot 命门(子问题③)</h3>
+<div class="field"><div class="field-label">Findings — CLI coverage(v0.4.10)</div>
+<table>
+<tr><th style="width:22%">MCP 写操作</th><th>对应 CLI</th><th style="width:12%">覆盖度</th><th>缺口 / 证据</th></tr>
+<tr><td><code>createIssue</code></td><td><code>issue create</code></td><td><span class="v-yes">全</span></td><td>字段齐(<code>--title/--description/--project/--attachment</code>…)</td></tr>
+<tr><td><code>updateIssue</code></td><td><code>issue update</code> / <code>issue status</code></td><td><span class="v-yes">全</span></td><td>但<b>无 <code>--attachment-ids</code></b>,不能像 MCP 那样 PUT 时绑附件</td></tr>
+<tr><td><code>commentOnIssue</code></td><td><code>issue comment add</code></td><td><span class="v-mid">纯文本全</span></td><td><code>--content/--content-file/--content-stdin</code> 齐;但带渲染附件做不到(见下)</td></tr>
+<tr><td><code>addLabel</code>/<code>removeLabel</code></td><td><code>issue label add/remove</code></td><td><span class="v-mid">部分</span></td><td><span class="tag fix">纠偏</span> CLI 收 <b><code>&lt;label-id&gt;</code> UUID</b> 不收 name;MCP 的 name→UUID 解析(<code>getLabelId</code>)<b>转嫁 agent</b>(须先 <code>multica label list</code>)</td></tr>
+<tr><td><code>uploadFile</code></td><td>(无独立命令)</td><td><span class="v-mid">部分</span></td><td><code>multica attachment</code> 顶层<b>只有 <code>download</code></b>;upload 仅作 create/comment 的 <code>--attachment</code> 附属,且<b>吞 url</b></td></tr>
+<tr><td><code>publishDoc</code></td><td><b>无单命令等价</b></td><td><span class="v-no">缺口(命门)</span></td><td>见下方核心问题</td></tr>
+</table>
+<div class="pin"><div class="field-label">核心问题:doc_publish 能否用 CLI 复现内联渲染?——不能</div>
+<ul>
+<li><code>publishDoc</code> = 三件事原子完成(<code>multica-client.ts:152-167</code>):① 上传 HTML 拿 <code>{id,url}</code> → ② 评论体拼 <code>!file[name](url)</code>(<b>依赖 url 做内联 token</b>)→ ③ 建评论并 <code>attachment_ids</code> 绑定。</li>
+<li>CLI <code>issue comment add --attachment</code> 实测(<code>cmd_issue.go:1070-1142</code>):content <b>原样透传、无一行拼 <code>!file</code></b>;调的是 <code>UploadFile</code>(<code>client.go:383</code> decode <b>只取 <code>result["id"]</code></b>),<b>不是</b> <code>UploadFileWithURL</code>。</li>
+<li>后果:没有 <code>!file</code> token 的附件「has NO render surface, shows nowhere」——HTML <b>不会内联渲染</b>。upload-file 服务端响应<b>确实带 url</b>(<code>handler/file.go:66</code> <code>URL: a.Url</code>),但<b>在 CLI 命令层被吞</b>,agent 无从获取。</li>
+<li><span class="tag fix">纠偏</span> <code>doc_publish.ts:28-30</code> 注释「CLI 的 attachment 只能 download 不能 re-upload」<b>已过时</b>:能 upload,但<b>不能内联渲染</b>才是真约束。</li>
+<li><b>复现路径二选一(均超出单条 CLI)</b>:(1) agent 保留<b>一步 raw HTTP</b>——直接 POST <code>/api/upload-file</code>(响应带 url)→ 自拼 <code>!file</code> → comment 带 <code>attachment_ids</code>;(2) <b>改 CLI</b>——给 <code>comment add</code> 增「上传后自动拼 <code>!file</code>」或让 <code>UploadFile</code> 回 url。</li>
+</ul>
+</div>
+</div>
+
+<h3>C · 渲染保真 · 校验链路 · token 成本(子问题② ④)</h3>
+<div class="field"><div class="field-label">Findings — 「4 要素」运行时强制矩阵</div>
+<table>
+<tr><th>要素</th><th>字段 / zod 约束</th><th>运行时强制?</th></tr>
+<tr><td>目标 goal</td><td><code>z.string().min(10)</code>(<code>plan_create.ts:15</code>)</td><td class="v-yes">是</td></tr>
+<tr><td>完成标准</td><td><code>z.array(...).min(1)</code>(:16)</td><td class="v-yes">是</td></tr>
+<tr><td>投入预算 appetite</td><td><code>.optional()</code>(:17)→ 渲染填 <code>(设定)</code></td><td class="v-no">否</td></tr>
+<tr><td>分工 roles</td><td><code>dri/exec/collab/reviewer</code> 全 <code>.optional()</code>(:14,18-20)→ 填 <code>(未分配)/(待指派)</code></td><td class="v-no">否</td></tr>
+</table>
+<ul>
+<li><span class="tag ok">证实</span> 「4 要素齐全」<b>现状就只有半套代码护栏</b>:仅 goal + completionCriteria 是 zod 硬约束;appetite/roles <b>本就靠 skill 文字 + agent 自觉 + 占位符兜底</b>(<code>plan-html.ts:25-32</code>)。<b>不是搬进 skill 才退化,而是现在就一半靠自觉。</b></li>
+<li><b>无独立「4 要素校验器」</b>:<code>plan_approve</code> 纯状态流转<b>不读 plan 内容</b>(空 appetite 也能 approve);<code>case_review</code> 是唯一做内容校验的(第4段 &lt;100 字符抛错,<code>case_review.ts:14,23-28</code>);<code>skill_lint</code>/<code>autopilot_lint</code> 校验的是 SKILL.md / autopilot YAML 自身,与 4 要素无关。</li>
+<li>case 校验最严:<code>whatHappened</code> min1max1500、<code>keyJudgments</code> min1 且 6 子字段全 required(<code>case_create.ts:11,17-24</code>);research 几乎无结构强制(只 <code>question</code> min20)。</li>
+<li><b>搬后净损失清单(仅 4 条硬约束)</b>:plan goal≥10 · completionCriteria≥1 · case keyJudgments≥1 · case_review 第4段≥100 字符。<b>这 4 条若不在 skill 复刻成文字纪律,即净损失</b>;其余 optional 项无变化。</li>
+</ul>
+</div>
+<div class="field"><div class="field-label">Findings — SOP 三纪律:现状 vs 搬后</div>
+<table>
+<tr><th>SOP 纪律</th><th>现状靠什么</th><th>搬后</th></tr>
+<tr><td>① 4 要素齐全</td><td>半代码半自觉</td><td>退化面仅 goal≥10 / criteria≥1 两条硬约束(其余本无护栏)</td></tr>
+<tr><td>② commit 前人眼 diff</td><td><b>完全不靠代码</b>:默认 <code>commit</code> 策略<b>自动 <code>add -A</code>+commit、不展示 diff</b>(<code>git.ts:42-43</code>)</td><td class="v-yes"><b>无退化、反更好</b>:agent 用 Bash 可先 <code>git diff</code> 给人看再 commit,比 simple-git 黑箱更易插人眼 gate</td></tr>
+<tr><td>③ 不 vibe code</td><td>部分代码:label/status 状态机 + <code>plan_upgrade</code>「超 appetite 回 in_review 重审」(<code>plan_upgrade.ts:44-47</code>)</td><td>退化点:状态机硬流转变 agent 自觉调 <code>multica issue</code> 改 label</td></tr>
+</table>
+<ul>
+<li>另两个安全护栏搬后只能靠 skill 文字:<code>session_handoff</code> 的 <b>&lt;60 秒重复 handoff 拒绝</b>(<code>session_handoff.ts:83-87</code>)+ <b>discard 必须 confirmDiscard</b> 的破坏性兜底(:59-67)。</li>
+</ul>
+</div>
+<div class="field"><div class="field-label">Findings — 渲染 token 成本 与 skill_lint 红线</div>
+<ul>
+<li>三个 skill 目录(<code>tc-3-plan</code>/<code>tc-5-review</code>/<code>tc-2-research</code>)<b>零 HTML/CSS</b>,只有 SKILL.md(markdown 骨架)+ 自引用软链;CSS 现只活在 MCP 包(<code>template-base.ts:17-35</code>)。SKILL.md 明写「渲染外包给 MCP 工具」。</li>
+<li>量化:CSS 纯内容 <b>1775 字节</b>;完整搬一种 doc 模板进 skill 约 +3.3~5.4KB(<b>840~1360 token</b>):plan 版 ~1360 / case 版 ~1010 / research 版 ~840。</li>
+<li><span class="tag new">硬约束</span> <code>skill_lint.ts:53-54</code>:SKILL.md body &gt;<b>2000 token 直接报 error</b>。<code>tc-3-plan</code> 内嵌完整 plan 模板后约 <b>2220 token,会撞破自家 lint 红线</b>;tc-5-review/tc-2-research 逼近未破。<b>解法</b>:抽公共 <code>assets/style.css</code> 让 agent 读(不计入 body token),或精简映射规则——搬迁方案绕不开。</li>
+</ul>
+</div>
+
+<h3>D · 注册变更(子问题⑤)</h3>
+<div class="field"><div class="field-label">Findings — MCP registration</div>
+<table>
+<tr><th>端</th><th>配置</th><th>remote 方式 / bearer</th><th>去 local 改动</th></tr>
+<tr><td>Claude</td><td><code>~/.claude.json</code> 顶层 <code>.mcpServers</code></td><td><code>type:"http"</code> url · header 内联 bearer</td><td>删 <code>tcmcp-local</code> stdio 整块(~9 行),remote 零改</td></tr>
+<tr><td>Codex</td><td><code>~/.codex/config.toml:221-223</code></td><td><code>url=</code> HTTP · env <code>TCMCP_AGENT_TOKEN</code></td><td>删 <code>[mcp_servers.tcmcp-local]</code> 3 行,remote 零改</td></tr>
+</table>
+<ul>
+<li>两端 remote 都 <b>HTTP url 直连</b> <code>mcp.teamctx.actionow.ai/mcp</code>(非 stdio),改动只是删 local 块。</li>
+<li><span class="tag new">Codex 三坑</span>(去 local 后 remote 成唯一通道,风险放大):① remote 靠 env <code>TCMCP_AGENT_TOKEN</code> 认证,env 未注入则 remote 直接挂(Claude 内联 header 无此问题);② Codex <b>无单 server 重连</b>,远程抖动需重启整个 Codex;③ local 当前未设 <code>startup_timeout_sec</code>(对比 <code>node_repl</code> 显式设 120),删后此风险消失。</li>
+<li><span class="tag new">史坑印证</span> <code>config.toml:213</code> 留有注释:已于 2026-05-29 删过一个 stdio server(同 <code>dist/server.js</code> 死路径模式),本次删的 <code>tcmcp-local</code> 是其继任。</li>
+</ul>
+</div>
+
+<h3>E · 残余同步面 与 引擎重估(子问题⑥)</h3>
+<div class="field"><div class="field-label">Findings — residual sync surface</div>
+<table>
+<tr><th>同步项</th><th>方式</th><th>免费?</th><th>证据</th></tr>
+<tr><td>CLAUDE.md / AGENTS.md</td><td>软链同一文件</td><td class="v-yes">免费</td><td><code>git pull</code> 即时</td></tr>
+<tr><td>skill 正文(内层)</td><td>嵌套软链 → repo</td><td class="v-yes">免费</td><td><code>git pull</code> 即时</td></tr>
+<tr><td>SKILL.md 外层(触发器)</td><td><b>物理副本</b></td><td class="v-no">否(会 stale)</td><td>实测副本落后源 5-7 行 diff,需 <code>sync-team-config.sh</code></td></tr>
+<tr><td>registry(server DB)</td><td><code>multica skill create/update</code></td><td class="v-no">否(需 CLI)</td><td>无「本地↔registry 双向同步」原语</td></tr>
+<tr><td>CLI 自身</td><td><code>multica update</code></td><td class="v-mid">半</td><td>GitHub Release 自更新,无 sudo</td></tr>
+</table>
+<ul>
+<li><span class="tag ok">证实</span> <b>本机侧 MCP 同步难点归零</b>:local 删除 → <code>tsc</code> rebuild + 重启编辑器(及 Codex 无单 server 重连)<b>随之消失</b>——这是 pivot 的<b>最大直接收益</b>。remote 在 <b>Zeabur</b>「merge main → git-trigger → docker build → 重部署」+ client HTTP 自动重连,<b>本机零操作</b>(<code>DEPLOY.md:18-30</code>)。</li>
+<li><span class="tag fix">纠偏</span> remote 域名是 Zeabur 公网 <code>mcp.teamctx.actionow.ai</code>,<b>不是</b> self-host <code>10.0.5.51:8083</code>(后者是 multica 控制面,非 MCP server)。</li>
+<li><span class="tag fix">纠偏</span> 第一轮「daemon 每 6h 自动检查 CLI 新版」:间隔常量属实,但 <code>config.go:381/391</code> <b>self-host 默认 <code>autoUpdateEnabled=false</code></b>(注释 :76「default true on Cloud, false on self-host」)→ 实际靠手动 <code>multica update</code>。</li>
+</ul>
+</div>
+<div class="field"><div class="field-label">引擎重估 · 两张清单(测绘事实,非决策)</div>
+<table>
+<tr><th style="width:50%">随 local MCP <b>消失</b>的同步需求</th><th style="width:50%">pivot 后<b>仍存在</b>的同步需求</th></tr>
+<tr><td>1. local MCP 的 <code>tsc</code> rebuild(<code>dist/server.js</code>)</td><td>1. skill 正文 + CLAUDE.md 软链(<code>git pull</code> 免费即时)</td></tr>
+<tr><td>2. rebuild 后重启 Claude/Codex(Codex 无单 server 重连一并消失)</td><td>2. SKILL.md 外层副本(会 stale,需 sync 脚本)</td></tr>
+<tr><td>3. 为「MCP 变更需即时重启」而设的即时通知(webhook/notify_team)</td><td>3. registry 新增/改 skill(<code>multica skill create/update</code>)</td></tr>
+<tr><td>4. 为防「broken main→本机出坏 MCP」的 tag 闸门(本机侧)</td><td>4. CLI 自身(<code>multica update</code>,self-host 自动默认关)</td></tr>
+<tr><td>5. <code>config.toml</code> 的 <code>tcmcp-local</code> 注册</td><td>5. remote MCP(仍在,但<b>本机零操作</b>)</td></tr>
+<tr><td>6. local 13 工具本身</td><td>6. 「谁来 pull」的安全性(ff-only/仅 main/脏跳过,目前仅文档级)</td></tr>
+</table>
+<ul>
+<li><b>launchd 轮询引擎:从「刚需」降为「便利性可选项」</b>。无任何残余项<b>必须</b>靠它:最重的 git pull 是软链免费即时;SKILL.md 副本/registry 是确定性脚本一次跑完;CLI 单命令。</li>
+<li><b>tag 闸门:范围缩到几乎为零</b>。残余本机项<b>没有一项在本机 build 或执行 team-context 代码</b>——唯一会 <code>tsc</code> build 的 local MCP 删了;remote build 在 Zeabur 服务端 + main 分支保护兜。坏文档最多内容错(靠 <code>lint.yml</code>),不让本机进程崩。</li>
+</ul>
+</div>
+
+<h3>F · 迁移成本 与 什么会破(子问题⑦)</h3>
+<div class="field"><div class="field-label">Findings — migration cost &amp; breakage</div>
+<ul>
+<li><b>一次性工作量 ~6-9 人日</b>(单人;HTML 模板可复用显著压低):轻档(渲染+发评论)6 个 ~0.5 人日/个;中档(读多源聚合)4 个 ~0.5-1 人日/个;重档(扫全仓报告)2 个 ~1 人日/个。是「重写为 skill 指令 + CLI 组合」,非写新功能。</li>
+<li><span class="tag ok">过渡期可无冲突共存</span>:skill 是 <code>~/.claude/skills/</code> prose、MCP 是 <code>config.toml</code> 注册,<b>命名空间完全不同</b>;改写期保留 MCP、agent 优先走新 skill,删 MCP 注册放最后一步。无技术阻塞。</li>
+</ul>
+<div class="field-label" style="margin-top:12px">会破点 1 · 5 个 skill 引用 local 工具名(去 MCP 须改写)</div>
+<table>
+<tr><th>skill</th><th>引用工具</th><th>改写性质</th></tr>
+<tr><td><code>tc-1-start</code></td><td><code>project_kickoff</code>/<code>plan_create</code>/<code>plan_approve</code></td><td><b>最重</b>(多处 + frontmatter)</td></tr>
+<tr><td><code>tc-3-plan</code></td><td><code>plan_create</code>/<code>project_kickoff</code></td><td>改为 skill 出 HTML + CLI 发</td></tr>
+<tr><td><code>tc-2-research</code></td><td><code>research_create</code>/<code>project_kickoff</code></td><td>同上,research 版</td></tr>
+<tr><td><code>tc-5-review</code></td><td><code>case_create</code>/<code>case_promote_rule</code></td><td>渲染 + 规则提升</td></tr>
+<tr><td><code>tc-handoff</code></td><td><code>session_handoff</code></td><td>发 Current State 评论 + git</td></tr>
+</table>
+<ul><li>其余 skill(tc-4-build/tc-conflict/tc-friday/tc-monday/tc-roles/tc-health-check/tc-self-check/multica-cli)<b>无 local 工具引用,不受影响</b>。均为 prose 描述,<b>无</b> <code>mcp__tcmcp-local__</code> 前缀硬调。</li></ul>
+<div class="field-label" style="margin-top:12px">会破点 2 · 8 个 autopilot 引用 local 工具(会断)</div>
+<ul>
+<li>全 22 个 autopilot 均 <code>run_only</code>;引用 local 的:<code>monthly_health_report</code>×4(monthly-health-*)+ <code>skill_lint</code>×4(wednesday-stats-*)。<code>case_create</code>×4(daily-summary)是「检测未写 case」的<b>信号、非真调用</b>。</li>
+<li>机理:autopilot 跑在 <b>server 端 daemon runtime</b>,agent 经 server 端可达 MCP 调工具;但 <code>monthly_health_report</code>/<code>skill_lint</code> 是 <b>local stdio 工具,只在装了 local MCP 的那台机可见</b>。删 local 注册 → 这 8 个 autopilot 找不到工具会断。</li>
+<li>缓解:实测 <code>last_run_at</code> 多为 <code>None</code>(monthly-health 几乎没跑过)→ <b>影响面实际较小但非零</b>;改 5 个 skill 时连带把这 2 类 autopilot 的 prompt 从「call MCP X」改为「agent 自己跑 git/CLI 聚合」。</li>
+<li>codex 侧:<code>AGENTS.md</code> 是软链全局规则(无工具名);<b>无独立 prompt 硬编码 13 工具名</b>,只需改 <code>config.toml</code> 注册段。</li>
+</ul>
+</div>
+
+<h2>第一轮对账(证实 / 纠偏 / 新增)</h2>
+<div class="field"><div class="field-label">Reconciliation vs TEA-74 / TEA-75</div>
+<ul>
+<li><span class="tag ok">证实</span> 9 工具写本地 FS;session_handoff 真 commit/stash git;local≠remote 工具集不重叠;local 不能远程化(写本地工作树)。</li>
+<li><span class="tag ok">证实</span> remote = Zeabur push-main 自动重建 + client HTTP 自动重连 + 本机零操作;skill/CLAUDE.md 软链免费;SKILL.md 物理副本会 stale。</li>
+<li><span class="tag fix">纠偏</span> <code>doc_publish.ts</code> 注释「CLI 只能 download 不能 upload」已过时——<b>能 upload,但不能内联渲染</b>才是真约束(命门)。</li>
+<li><span class="tag fix">纠偏</span> CLI label add 收 <b>UUID 不收 name</b>(name→UUID 解析转嫁 agent)。</li>
+<li><span class="tag fix">纠偏</span> remote 域名 Zeabur 公网,非 self-host 10.0.5.51;CLI daemon 6h 自更新 self-host 默认<b>关</b>。</li>
+<li><span class="tag new">新增</span> 「4 要素」现状只 2 条 zod 硬约束,无独立校验器——搬 skill 净损失仅 4 条硬约束。</li>
+<li><span class="tag new">新增</span> <code>skill_lint</code> 2000-token 红线:tc-3-plan 内嵌完整模板会撞破,需抽公共 CSS 文件。</li>
+<li><span class="tag new">新增</span> 5 skill + 8 autopilot 会破;Codex remote 单点(env 认证 + 无单 server 重连)。</li>
+</ul>
+</div>
+
+<h2>待解问题</h2>
+<div class="field"><div class="field-label">Open questions — Plan 前需 DRI / 团队回答</div>
+<ul>
+<li><b>doc_publish 命门怎么解?</b>(决定整个 pivot 形态)选 A「agent 跑一步 raw HTTP(POST upload-file 拿 url→拼 <code>!file</code>→comment)」还是 B「给 CLI 加一个 flag(<code>comment add</code> 自动拼 <code>!file</code> / <code>UploadFile</code> 回 url)」?B 更干净但是 tc-multica 代码改动(fork,有 upstream)。</li>
+<li>渲染模板放哪?每 skill 内嵌(撞 tc-3-plan 红线)还是<b>抽公共 <code>assets/style.css</code> + 一个共享渲染规则片段</b>?后者还要解决「公共片段如何同步」(回到软链/副本面)。</li>
+<li>净损失的 <b>4 条硬约束 + plan_upgrade 状态机</b>是否需要在 skill 复刻为强制纪律?还是接受降级为 agent 自觉(SOP 人眼 review 兜底)?</li>
+<li>本期范围:<b>13 工具全迁</b>,还是先迁高频 5-6 个(plan/research/case/handoff/doc_publish)、低频的(monthly_health_report / project_kickoff / *_lint)留后?</li>
+<li>8 个会断的 autopilot:本期连带改 prompt,还是先停用(last_run 多为 None)?</li>
+<li>Codex remote 单点风险(env 认证 + 无单 server 重连):是否需要在去 local 前先验证 <code>TCMCP_AGENT_TOKEN</code> 注入可靠?</li>
+</ul>
+</div>
+
+<h2>可选方案(为 Plan 准备 · 非定论)</h2>
+<div class="callout">以下是带证据的<b>选项与权衡</b>,供 Plan session + DRI 拍板。本 Research 不做决策,仅给证据倾向。</div>
+
+<div class="opt"><div class="field-label">取向 1 · doc_publish 命门的解法</div>
+<ul>
+<li><b>A · agent 跑 raw HTTP 一步</b>:skill 指挥 agent <code>curl</code>/fetch POST <code>/api/upload-file</code> 拿 url → 自拼 <code>!file</code> → <code>multica issue comment add --content-file ... --attachment ...</code>。零 CLI 改动、本期即可落地;代价是 skill 里要藏一段 HTTP 调用(token/凭据复用现有注册)。</li>
+<li><b>B · 给 CLI 加 flag</b>:<code>comment add</code> 上传后自动拼 <code>!file</code>(或 <code>UploadFile</code> 回 url)。最干净、一劳永逸;但改 tc-multica(fork + upstream),需走 CLI 发版节奏。</li>
+</ul>
+<div class="lean">证据倾向(非定论):<b>本期 A 落地、B 作为正式收口</b>。A 让 pivot 不被 CLI 发版阻塞;publishDoc 被 6 工具依赖,长期值得 B 根治。</div>
+</div>
+
+<div class="opt"><div class="field-label">取向 2 · 渲染模板的承载</div>
+<ul>
+<li><b>A · 每 skill 内嵌</b>:简单直给,但 tc-3-plan 撞 skill_lint 2000-token error。</li>
+<li><b>B · 抽公共 <code>assets/style.css</code> + 共享渲染片段</b>:不占 SKILL.md body token、CSS 单点维护;但「公共片段同步」回到软链/副本面(可复用现有 Tier0 软链)。</li>
+</ul>
+<div class="lean">证据倾向(非定论):<b>B</b>。CSS 仅 1775B 单点最稳,且天然走软链免费同步,顺带不破自家 lint。</div>
+</div>
+
+<div class="opt"><div class="field-label">取向 3 · 迁移范围与节奏</div>
+<ul>
+<li><b>A · 全 13 工具一次迁</b>:彻底,但 ~6-9 人日 + 8 autopilot 连带。</li>
+<li><b>B · 先高频 5-6 个</b>(plan_create/research_create/case_create/session_handoff/doc_publish/plan_approve)+ MCP/skill 并存过渡,低频(project_kickoff/monthly_health_report/*_lint)留后。</li>
+</ul>
+<div class="lean">证据倾向(非定论):<b>B 分阶段</b>。命名空间不冲突可并存(已证),高频先迁拿掉 90% 痛点;低频的 *_lint/monthly 可暂留 MCP 或停用对应 autopilot(last_run 多 None)。</div>
+</div>
+
+<h2>深化追问 · 机理与可行性(DRI 第二轮追问)</h2>
+<div class="callout">DRI 追问 5 点,主 session 读 tc-multica(Go CLI)+ team-context-mcp 源码查实。<b>重大发现</b>:命门的 CLI 修复极小、且同仓已有现成范例——推翻第一轮「改 CLI 代价中」的估计。</div>
+
+<h3>① 为什么不能内联渲染</h3>
+<div class="field">
+内联渲染的唯一触发器 = 评论正文里的 <code>!file[文件名](url)</code> file-card token(multica 前端 <code>preprocessFileCards → file-card → HtmlAttachmentPreview</code> 才渲染,<code>multica-client.ts:4-12</code>)。光上传 + 绑 <code>attachment_ids</code> <b>没 token 就「无渲染面」</b>;拼 token 需要 url。
+<ul>
+<li>MCP 工具能内联:TS 端 <code>uploadFile</code> 取 url(<code>multica-client.ts:196</code>)→ <code>publishDoc</code> 拼 <code>fileEmbed</code>(<code>:162-163</code>),无 url 则降级提示(<code>:164</code>)。</li>
+<li>CLI <code>issue comment add</code> 不能:用旧 <code>UploadFile</code>(<code>client.go:338</code>)<b>只返回 id、吞掉 url</b>(<code>:383</code>),正文原样透传不拼 <code>!file</code>(<code>cmd_issue.go:1123</code>)。</li>
+<li><span class="tag fix">根因</span> 不是后端缺能力(<code>/api/upload-file</code> 响应本就带 url),是 CLI 这条命令没接「取 url + 拼 token」两步。</li>
+</ul>
+</div>
+
+<h3>② CLI 二次开发可行性 —— 极小,同仓已有范例</h3>
+<div class="pin"><div class="field-label">命门最小修复</div>
+<ul>
+<li><code>UploadFileWithURL</code>(<code>client.go:393</code>,返回 <code>(id,url,err)</code> 不吞 url)<b>已存在</b>,且 CLI 自己已在用(<code>cmd_agent.go:773</code> 头像上传)。</li>
+<li>修复 <code>runIssueCommentAdd</code>(<code>cmd_issue.go:1115</code>):改用 <code>UploadFileWithURL</code> 拿 id+url → 正文拼 <code>!file[名](url)</code>(格式 <code>multica-client.ts:14-16</code>)→ comment 带 <code>attachment_ids</code> 绑定 → 加 <code>--inline</code> flag。<b>只动一处 ~5-10 行</b>。</li>
+<li>注:<code>UploadFileWithURL</code> 不绑 issue_id,靠 comment 的 <code>attachment_ids</code> 绑定即可。</li>
+</ul>
+</div>
+
+<h3>③ Zeabur 架构厘清</h3>
+<div class="field">
+<span class="tag ok">证实</span> remote MCP = <code>tcmcp-remote-gres</code>,Zeabur 项目 teamctx,公网 <code>mcp.teamctx.actionow.ai</code>;<code>@tcmcp/local</code> 不在 Zeabur(本机 stdio);CD = Zeabur git-trigger(push main→build→redeploy,<code>DEPLOY.md:1-44</code>)。
+<br><span class="tag fix">厘清</span> CLI / 原 local MCP 实际连 multica 后端<b>公网 <code>api.teamctx.actionow.ai</code></b>(<code>multica config show</code>),<b>非</b> 记录里的 <code>10.0.5.51:8083</code>(两者 health 均 ok,后者内网仍可达)。后端很可能也在 Zeabur teamctx。<b>不影响去 local MCP 结论。</b>
+</div>
+
+<h3>④ CLI 自动 update —— 一个 env 开关</h3>
+<div class="field">
+daemon 有自更新能力,self-host 默认关(<code>config.go:381</code> <code>isOfficialCloudServer→false</code>)。设 <code>MULTICA_DAEMON_AUTO_UPDATE=true</code>(<code>config.go:382</code>)即开,每 6h 在 idle 时自更新(<code>auto_update.go:43</code>)。<b>进一步削弱「需专门同步引擎」的必要性</b>。
+</div>
+
+<h3>⑤ 是否需要新增 skill —— 5 改写 + 1 新增共享</h3>
+<div class="field">
+13 工具<b>非 1:1 变 skill</b>。多数内化进现有:plan_create/approve/upgrade→tc-3-plan;research_create→tc-2-research;case_create/review/promote_rule→tc-5-review;session_handoff→tc-handoff;project_kickoff→tc-1-start。<b>新增 1 个共享「方案A 渲染+发布」skill</b>(承载 CSS + 4 文档结构 + CLI 发布步骤)——正好解 <code>skill_lint</code> 2000-token 红线。*_lint / monthly_health_report 可内化进 tc-health-check / tc-self-check。
+</div>
+
+<h2>三仓改动面 · 依赖链与执行编排</h2>
+<div class="callout">3 子代理逐仓测绘(tc-multica 一仓由主 session 补齐)。<b>核心</b>:真正代码改动很小(tc-multica ~10 行 + local 整包删),大头在 team-context 的文档/skill 改写 + 跨切面决策。</div>
+
+<h3>三仓改动清单</h3>
+<table>
+<tr><th style="width:18%">仓</th><th>核心改动</th><th style="width:28%">关键风险/依赖</th><th style="width:8%">量</th></tr>
+<tr><td><b>tc-multica</b><br>(CLI · Go)</td><td>命门最小修复(<code>cmd_issue.go</code> runIssueCommentAdd ~5-10 行)+ <code>--inline</code> flag;auto-update env 开关(可选改默认)</td><td>fork(feibo-ai);tag → <code>release.yml</code> → 成员 <code>multica update</code></td><td>小</td></tr>
+<tr><td><b>team-context</b><br>(skills+文档)</td><td>改写 5 个 tc-* skill(~18 处 MCP 引用)+ 新增 1 共享 skill + 2 autopilot YAML(改后重跑脚本推 server)+ sync 脚本 + 文档重灾区(ONBOARDING×4 + README + labels)</td><td><b>3 跨切面待决</b>:registry 去留 / skill 单一真相(软链 vs curl-registry 双机制 stale)/ 新 skill 命名(<code>tc-*</code> glob 会漏)</td><td>大</td></tr>
+<tr><td><b>team-context-mcp</b><br>(MCP 源)</td><td><code>@tcmcp/local</code> 整包删(~38 文件);<code>@tcmcp/shared</code> 必留(remote 运行时用 MulticaClient)可瘦身(git/markdown/tokens 成 104 行孤儿);remote 零改(<code>Dockerfile:31</code> 死 COPY 顺手);render CSS 搬 skill</td><td><code>pnpm-lock</code> 重生过 CI <code>--frozen-lockfile</code>;删包前须全员切换</td><td>中(机械)</td></tr>
+</table>
+<ul>
+<li><span class="tag fix">纠偏</span> autopilot:repo 是 <b>5 个 YAML 非 8</b>;真调 local 工具的仅 2 个(monthly-health→monthly_health_report、wednesday-stats→skill_lint),「8」是 team+个人实例化口径。</li>
+<li><span class="tag fix">纠偏</span> skill 到本机:实测<b>软链路线与 curl-registry 物理副本路线并存且 stale</b>(本机 <code>tc-2-research/SKILL.md</code> 实测 stale)——去 MCP 正是收敛「单一真相」的时机。</li>
+</ul>
+
+<h3>依赖链(决定能否并行)</h3>
+<div class="pin"><div class="field-label">三仓不是独立并行,是有序依赖链</div>
+<b>① tc-multica 命门修复+发版</b>(最先,skill 才有 CLI 可调)<b>→ ② team-context 建共享 skill + 改 5 skill</b>(居中,依赖命门 + registry 决策)<b>→ ③ team-context-mcp 删 local 包</b>(最后,确认全员切换否则客户端 spawn 崩)。
+<br>含义:<b>跨仓不能真并行实施/测试</b>(命门未发版前 skill 改写无法端到端测);<b>仓内可局部并行</b>(共享 skill 建好后,5 个 tc-* 改写弱依赖可并行,但需 git worktree 隔离 + 每个 diff 过人眼)。
+</div>
+
+<h3>issue 拆分 + 执行编排(倾向 · 属 Plan 决策)</h3>
+<div class="opt"><div class="field-label">倾向(非定论 · Plan 正式拍板)</div>
+<ul>
+<li><b>issue 拆分</b>:1 个父 issue + 3 个子 issue(按仓,<code>parent_issue_id</code> 串起依赖顺序)。三仓 = 三 PR 有天然边界、各自独立 review/betting;单个大 issue 跨仓不现实。</li>
+<li><b>执行编排</b>:跨仓串行(tc-multica 先)、仓内局部并行(skill 改写 worktree 隔离)。多 agent 并行的价值在<b>仓内</b> skill 批量改写,不在跨仓。</li>
+</ul>
+<div class="lean">证据倾向:这是 SOP 4 要素的「分工 / 范围 / appetite」,该在 Plan 文档定 + 第二 session 评审。Research 已把依赖链测绘清楚作为输入。</div>
+</div>
+
+<footer>team-context · RPI Research R2 · 主 session 第一手读源码 + 7 子代理累计只读实测(4 维度 + 3 仓改动面)· 含 DRI 深化追问 · 引用 TEA-74/TEA-75 · multica issue 内渲染</footer>
+</body></html>
