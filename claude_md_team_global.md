@@ -24,6 +24,10 @@ AI MIQ — 5 人 AI-Native 团队。以 SOP v0.4 参考 Handbook 为准。通才
 （通过 `case_promote_rule` MCP 工具从 case file 提升上来。）
 
 - 本机开发依赖(DB/Redis/端口)用 docker-compose 起时,默认改用非标准避让端口并写进 .env.example/compose 注释,避免与开发机上其他项目的运行服务冲突。(来源:case TEA-40 · actionow-foundation-week1)
+- nullable 外键列的 add_column migration 必须显式命名 FK 约束——否则 Alembic autogen 的 downgrade 用 None 名无法 drop,迁移不可逆。(来源:case TEA-62 · actionow-hardening-phase-a)
+- 高频表的 add_column + create_index migration 应评估 CONCURRENTLY,避免大表锁写(本期量小未做,沉淀为团队迁移规范)。(来源:case TEA-62 · actionow-hardening-phase-a)
+- Tailwind v4 + next/font 接字体走 @theme inline 让 font-sans/font-mono 工具类直接内联 var(--font-xxx);在 :root 覆盖 --font-sans 不被 font-sans 工具类采纳(会静默回退默认栈)。(来源:case TEA-66 · actionow-admin-redesign)
+- 前端工程禁止使用任何 emoji(UI 文案、组件、代码、注释一律不得出现)——用图标组件或纯文字替代。(来源:团队前端规范)
 
 ## 怎么叫起其他 Claude session
 
