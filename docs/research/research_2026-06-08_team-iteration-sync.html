@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>team-iteration-sync</title>
+<style>
+:root{--ink:#1A1A1A;--ink2:#2D2D2D;--paper:#F5F2EB;--paper2:#EDE8DC;--accent:#C73E1D;--gray:#8B8680;--border:#D4CFC4;--green:#4A6B3A;--gold:#B8862E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Songti SC","Noto Serif SC",Georgia,serif;background:var(--paper);color:var(--ink);line-height:1.8;font-size:15px;padding:48px 40px;max-width:820px;margin:0 auto}
+.eyebrow{font-family:"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:14px}
+h1{font-weight:900;font-size:40px;line-height:1.15;letter-spacing:-1px;margin-bottom:18px;border-bottom:3px double var(--ink);padding-bottom:20px}
+.meta{display:flex;gap:32px;flex-wrap:wrap;font-family:"SF Mono",Menlo,monospace;font-size:12px;color:var(--gray);margin-bottom:36px}
+.meta b{color:var(--ink);font-weight:600}
+h2{font-weight:700;font-size:22px;margin:40px 0 14px;padding-left:14px;border-left:4px solid var(--accent)}
+h3{font-weight:700;font-size:16px;margin:22px 0 8px;color:var(--ink2)}
+.field{background:#fff;border:1px solid var(--border);padding:18px 22px;margin-bottom:14px}
+.field-label{font-family:"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1.5px;color:var(--gray);text-transform:uppercase;margin-bottom:6px}
+ul{list-style:none;margin:8px 0}
+li{padding:6px 0 6px 24px;position:relative}
+li::before{content:"\25B8";position:absolute;left:4px;color:var(--accent)}
+.crit li::before{content:"\2610";color:var(--green)}
+code{font-family:"SF Mono",Menlo,monospace;background:var(--paper2);padding:1px 6px;border-radius:2px;font-size:12.5px}
+.callout{background:var(--paper2);border-left:4px solid var(--gold);padding:14px 18px;margin:18px 0;font-size:14px}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px;background:#fff}
+th,td{border:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--paper2);font-family:"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--ink2)}
+.v-yes{color:var(--green);font-weight:700}
+.v-no{color:var(--accent);font-weight:700}
+.v-mid{color:var(--gold);font-weight:700}
+.tag{display:inline-block;font-family:"SF Mono",Menlo,monospace;font-size:10px;padding:1px 7px;border-radius:3px;letter-spacing:.5px;vertical-align:middle}
+.tag.ok{background:#E3EDDD;color:var(--green)}
+.tag.fix{background:#F6E0DA;color:var(--accent)}
+.tag.new{background:#F2E7CC;color:#8a6518}
+.opt{background:#fff;border:1px solid var(--border);padding:14px 18px;margin:10px 0}
+.opt .field-label{margin-bottom:8px}
+.lean{font-size:13px;color:var(--ink2);margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}
+.lean b{color:var(--accent)}
+strong{font-weight:700}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--gray)}
+</style></head>
+<body>
+<div class="eyebrow">RESEARCH · 研究</div>
+<h1>team-iteration-sync</h1>
+<div class="meta"><span>Phase <b>RPI Research</b></span><span>Issue <b>TEA-74</b></span><span>Project <b>Multica 迭代</b></span><span>DRI <b>曾振华</b></span><span>Date <b>2026-06-08</b></span></div>
+
+<h2>问题</h2>
+<div class="field"><div class="field-label">Question</div>
+三仓(<b>team-context</b> / <b>team-context-mcp</b> / <b>tc-multica</b>)的更新如何<b>快速、安全</b>地同步到每个成员本机?本次复核并深化上个 session 的 carry-over,逐条实测验证,产出需为 Plan 的三个决策(引擎 / 自动边界 / 范围)提供事实依据。<b>本 session 只测绘、不决策</b>(决策属 Plan)。
+</div>
+<div class="callout">
+方法:并行派 4 个子代理对三仓 + 本机做<b>只读实测</b>(<code>readlink</code>/<code>git</code>/<code>--help</code>/源码),覆盖交接评论的 6 条核查项。所有结论均带证据;与 carry-over 不符处已标注 <span class="tag fix">纠偏</span>。
+</div>
+
+<h2>6 条核查项 · 裁决</h2>
+<table>
+<tr><th style="width:34%">核查项</th><th style="width:14%">裁决</th><th>实测要点(带证据)</th></tr>
+<tr>
+<td>① stdio MCP 是否真不热重载</td>
+<td><span class="v-yes">证实(真硬约束)</span></td>
+<td>stdio server 是 client 启动时 spawn 的长驻子进程,整个 session 持有;<code>tsc</code> 覆写 dist 字节对内存中运行的进程零影响。证据:<code>packages/local/src/server.ts:166</code> <code>new StdioServerTransport()</code> + 文件头 "no remote transport";全仓 0 个 watch/nodemon/chokidar。<span class="tag fix">纠偏</span> carry-over 说"机制可自动 rebuild"——仓库<b>现状无任何自动 rebuild</b>(<code>dev</code> 也只是裸 <code>tsx</code> 不 watch),自动 rebuild 需另加外部脚本/CI。</td>
+</tr>
+<tr>
+<td>② "80% 靠软链免费" 是否成立</td>
+<td><span class="v-mid">方向对 · 口径要修正</span></td>
+<td>纯正文 + 全局 md 的软链覆盖率其实 <b>~93%(14/15)</b>,高于 80%。但"免费"有三个前提被 carry-over 隐去:(1) 仅限<b>已存在</b>条目的正文;(2) <b>新增 skill 首次</b>出现必须重跑 <code>sync-team-config.sh</code> 才建软链;(3) 每个 skill 的<b>外层 <code>SKILL.md</code>(加载器真正读的触发器/frontmatter)是物理副本、git pull 后仍 stale</b>——实测 <code>tc-1-start</code> 副本 mtime 06-01 18:45 落后源最后 commit 06-02 10:38(差 3 行,缺 rule #6)。<span class="tag fix">纠偏</span> 30 个 <code>ljg/gsap</code> 软链指向<b>个人仓 <code>~/.agents</code></b>(非团队三仓),不计入本题分母。</td>
+</tr>
+<tr>
+<td>③ multica autopilot/trigger/daemon 能力边界</td>
+<td><span class="v-yes">已摸清</span></td>
+<td>webhook 在<b>远程 server</b> 接收(<code>/api/webhooks/autopilots/{token}</code>),非本地 daemon——self-host <code>10.0.5.51:8083</code> 内网可达即可;cron 标准表达式 + IANA 时区,分钟级,<b>server 端调度、不依赖本地 daemon 在线</b>;daemon per-machine,30s 轮询 + WebSocket 唤醒(WS 断退回轮询)。<span class="tag new">关键</span> <b>autopilot 必然产出一个 LLM agent task,无"跑确定性 shell"模式</b>(两种 mode 终点都把 prompt 交给 Claude/Codex)→ 纯机械同步活不该用 autopilot 承载。</td>
+</tr>
+<tr>
+<td>④ tcmcp-local build/产物/启动</td>
+<td><span class="v-yes">已确认</span></td>
+<td>pnpm <b>monorepo</b>,根 build = <code>pnpm -r --filter './packages/*' build</code>,本地 server 是子包 <code>@tcmcp/local</code>,构建器 <b><code>tsc</code></b>。<span class="tag fix">纠偏</span> 产物是 <code>packages/local/dist/server.js</code>,<b>不是</b> carry-over 写的 <code>dist/server.js</code>(<code>~/.codex/config.toml</code> 还留有旧死路径已删的注释,印证踩过此坑)。Claude Code 与 Codex 都以 stdio <code>node .../packages/local/dist/server.js</code> 注册。</td>
+</tr>
+<tr>
+<td>⑤ 三仓 CI 绿/tag/release 现状</td>
+<td><span class="v-mid">分仓裁决</span></td>
+<td>见下方"三仓现状表"。一句话:<b>只有 tc-multica 今天就能"CI绿+tag"</b>(tag 驱动 release、几乎日更);team-context-mcp 半能(main 分支保护=绿,但 0 release、无发布节奏);team-context 不能(0 tag、CI 仅 lint 文档合规、不 build/test)。</td>
+</tr>
+<tr>
+<td>⑥ 存量脚本已做到哪步</td>
+<td><span class="v-yes">已复核</span></td>
+<td><code>sync-*.sh</code> <b>全部手动触发</b>(无 cron/hook);<code>team-/my-autopilot.sh</code> + <code>_autopilot-common.sh</code> <b>全程零 git 操作</b>(只建 autopilot,内置 PB-04 guardrails lint);<code>git pull --ff-only</code> 只出现在 <b>onboarding 文档</b>(且已是 <code>--ff-only 2>/dev/null || true</code> fail-open)。<b>当前没有任何可执行的自动 pull 在跑</b>——同步风险是"前瞻约束"不是"现存 bug"。</td>
+</tr>
+</table>
+
+<h2>发现 · 按维度</h2>
+
+<h3>A · 软链消费 与 "免费" 的真实口径</h3>
+<div class="field"><div class="field-label">Findings — symlink audit</div>
+<table>
+<tr><th>被消费产物</th><th>消费方式</th><th>更新动作</th><th>git pull 即生效?</th></tr>
+<tr><td><code>~/.claude/CLAUDE.md</code> / <code>~/.codex/AGENTS.md</code></td><td>软链 → <code>team-context/claude_md_team_global.md</code>(同一文件)</td><td>改源即生效</td><td class="v-yes">是</td></tr>
+<tr><td>12 个 <code>tc-*</code> skill 的<b>正文</b></td><td>嵌套软链 <code>tc-X/tc-X</code> → repo</td><td>改源即生效</td><td class="v-yes">是</td></tr>
+<tr><td>12 个 <code>tc-*</code> 的<b>外层 <code>SKILL.md</code></b>(触发器)</td><td><b>物理副本</b></td><td>需重跑 <code>sync-team-config.sh</code></td><td class="v-no">否(会 stale)</td></tr>
+<tr><td><code>multica-cli</code> skill</td><td><b>孤儿物理副本</b>(三仓中均无源)</td><td>手动(无脚本覆盖)</td><td class="v-no">否</td></tr>
+<tr><td>registry 里的 skill 正文</td><td>CLI 推送副本(autopilot 消费)</td><td><code>multica skill create/update</code></td><td class="v-no">否</td></tr>
+<tr><td>本地 MCP 进程 / 远程 autopilot</td><td>进程 / 远程部署</td><td>重启 / 重部署</td><td class="v-no">否</td></tr>
+</table>
+<ul>
+<li><b>量化</b>:团队核心产物 N=15,纯软链即时生效 14/15 ≈ <b>93%</b>(2 个 md + 12 个嵌套软链正文 + 注:此处把 12 正文计入,SKILL.md 副本单列)。"免费"对<b>正文</b>偏低估、对<b>端到端(含触发器副本/新增/registry)</b>偏高估。</li>
+<li><b>sync 脚本</b>:<code>sync-team-config.sh</code>(主,手动)= 软链 tc-* + 软链全局 md + 缺失则 <code>multica skill create</code> 推 registry;<code>sync-to-local.sh</code>(手动)= 仅软链、幂等、遇同名物理文件 WARN 跳过;<code>sync-to-multica.sh &lt;url&gt;</code>(手动)= <code>multica skill import --url</code> + 调 <code>team-autopilot.sh</code>。</li>
+<li><span class="tag fix">坑</span> <code>sync-to-multica.sh:33</code> 硬编码 <code>~/team-context/scripts/...</code>,真实路径是 <code>~/feibo/team-context/</code> —— 该脚本的 autopilot 步骤大概率执行失败(静态发现)。</li>
+</ul>
+</div>
+
+<h3>B · stdio MCP 热重载硬约束 与 破解路径</h3>
+<div class="field"><div class="field-label">Findings — MCP reload</div>
+<ul>
+<li><b>裁决:硬约束为真</b>。机制见核查项①。本地改 MCP 代码 → 必须 <code>tsc</code> rebuild + 重启 client 才生效;机制能自动 rebuild,但无法替你重启正在跑的 Claude/Codex。</li>
+<li><b>破解 1(最低成本,部分软化)</b>:Claude Code 交互内 <code>/mcp</code> 斜杠命令可<b>重连单个 server</b>(触发重新 spawn 子进程→载入新 dist),不必重启整个编辑器。但仍需一次手动动作,且 <code>claude mcp</code> 子命令本身无 restart/reconnect。</li>
+<li><b>破解 2(根治,代价中)</b>:把 tcmcp-local 从 stdio 改 <b>HTTP/SSE transport</b>——<b>同仓 remote 已证明该路径</b>(<code>StreamableHTTPServerTransport</code> + express,<code>MCP_TRANSPORT</code> env 切换;Claude <code>--transport http</code>、Codex <code>url=</code> 都支持)。改后 server 独立进程,rebuild 只重启 server、client 自动重连。代价:本地起常驻 HTTP 进程 + 端口/健康检查(remote 已有 <code>health.ts</code>/<code>auth.ts</code> 可复用)。</li>
+<li><b>破解 3</b>:tcmcp-remote(Zeabur)<b>本质已规避</b>——server 端部署、push main 重建、client 走 HTTP 自动重连,不经本地 spawn。但 remote 与 local 工具集不同(remote 偏飞书/协作,local 偏 plan/case/git 本地操作),非简单换 transport 即可合并。</li>
+<li><span class="tag fix">差异</span> <b>Codex 受约束更硬</b>:无 <code>/mcp</code> 式单 server 重连,只能重启 Codex 或靠 <code>startup_timeout_sec</code>。</li>
+</ul>
+</div>
+
+<h3>C · multica CLI 现成零件的能力与边界</h3>
+<div class="field"><div class="field-label">Findings — multica CLI (v0.4.10, 源码核实)</div>
+<ul>
+<li><code>update</code>:纯 GitHub Release 自更新(写死 <code>feibo-ai/tc-multica/releases/latest</code>),semver 比较,下载→校验→<code>os.Rename</code> 原地替换。<b>无 sudo、无 brew 分支</b>;装在可写目录(<code>/opt/homebrew/bin</code>)直接覆盖,不可写则 rename 报错(不提权)。daemon 另有每 6h 自动检查 CLI 新版。</li>
+<li><code>autopilot</code>:调度单元,<b>必走 LLM agent</b>。<code>create</code> 必填 <code>--agent</code>+<code>--mode</code>(<code>create_issue</code>/<code>run_only</code>),<code>--description</code> 是给 agent 的自然语言 prompt,<b>非命令</b>。<code>trigger-add --kind schedule|webhook</code>:schedule 需 <code>--cron</code>+<code>--timezone</code>;webhook 自动生成 <code>awt_</code> bearer token URL。</li>
+<li><code>skill</code>:操作 <b>server 端 registry</b>,非本地文件同步。<code>import --url</code> 单向(外部→registry);<code>update &lt;id&gt;</code> 改 registry DB 记录。<b>无"本地目录↔registry 双向同步"原语</b>。</li>
+<li><code>repo checkout &lt;url&gt;</code>:从 daemon 的 bare-clone 缓存创建 git <b>worktree</b>(<code>--ref</code> 指定 ref)。是 checkout/worktree 语义,<b>不是</b>在已有工作树里 fast-forward,<b>不能当通用 git pull 用</b>。</li>
+</ul>
+<div class="field-label" style="margin-top:10px">"不做" 清单(这些零件覆盖不到)</div>
+<ul>
+<li>任意仓的 <code>git pull --ff-only</code> / 已有工作树 fast-forward</li>
+<li>任何 build/编译(<code>pnpm build</code>/<code>tsc</code>/<code>go build</code>)</li>
+<li>重启编辑器 / 重启 daemon 之外的进程</li>
+<li>以确定性 shell 脚本作为调度产物(autopilot 必走 LLM,无 "run a command" 型 trigger)</li>
+<li>webhook 本地接收(必经 server;daemon 本地只有 127.0.0.1 health listener)</li>
+</ul>
+</div>
+
+<h3>D · 三仓 git/CI/tag 现状 与 风险复核</h3>
+<div class="field"><div class="field-label">Findings — repos / CI / risk</div>
+<table>
+<tr><th>仓</th><th>分支</th><th>脏?</th><th>vs origin/main</th><th>CI</th><th>tag / release</th><th>"CI绿+tag" 今天可落地?</th></tr>
+<tr><td>team-context<br><code>~/feibo/team-context</code></td><td>main</td><td>轻(2 untracked 目录)</td><td>0/0</td><td><code>lint.yml</code>(所有分支;仅查 frontmatter/token/guardrails,<b>不 build/test</b>)</td><td><b>0 tag / 0 release</b></td><td class="v-no">否(需从零建发版)</td></tr>
+<tr><td>team-context-mcp<br><code>~/team-context-mcp</code></td><td>main</td><td>轻(1 untracked 目录)</td><td>0/0</td><td><code>ci.yml</code>(仅 main+PR;main 保护需 build-test 绿才进)</td><td>2 tag(v0.2.x)/ <b>0 release</b></td><td class="v-mid">半(main HEAD≈绿;缺 release 节奏)</td></tr>
+<tr><td>tc-multica<br><code>~/feibo/tc-multica</code></td><td class="v-no">docs/cli-install-feibo-ai</td><td>轻(2 untracked HTML,已 push)</td><td>ahead 2 / behind 0</td><td><code>ci.yml</code>+<code>release.yml</code>(tag <code>v*.*.*</code> 驱动、拒 -dirty)+<code>desktop-smoke.yml</code></td><td><b>100 tag / 10+ release(日更)</b></td><td class="v-yes">是</td></tr>
+</table>
+<ul>
+<li><b>风险① ff-only 遇脏/非 main</b>:方向正确,但<b>目前是文档级、非脚本级</b>(autopilot 脚本完全不碰 git)。活例:tc-multica 现在 <code>docs/cli-install-feibo-ai</code> 且 ahead 2,对它跑 <code>git pull --ff-only origin main</code> 必被拒——正说明"非 main/脏则跳过"是对的。<span class="tag fix">注</span> <code>ONBOARDING-MEMBER.md:311</code> 仍是<b>裸 <code>git pull</code></b>(更危险),需收口。</li>
+<li><b>风险② broken main 传染</b>:部分证实。今天闸门按仓不同——tc-multica 有(CI绿+tag);team-context-mcp 半有(main 保护);team-context <b>无</b>(纯 lint 挡不住运行态问题)。</li>
+<li><b>风险③ 多机</b>:证实 per-machine daemon。<code>my-/team-autopilot.sh</code> 仅差 SCOPE+命名后缀(共用 <code>_autopilot-common.sh</code>),幂等靠服务端 upsert(同名=同 scope),<b>无本地文件锁</b>——team 版应只在 DRI 一台跑,否则多机同 scope 可能互相覆盖。</li>
+<li><span class="tag new">新坑</span> 三套路径不一致:<code>~/feibo/feibo/*</code>(2 仓)、<code>~/team-context-mcp</code>(mcp 仓)、文档里 <code>$HOME/team-context</code>——统一同步脚本必须逐仓显式配路径,不能通配。</li>
+<li><span class="tag new">新坑</span> tc-multica 是 <b>fork</b>:除 origin(<code>feibo-ai/tc-multica</code>)还有 upstream(<code>multica-ai/multica</code>)——自动同步若误碰 upstream 会出大问题。其 <code>install.sh</code> 用 <code>git reset --hard</code>/<code>checkout --force</code> 按 tag 强拉,是"安装器"语义,勿与"同步本地工作区"混为一谈。</li>
+</ul>
+</div>
+
+<h2>Carry-over 复核结论</h2>
+<div class="field"><div class="field-label">Confirmed / Corrected / New</div>
+<ul>
+<li><span class="tag ok">证实</span> stdio MCP 不热重载是真硬约束;local MCP 这格只能"自动 rebuild + 通知重启"。</li>
+<li><span class="tag ok">证实</span> multica CLI 是"零件库",不解决 git pull / build / 编辑器重启;daemon per-machine。</li>
+<li><span class="tag ok">证实</span> 自动 pull 对脏区/非 main 的风险(ff-only+脏跳过的设计方向对)。</li>
+<li><span class="tag fix">纠偏</span> "80% 免费":正文软链其实 ~93%(更高),但 <b>SKILL.md 触发器是会 stale 的物理副本</b>、新增 skill 不免费、registry 需 CLI——"免费"被偷换了概念。</li>
+<li><span class="tag fix">纠偏</span> "机制可自动 rebuild":仓库现状<b>无</b>任何自动 rebuild,需另建。</li>
+<li><span class="tag fix">纠偏</span> 产物路径是 <code>packages/local/dist/server.js</code>(monorepo),非 <code>dist/server.js</code>。</li>
+<li><span class="tag fix">纠偏</span> "只消费 CI绿+tag" <b>不能一刀切</b>:仅 tc-multica 今天可落地,另两仓缺发版节奏。</li>
+<li><span class="tag new">新增</span> autopilot 必走 LLM(无确定性 shell 模式)→ 纯机械同步别塞 autopilot,用确定性脚本。</li>
+<li><span class="tag new">新增</span> webhook 落点在远程 server(self-host 内网可达即可);cron 由 server 端调度不依赖本地 daemon 在线。</li>
+<li><span class="tag new">新增</span> 三套路径不一致 / tc-multica 是 fork / multica-cli skill 是孤儿副本 / sync-to-multica.sh 路径硬编码——四个落地暗坑。</li>
+</ul>
+</div>
+
+<h2>待解问题</h2>
+<div class="field"><div class="field-label">Open questions — Plan 前需 DRI/团队回答</div>
+<ul>
+<li>team-context 与 team-context-mcp 是否愿意引入 <b>tag/release 节奏</b>?(决定"CI绿+tag"能否统一,还是退而消费"受保护 main 的绿 HEAD")</li>
+<li>成员真实痛点频率:skill 正文更新 vs 新增 skill vs MCP 改动,各自多久发生一次?(决定优先级——若 MCP 极少改,自动 rebuild 价值有限)</li>
+<li>是否接受 Codex 端"MCP 变更必须重启 Codex"(无单 server 重连)?还是值得把 tcmcp-local 改 <b>HTTP transport</b> 根治(增本地常驻进程运维)?</li>
+<li>self-host server(<code>10.0.5.51:8083</code>)是否已具备<b>接收 GitHub webhook</b> 的入口?(决定 webhook 引擎可行性)</li>
+<li>每位成员是否都跑 daemon、机型/路径布局是否一致?(多机同步落地前提;注意当前三套路径)</li>
+<li>SKILL.md 物理副本 stale 是否要纳入本期(影响 skill 触发器/frontmatter 的准确性)?</li>
+</ul>
+</div>
+
+<h2>可选方案(为 Plan 三决策准备 · 非定论)</h2>
+<div class="callout">以下是带证据的<b>选项与权衡</b>,供 Plan session + DRI 拍板。本 Research 不做决策。</div>
+
+<div class="opt"><div class="field-label">决策 1 · 引擎:GitHub webhook vs launchd 轮询</div>
+<ul>
+<li><b>选项 A · webhook 触发</b>:即时。但 multica 的 webhook 落点是远程 server 且 autopilot 必走 LLM——若要纯机械执行,webhook 更适合打到"本机轻量 listener / CI 触发脚本",而非 multica autopilot。每仓加一步配置,需 server 可达入口。</li>
+<li><b>选项 B · launchd 轮询</b>:本机定时跑确定性脚本,简单、无 LLM、天然 per-machine,与 daemon 30s 轮询同构;代价是分钟级延迟。</li>
+</ul>
+<div class="lean">证据倾向(非定论):纯机械同步(safe-pull/rebuild/CLI update)用<b>确定性脚本</b>更稳;webhook 即时性对"skill 正文"收益有限(本就 git pull 免费),主要价值在"MCP 变更需重启"的<b>即时通知</b>。引擎可能是"轮询执行 + 通知用 webhook/notify_team"的组合。</div>
+</div>
+
+<div class="opt"><div class="field-label">决策 2 · 自动边界:Tier1 全自动 vs 通知+一键确认</div>
+<ul>
+<li><b>可确定性自动(低风险)</b>:safe-pull(ff-only + 仅 main + 脏则跳过告警)、新增 skill 重铺软链 + 刷新 SKILL.md 副本、registry <code>skill update</code>、<code>multica update</code>(无 sudo、可写目录直接覆盖)。</li>
+<li><b>硬边界(不可全自动)</b>:本地 MCP 变更→必须人工重启编辑器(Claude 可 <code>/mcp</code> 重连软化,Codex 不行)→ 这格只能"自动 rebuild + 通知重启"。</li>
+</ul>
+<div class="lean">证据倾向(非定论):Tier1(safe-pull+rebuild+CLI update)风险可控可全自动;但 <b>broken main 对 team-context(无闸门)仍是隐患</b> → 自动边界与"决策 3 范围/闸门"耦合,team-context 在补上发版/CI 闸门前,自动 pull 宜更保守。</div>
+</div>
+
+<div class="opt"><div class="field-label">决策 3 · 范围:先两仓 vs 含 tc-multica CLI</div>
+<ul>
+<li><b>选项 A · 先两仓</b>:team-context 同步几乎纯软链(正文免费),增量只是"新增 skill 重铺 + SKILL.md 刷新";team-context-mcp 是真正难点(rebuild+重启)。两仓覆盖日常绝大多数痛点。</li>
+<li><b>选项 B · 含 tc-multica CLI</b>:CLI 自更新已由 <code>multica update</code> + daemon 每 6h 自动检查解决,边际收益小;且 tc-multica 是 fork、在脏特性分支、有 upstream——自动同步它<b>风险最高、收益最低</b>。</li>
+</ul>
+<div class="lean">证据倾向(非定论):<b>先两仓</b>;tc-multica CLI 用现成 <code>multica update</code> 兜底即可,不必纳入自建同步。</div>
+</div>
+
+<footer>team-context · RPI Research phase · TEA-74 · 4 子代理只读实测 · multica issue 内渲染</footer>
+</body></html>
