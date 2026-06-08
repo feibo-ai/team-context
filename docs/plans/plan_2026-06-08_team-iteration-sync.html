@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>team-iteration-sync</title>
+<style>
+:root{--ink:#1A1A1A;--ink2:#2D2D2D;--paper:#F5F2EB;--paper2:#EDE8DC;--accent:#C73E1D;--gray:#8B8680;--border:#D4CFC4;--green:#4A6B3A;--gold:#B8862E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Songti SC","Noto Serif SC",Georgia,serif;background:var(--paper);color:var(--ink);line-height:1.8;font-size:15px;padding:48px 40px;max-width:760px;margin:0 auto}
+.eyebrow{font-family:"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:14px}
+h1{font-weight:900;font-size:40px;line-height:1.15;letter-spacing:-1px;margin-bottom:18px;border-bottom:3px double var(--ink);padding-bottom:20px}
+.meta{display:flex;gap:32px;flex-wrap:wrap;font-family:"SF Mono",Menlo,monospace;font-size:12px;color:var(--gray);margin-bottom:36px}
+.meta b{color:var(--ink);font-weight:600}
+h2{font-weight:700;font-size:22px;margin:36px 0 14px;padding-left:14px;border-left:4px solid var(--accent)}
+.field{background:#fff;border:1px solid var(--border);padding:18px 22px;margin-bottom:14px}
+.field-label{font-family:"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1.5px;color:var(--gray);text-transform:uppercase;margin-bottom:6px}
+ul{list-style:none;margin:8px 0}
+li{padding:6px 0 6px 24px;position:relative}
+li::before{content:"▸";position:absolute;left:4px;color:var(--accent)}
+.crit li::before{content:"☐";color:var(--green)}
+code{font-family:"SF Mono",Menlo,monospace;background:var(--paper2);padding:1px 6px;border-radius:2px;font-size:13px}
+.callout{background:var(--paper2);border-left:4px solid var(--gold);padding:14px 18px;margin:18px 0;font-size:14px}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--gray)}
+</style></head>
+<body>
+<div class="eyebrow">PLAN · 计划 · project</div>
+<h1>team-iteration-sync</h1>
+<div class="meta"><span>DRI <b>曾振华</b></span><span>Layer <b>project</b></span><span>Appetite <b>2 周(Shape Up appetite,非估时)。M1〜3天 两仓发版闸门(关键路径,轮询的「源」依赖它)→ M2〜4天 tcmcp-local HTTP transport 迁移 + 实测 client 自动重连 → M3〜3天 launchd 轮询引擎 + Tier1 自动化 + Tier2 notify + 安全边界实测 + 3 天稳定性观察 + 收口。</b></span></div>
+<h2>目标</h2><div class="field"><div class="field-label">Goal</div>建立确定性、安全、分钟级的团队迭代同步机制(本期范围:team-context + team-context-mcp 两仓)。发版(CI绿+tag)后,每台成员机经 launchd 轮询的确定性脚本自动 safe-pull 到最新 release tag;tcmcp-local 从 stdio 迁至 HTTP transport,使 MCP 改动后 rebuild→重启 server 进程→client 自动重连全链路自动完成,彻底消除「改 MCP 必须人工重启 Claude/Codex」的硬边界(Codex 同样受益);每次同步经 notify_team 播报「X 仓→tag vN」。tc-multica CLI 不纳入本期,由现成 multica update + daemon 6h 自检兜底。</div>
+<h2>完成标准</h2><div class="field crit"><ul><li>发版闸门:team-context-mcp 补 tag 驱动 release.yml(已有 main 保护 + 2 tag);team-context 补 release 流程(CI lint+frontmatter 绿为 tag 前置)。两仓各手动打一个 v* tag 能自动产出 GitHub Release。</li><li>HTTP transport:tcmcp-local 以 HTTP transport 经 launchd 常驻;Claude(--transport http)+ Codex(url=)注册迁完。实测改 packages/local/src/server.ts→脚本 rebuild→client 自动重连、不重启编辑器即见新工具一次。</li><li>轮询引擎:DRI 机一条 launchd 脚本跑通完整 Tier1 链路——检测两仓新 release tag → safe-pull → 新增 skill 重铺软链 + 刷新 SKILL.md 物理副本 → registry skill update → multica update → tcmcp-local rebuild+重启 server → notify_team 播报。</li><li>安全边界各验一次:脏工作区跳过+告警 / 非目标 tag(或非 main)跳过 / build 失败捕获+通知不强推 / 全程不碰 tc-multica fork 的 upstream。</li><li>稳定性:DRI 机连续 3 天无人工干预自动同步,两仓更新分钟级到位、零误覆盖脏区。</li><li>收口:ONBOARDING-MEMBER.md:311 裸 git pull 收敛为 ff-only safe-pull;sync-to-multica.sh:33 硬编码 ~/team-context 路径修正。</li></ul></div>
+<h2>分工</h2><div class="field"><div class="field-label">Roles</div>DRI <code>曾振华</code> · EXEC <code>曾振华(AI 杠杆:Claude Code / Codex 执行迁移与脚本)</code> · COLLAB <code>全体成员(一次性配合:切 HTTP transport 时各自改本机 client 注册 + 起 launchd;首轮在各自机器验证轮询脚本)</code> · REVIEW <code>(待指派)</code></div>
+<h2>投入预算</h2><div class="callout"><b>2 周(Shape Up appetite,非估时)。M1〜3天 两仓发版闸门(关键路径,轮询的「源」依赖它)→ M2〜4天 tcmcp-local HTTP transport 迁移 + 实测 client 自动重连 → M3〜3天 launchd 轮询引擎 + Tier1 自动化 + Tier2 notify + 安全边界实测 + 3 天稳定性观察 + 收口。</b> · 超时触发 plan_upgrade(升版强制重审)。</div>
+<h2>方案</h2><div class="field">【总体形态】分层 hybrid:Tier0 软链已免费(git pull 即时生效)→ Tier1 确定性轮询脚本做四类机械活 → Tier2 notify_team 播报。引擎走 launchd 轮询、不挂 multica autopilot——研究已实测确认 autopilot 必走 LLM、无确定性 shell 模式,纯机械同步不该用 LLM 承载。研究量化:团队核心产物约 93% 的 skill/CLAUDE.md 正文是软链进仓库的(Tier0),真正要额外做的只有四类:① 新增 skill 重铺软链 + 刷新会 stale 的 SKILL.md 物理副本 ② registry skill 正文回推 ③ multica update CLI 自更新 ④ tcmcp-local rebuild+重启——全是确定性操作。
+
+【决策 1 · 引擎=launchd 轮询】DRI 确认 self-host(10.0.5.51:8083)无现成 GitHub webhook 入口;且 multica webhook 落点在远程 server、又必经 LLM autopilot,对纯机械同步不合适。launchd 轮询天然 per-machine、无 LLM、与 daemon 30s 轮询同构,代价仅分钟级延迟——对「正文本就软链免费 + MCP 月级才改一次」完全够用。轮询的「源」是各仓最新 release tag(见决策 3),脚本比对本地 vs 最新 tag,有新且 CI 绿则 safe-pull。
+
+【决策 2 · 自动边界=Tier1 全自动(含 MCP),硬边界由 HTTP 迁移消除】原硬约束:stdio MCP 不热重载→改 MCP 必人工重启编辑器(Claude /mcp 可软化、Codex 不行)。DRI 拍板本期就把 tcmcp-local 从 stdio 改 HTTP transport 根治——同仓 remote 已验证该路径(StreamableHTTPServerTransport + express + MCP_TRANSPORT env 切换,health.ts/auth.ts 可复用)。迁移后 server 是 launchd 托管的独立常驻进程,rebuild 只重启该进程、client 自动重连,「人工重启编辑器」硬边界被彻底消除,Tier1 因此可把 MCP rebuild+重启纳入全自动。张力说明:Q2 确认 MCP 仅月级改、auto-rebuild 边际价值有限——但 HTTP transport 的价值不在频率,而在一次性根除唯一人工边界、且对 Codex 同样生效,让整套机制成为干净的确定性闭环,这一战略收益值得本期投入。一次性代价:切 transport 需各成员在本机改一次 client 注册 + 起一个 launchd 托管常驻 HTTP server(端口/健康检查复用 remote health.ts),属 onboarding 级动作、非每次同步。
+
+【决策 3 · 范围=先两仓 + 本期加码两项】tc-multica CLI 自更新已由 multica update(无 sudo、可写目录直接覆盖)+ daemon 6h 自检兜底,边际收益小;且 tc-multica 是 fork、当前卡脏特性分支、有 upstream(multica-ai/multica)——自动同步它风险最高收益最低,明确排除本期(防误碰 upstream)。两仓范围因 DRI 选 tag/release 统一闸门而加码:(a) team-context-mcp 补 tag 驱动 release.yml(已有 main 保护 + 2 tag,补发布即可);(b) team-context 补 release 流程(现 0 tag、CI 仅 lint 文档,以 lint+frontmatter 绿为 tag 前置,tag 标记「已审核快照」)。统一为「只消费 CI绿+tag」后 broken-main 传染风险被 tag 闸门挡住,正是研究风险②的收口。
+
+【安全护栏(写进 safe-pull,研究风险逐条收口)】① ff-only + 仅 main 来源 + 脏工作区跳过+告警(活例:tc-multica 现卡 docs 分支且 ahead 2,对它 pull 必拒,证明设计对);② build 失败捕获+notify、不强推;③ 三套路径不一致(~/feibo/feibo/*、~/team-context-mcp、文档 $HOME/team-context)→ 脚本逐仓显式配路径、严禁通配;④ tc-multica fork 的 upstream 绝不自动碰;⑤ 多机:team 版脚本只在 DRI 一台跑(无本地文件锁,多机同 scope 互相覆盖——研究风险③)。
+
+【复用既有基建(别重造)】team-context/scripts/ 已有 sync-team-config.sh(软链 tc-*+全局 md+registry 推)、sync-to-local.sh、sync-to-multica.sh、team-/my-autopilot.sh + _autopilot-common.sh。本期轮询脚本在其上增量(safe-pull 包裹 + tag 检测 + SKILL.md 刷新 + notify),而非另起炉灶。
+
+【里程碑】M1 两仓发版闸门(关键路径)→ M2 tcmcp-local HTTP transport 迁移+实测自动重连 → M3 launchd 轮询引擎 + Tier1 + Tier2 notify + 安全边界实测 + 3 天稳定性 + 收口。</div>
+
+<footer>team-context · RPI Plan phase · multica issue 内渲染</footer>
+</body></html>
