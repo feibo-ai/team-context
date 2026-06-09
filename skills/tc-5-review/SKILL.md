@@ -74,6 +74,16 @@ About 10% of candidates promote. 90% stay local.
   → these are case-specific, not general rules
 - ❌ Mark all 3 candidates for promotion without examining (most are not)
 
+## 评审收尾状态转换(原 case_review MCP · 改用 CLI 原语)
+case 经第二 session 评审通过后(section4≥100 已由 publish.py 硬挡):
+```bash
+multica issue label add    <case-issue> 复盘-已审
+multica issue label remove <case-issue> 复盘-待审
+multica issue status       <case-issue> done
+PARENT=$(multica issue get <case-issue> --output json | jq -r '.parent_issue_id // empty')
+[ -n "$PARENT" ] && multica issue status "$PARENT" done   # 连带关闭被复盘的 plan(§6 DRI auto)
+```
+
 ## Hand-off
 - Project layer: present at Friday Demo. Real artifact, not slides.
 - Task layer: weekly case batch reviewed in Monthly Review.

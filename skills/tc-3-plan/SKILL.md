@@ -111,6 +111,16 @@ plan's "## Review" section.
 For task plans: 3-sentence plan can self-approve, but state it out loud
 before coding.
 
+### 批准状态转换(原 plan_approve MCP · 改用 CLI 原语,原子做完)
+plan 批准时:
+```bash
+multica issue label add    <plan-issue> 计划-已批准
+multica issue label remove <plan-issue> 计划-草稿
+multica issue label remove <plan-issue> 计划-评审中
+multica issue status       <plan-issue> in_progress     # 进入 Implement
+```
+Reviewer / Verdict 写进 plan 的 `approach`/评审字段,用 `publish.py --type plan` 再发一版(append-only)。
+
 ## Anti-patterns
 - ❌ Write plan and immediately start coding (skipped review)
 - ❌ Skip the 4 fields ("I know the goal in my head")
