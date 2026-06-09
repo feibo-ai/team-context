@@ -333,3 +333,38 @@ def test_schema_covers_all_renderer_read_keys():
     cr = set(mod.SCHEMAS["case"]["properties"]["criteriaResults"]["items"]["properties"])
     assert _read_keys(case_src, "j") <= kj, f"keyJudgment 子字段越出 schema:{_read_keys(case_src, 'j') - kj}"
     assert _read_keys(case_src, "c") <= cr, f"criteriaResult 子字段越出 schema:{_read_keys(case_src, 'c') - cr}"
+
+
+# ============ ⑪ 命门B 成功率计数器(daemon 心跳读它上报)============
+
+def test_gate_counter_increments(tmp_path):
+    """⑪:命门B pass/fail 计数累加(跨调用累计)。"""
+    mod = load_publish_module()
+    p = tmp_path / "gate-counts.json"
+    mod.record_gate(True, str(p))
+    mod.record_gate(True, str(p))
+    mod.record_gate(False, str(p))
+    assert json.loads(p.read_text()) == {"pass": 2, "fail": 1}
+
+
+def test_gate_counter_counts_only_privacy(tmp_path):
+    """⑪ 隐私边界:文件只含 pass/fail 整数,绝不含 error 串/路径/内容。"""
+    mod = load_publish_module()
+    p = tmp_path / "gate-counts.json"
+    mod.record_gate(False, str(p))
+    data = json.loads(p.read_text())
+    assert set(data.keys()) == {"pass", "fail"}, f"泄露了非计数字段:{data}"
+    assert all(isinstance(v, int) for v in data.values())
+
+
+def test_gate_counter_best_effort_never_raises(tmp_path):
+    """⑪ best-effort:损坏文件→重置;不可写路径→静默(遥测绝不打断发布)。"""
+    mod = load_publish_module()
+    p = tmp_path / "gate-counts.json"
+    p.write_text("{ not json,,,")
+    mod.record_gate(True, str(p))  # corrupt existing → reset then +1
+    assert json.loads(p.read_text()) == {"pass": 1, "fail": 0}
+    # 父是普通文件 → mkdir 失败 → 异常被吞,不抛
+    blocker = tmp_path / "blocker"
+    blocker.write_text("x")
+    mod.record_gate(True, str(blocker / "sub" / "gate.json"))  # must NOT raise

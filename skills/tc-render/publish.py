@@ -27,6 +27,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 CSS = (HERE / "assets" / "style.css").read_text()
 UUID_RE = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 SLUG_RE = re.compile(r"^[A-Za-z0-9._-]+$")   # 无 / 无 .. 无空格 → 阻断 slug 路径穿越
+GATE_COUNTS_PATH = os.path.expanduser("~/.multica/gate-counts.json")  # 命门B 成功率计数(daemon 心跳读 · ⑪)
 
 
 def esc(s):
@@ -329,24 +330,51 @@ def build_publish_argv(issue, doc_path, caption):
             "--inline", str(doc_path), "--content", caption, "--output", "json"]
 
 
+def record_gate(ok, path=GATE_COUNTS_PATH):
+    """命门B 发布结果的 bare pass/fail 计数(counts-only · 隐私:不写 error 串/路径/内容)。
+    best-effort:遥测绝不打断发布,任何异常吞掉。daemon 心跳读它上报命门成功率(⑪)。"""
+    try:
+        p = pathlib.Path(path)
+        counts = {"pass": 0, "fail": 0}
+        if p.exists():
+            try:
+                cur = json.loads(p.read_text())
+                counts["pass"] = int(cur.get("pass", 0))
+                counts["fail"] = int(cur.get("fail", 0))
+            except Exception:
+                pass  # 损坏 → 重置,绝不向上抛
+        counts["pass" if ok else "fail"] += 1
+        p.parent.mkdir(parents=True, exist_ok=True)
+        tmp = p.with_suffix(p.suffix + ".tmp")
+        tmp.write_text(json.dumps(counts))  # 只写 pass/fail 整数 —— 无 error/路径/内容
+        os.replace(tmp, p)                  # 原子替换:daemon 心跳并发读不会读到半截 JSON
+    except Exception:
+        pass  # 遥测 best-effort,绝不打断发布
+
+
 def publish(issue, doc_path, caption):
     """命门B 收口:exec `multica issue comment add --inline`,解析 JSON,自检 attachments。"""
     argv = build_publish_argv(issue, doc_path, caption)
     try:
         proc = subprocess.run(argv, capture_output=True, text=True)
     except FileNotFoundError:
+        record_gate(False)
         fail("找不到 multica CLI(命门B 收口入口);先安装/更新 multica(≥v0.4.11)再发布")
     if proc.returncode != 0:
+        record_gate(False)
         fail("命门B 发布失败(multica exit %d):%s"
              % (proc.returncode, (proc.stderr or proc.stdout or "").strip()[:300]))
     try:
         r = json.loads(proc.stdout)
     except Exception:
+        record_gate(False)
         fail("命门B 输出非 JSON: %s" % (proc.stdout or proc.stderr or "")[:200])
     atts = r.get("attachments") or []
     if not atts:
         # 命门 自检:绑定真信号 = attachments 非空(不看 url 前缀)。脏评论需撤回。
+        record_gate(False)
         fail("attachments 未绑定 → 无渲染脏评论。撤回:multica issue comment delete %s" % r.get("id"))
+    record_gate(True)
     a0 = atts[0] if isinstance(atts[0], dict) else {}
     return {"comment_id": r.get("id"), "attachment_id": a0.get("id"), "url": a0.get("url")}
 
