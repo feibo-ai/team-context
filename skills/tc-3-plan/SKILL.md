@@ -96,7 +96,7 @@ docs/research/research_YYYY-MM-DD_<topic>.html
 2. **建/定位 plan issue**:`multica issue create --project <UUID> --title "计划:<slug>" [--parent <research-issue-id>]`(取回 issue id 完整 UUID)。
 3. **产出+发布(一步 · 调脚本)**:把字段写成 `fields.json`(`goal` / `completionCriteria` / `dri` / `layer` / `exec` / `collab` / `reviewer` / `appetite` / `approach` / `slug`),调:
    `python3 ~/.claude/skills/tc-render/publish.py --type plan --data fields.json --issue <issue-UUID> --out docs/plans/plan_<YYYY-MM-DD>_<slug>.html`
-   脚本**渲染 + 硬校验 + 命门A 发布 + 自检 attachments** 一步到位,成功打印 `comment_id`/`url`。先 `--dry-run` 预览。
+   脚本**渲染 + 硬校验 + 命门B 发布 + 自检 attachments** 一步到位,成功打印 `comment_id`/`url`。先 `--dry-run` 预览。
 4. **更新(原 plan_upgrade)**:换新 `--out` 文件名(`_v2`…)再调一次,append-only;永不改附件、永不改 issue 描述。
 
 > **硬校验(publish.py 内建 · exit 1 硬挡,不再靠自觉)**:`goal` ≥10 字符、完成标准 ≥1 条、`--issue` 完整 UUID。违约脚本直接报错、发不出,回去补。

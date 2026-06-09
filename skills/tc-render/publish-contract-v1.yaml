@@ -1,0 +1,68 @@
+# publish-contract-v1.yaml — 命门A(raw upload→comment HTTP)契约化灾备
+#
+# 唯一发布路径是**命门B**:`multica issue comment add --inline`(见 publish.py)。
+# 命门A 仅作**灾备契约参考**:当 CLI 不可用时,HTTP 级该怎么调的逐字契约。
+# 本文件把契约固化为机器可读 + CI 探针守护(tests/test_contract_probe.py),
+# 取代 PUBLISH.md 旧 §2 的散文 runbook —— 那段散文是「可被手跑的旁路」,删除。
+#
+# 权威来源:前端渲染器 packages/ui/markdown/file-cards.ts。
+# 本契约 inline_marker.url_pattern 必须与 file-cards.ts:FILE_CARD_URL_PATTERN
+# **逐字一致**;CI 探针在两仓并置(或设 FILE_CARDS_TS)时断言一致,漂移即 fail。
+
+version: 1
+
+# ── 命门B:唯一发布路径(publish.py 内部 exec)─────────────────────────────
+gate_b:
+  command:
+    - multica
+    - issue
+    - comment
+    - add
+    - '<issue-uuid>'
+    - --inline
+    - '<doc.html>'
+    - --content
+    - '<caption>'
+    - --output
+    - json
+  token: 'multica CLI 自管(读 ~/.multica/config.json),绝不进调用方 argv → ps 不可见'
+  success_signal: '返回评论 JSON 的 attachments 非空(绑定真信号 · 不看 url 前缀)'
+
+# ── 命门A:灾备契约(CLI 不可用时的 HTTP 参考 · 非手跑兜底路径)──────────────
+gate_a_disaster_recovery:
+  upload:
+    method: POST
+    path: /api/upload-file
+    headers:
+      Authorization: 'Bearer <token>'
+      X-Workspace-ID: '<workspace-uuid>'
+    multipart:
+      file: '@<doc.html>;type=text/html'   # MIME 必须 text/html
+      issue_id: '<issue-uuid>'             # 必须绑 issue,否则附件不绑定
+    returns: { id: '<attachment-uuid>', url: '<relative-url>' }
+  comment:
+    method: POST
+    path: /api/issues/<issue-uuid>/comments
+    headers:
+      Authorization: 'Bearer <token>'
+      X-Workspace-ID: '<workspace-uuid>'
+      Content-Type: application/json
+    body:
+      content: "<caption>\n\n!file[<name>](<url>)"   # url 用 upload 返回的相对 url 原样
+      attachment_ids: ['<attachment-uuid>']
+    success_signal: '响应 attachments 非空'
+
+# ── 内联标记契约 · 必须对齐前端权威正则(file-cards.ts)─────────────────────
+inline_marker:
+  template: '!file[<name>](<url>)'
+  # 逐字复制自 file-cards.ts:FILE_CARD_URL_PATTERN.source(权威源)· CI 探针守护漂移
+  url_pattern: '\/uploads\/[^)]*|https?:\/\/[^)]+'
+  # 逐字复制自 file-cards.ts:NEW_FILE_CARD_RE(整行锚定 · 内嵌 url_pattern)
+  line_pattern: '^!file\[([^\]]*)\]\((\/uploads\/[^)]*|https?:\/\/[^)]+)\)$'
+  samples_must_match:
+    - '!file[plan_2026-06-09_x.html](/uploads/workspaces/abc/plan.html)'
+    - '!file[case.html](https://multica-static.example.ai/case.html)'
+  samples_must_reject:
+    - '!file[x](javascript:alert(1))'   # 协议注入
+    - '!file[x](//evil.host/x)'         # 协议相对
+    - '!file[x](/api/issues/1/comments)' # 越带 API 路径

@@ -24,7 +24,7 @@ case 是 HTML,作为**评论**内联渲染(append-only),走共享地基 **tc-ren
 2. **建/定位 case issue** `multica issue create --project <UUID> --title "复盘:<slug>" [--parent <plan-issue-id>]`(parent 指向被复盘的 plan,便于回溯/自动关闭)。
 3. **产出+发布(一步 · 调脚本)** 把字段写成 `fields.json`(`goal` / `whatHappened` / `criteriaResults`[{criterion,met,notMetReason}] / `keyJudgments`[{title,context,options,chose,inHindsight,ancientImpossible}] / `ruleCandidates` / `slug`),调:
    `python3 ~/.claude/skills/tc-render/publish.py --type case --data fields.json --issue <case-issue-UUID> --out cases/<YYYY-MM-DD>-<slug>.html`
-   脚本渲染 + 硬校验 + 命门A 发布 + 自检 attachments。先 `--dry-run` 预览。永不改附件/改描述。
+   脚本渲染 + 硬校验 + 命门B 发布 + 自检 attachments。先 `--dry-run` 预览。永不改附件/改描述。
 
 > **硬校验(publish.py 内建 · exit 1 硬挡)**:关键判断 ≥1 个、关键判断段合计 **≥100 字符**(非占位;复盘的存在理由就是这段)、`--issue` 完整 UUID。违约脚本报错、发不出。完成标准每条标 met/not + 信号。
 

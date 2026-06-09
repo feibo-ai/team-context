@@ -130,3 +130,17 @@ jobs:
             fi
           done
           exit $fail
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: tc-render publish 硬校验 + red-team + 命门A 灾备契约漂移探针 (pytest)
+        run: |
+          python -m pip install --quiet pytest pyyaml
+          # 已知取舍:本 job 只 checkout team-context 单仓,file-cards.ts 在 tc-multica 仓 →
+          # 跨仓漂移检测(test_contract_aligned_to_frontend_regex)在 CI 里 SKIP(诚实兜底·非假绿)。
+          # 硬校验 + red-team + 契约自洽全跑。要 CI 也防前端正则漂移:checkout tc-multica
+          # 或注入 FILE_CARDS_TS=<file-cards.ts 路径>(前端正则的权威应在 tc-multica 仓 CI 守护)。
+          python -m pytest skills/tc-render/tests/ -q
