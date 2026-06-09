@@ -14,9 +14,17 @@ of key judgments.
 - Project: `cases/YYYY-MM-DD-<project-slug>.html`
 - Task batch (lightweight): `cases/YYYY-MM-WW-tasks.html` (week-bucketed, append)
 
-> The project case is rendered to a 方案A HTML file by `case_create` and posted as a **comment** on the case issue (`!file` inline render · append-only — never an attachment-update or description rewrite). Local `cases/*.html` kept for git / offline.
+## 产出与发布(经 tc-render · 不再走 case_create MCP)
 
-> ⚠️ **项目归属(必填)**:`case_create` 的 `projectId` 已是必填(归到被复盘的那个项目)。拿不准先 `multica project list` 核对、或问用户。绝不建无项目的孤儿 issue。(team-global rule #6)
+case 是 HTML,作为**评论**内联渲染(append-only),走共享地基 **tc-render**(`~/.claude/skills/tc-render/`):
+
+1. **选定项目** `multica project list --full-id` 取**完整 UUID**(归到被复盘的那个项目;拿不准核对或问用户)。绝不建孤儿 issue(rule #6)。
+2. **建/定位 case issue** `multica issue create --project <UUID> --title "复盘:<slug>" [--parent <plan-issue-id>]`(parent 指向被复盘的 plan,便于回溯/自动关闭)。
+3. **产出 HTML** 填 `tc-render/templates/case.html`(5 段 + 两处动态注入:文件名日期、规则候选空→`_(无)_`),存 `cases/<YYYY-MM-DD>-<slug>.html`(git/离线副本)。
+4. **发布** 照 `tc-render/PUBLISH.md` 命门A 发为评论(自检 `attachments` 非空)。永不改附件/改描述。
+
+> **护栏(原 case_create / case_review zod · 迁移后须自检 · 对抗验收非 grep)**:
+> ① **关键判断(section 4)≥1 个**,且该段实质内容 **≥100 字符**(非占位;复盘的存在理由就是这段);② 完成标准每条标 met/not + 信号;③ projectId **完整 UUID**(rule #6 · 8 位短 ID 报 400)。任一不满足 → 回去补,不发布。
 
 ## The 5 mandatory sections
 
@@ -53,6 +61,7 @@ DRI marks each: `[ ] needs DRI promotion decision`.
 
 Promotion rule (SOP P-4): "does this apply to ALL future similar projects?"
 - YES → DRI promotes to CLAUDE.md via `case_promote_rule` MCP tool
+  (低频 · 写 CLAUDE.md 走月度 review · 本迭代**仍用 MCP 兜底**,迁移见迭代2;非 RPI 闭环工具)
 - NO → leave in case file only
 
 About 10% of candidates promote. 90% stay local.

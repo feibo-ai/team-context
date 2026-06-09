@@ -1,6 +1,6 @@
 ---
 name: tc-2-research
-description: "Use when entering Research phase of the RPI framework — before any plan or code work on a project-layer goal. Triggers: 'start research', 'let us understand', '调研', '研究一下', 'Research session', user explicitly invokes Phase 01 step 2. Orchestrates parallel subagent research with context budget discipline. Output: a local skeleton at docs/research/research_YYYY-MM-DD_topic.html; filled findings are published as an issue COMMENT via doc_publish (!file inline render) — never auto-uploaded to the description. Required for SOP v0.4 P-3 Phase 01."
+description: "Use when entering Research phase of the RPI framework — before any plan or code work on a project-layer goal. Triggers: 'start research', 'let us understand', '调研', '研究一下', 'Research session', user explicitly invokes Phase 01 step 2. Orchestrates parallel subagent research with context budget discipline. Output: a local skeleton at docs/research/research_YYYY-MM-DD_topic.html; filled findings are published as an issue COMMENT via tc-render 命门A (upload-file with issue_id + raw POST comment with !file + attachment_ids) — never auto-uploaded to the description. Required for SOP v0.4 P-3 Phase 01."
 ---
 
 # RPI · Research Session
@@ -71,10 +71,13 @@ docs/research/research_YYYY-MM-DD_<topic>.html
 3. ...
 ```
 
-> **文档怎么进 issue(append-only · 评论制)**:`research_create` 只建 issue + **本地骨架** HTML(`docs/research/*.html`),**不上传**(此刻还没发现)。把发现填进本地 HTML 后,用 **`doc_publish`** 工具发布为一条**评论**(`!file` 内联渲染 · 方案A)。
-> 之后每次更新 = **再发一条评论**(新文件名)。**永不**「更新附件」(CLI 只能下载,传不回)或把文档内容塞进 issue 描述 —— 那正是之前卡死的弯路。本地 `docs/research/*.html` 仍留作 git / 离线副本。
-
-> ⚠️ **项目归属(必填)**:`research_create` 的 `projectId` 已是必填。建研究 issue 前先 `multica project list` 选定项目;**拿不准就问用户**(是不是这个项目?要不要 `multica project create` 新建?)。绝不建无项目的孤儿 issue。(team-global rule #6)
+> **文档怎么进 issue(经 tc-render · 不再走 research_create / doc_publish MCP · append-only 评论制)**:
+> 1. **选定项目** `multica project list --full-id` 取**完整 UUID**(拿不准问用户/或 `multica project create`);绝不建孤儿 issue(rule #6)。
+> 2. **建研究 issue** `multica issue create --project <UUID> --title "研究:<topic>"`。
+> 3. **本地骨架** 填 `tc-render/templates/research.html`(Findings 先填字面「(待 fresh session 深度调研填充)」),存 `docs/research/research_<YYYY-MM-DD>_<topic>.html`,**此刻不发布**。
+> 4. **填发现后发布** 把 findings 填进本地 HTML,照 `tc-render/PUBLISH.md` 命门A(upload 带 issue_id → raw POST 评论带 `!file` + attachment_ids)发为一条**评论**(内联渲染 · 自检 `attachments` 非空)。
+> 之后每次更新 = 用命门A **再发一条新评论**(新文件名)。**永不**改附件(CLI 传不回)或把文档塞进 issue 描述 —— 那正是之前卡死的弯路。本地 `docs/research/*.html` 留作 git/离线副本。
+> projectId 一律**完整 UUID**(8 位短 ID 报 400 · rule #6)。
 
 ## What this session does NOT do
 - ❌ Pick a plan (Plan session does)

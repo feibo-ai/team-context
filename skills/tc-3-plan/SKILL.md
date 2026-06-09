@@ -86,9 +86,18 @@ docs/research/research_YYYY-MM-DD_<topic>.html
 **Boundary:** <what is out of scope, 1 sentence>
 ```
 
-> **Output is HTML, not a hand-written file.** The `plan_create` / `project_kickoff` MCP tool renders these fields to a 方案A HTML doc and posts it as a **comment** on the plan issue (`!file` inline render · append-only). Updates go through `plan_upgrade`, which posts a **new comment** (v2, v3…) — it never mutates an attachment or rewrites the issue description (the CLI can't re-upload an attachment anyway). Local `docs/plans/*.html` is kept for git history / offline reading.
+## 产出与发布(经 tc-render · 不再走 plan_create MCP)
 
-> ⚠️ **项目归属(必填)**:`plan_create` 的 `projectId` 已是必填。建计划 issue 前先 `multica project list` 选定项目;**拿不准就问用户**(对不对?要不要 `multica project create` 新建?)。绝不建无项目的孤儿 issue。(team-global rule #6)
+产出是 HTML,作为 issue **评论**内联渲染(append-only),走共享地基 **tc-render**(`~/.claude/skills/tc-render/`):
+
+1. **选定项目**:`multica project list --full-id` 取**完整 UUID** 作 projectId(8 位短 ID 报 400;**拿不准就问用户**:对不对?要不要 `multica project create` 新建?)。绝不建无项目的孤儿 issue。(rule #6)
+2. **建/定位 plan issue**:`multica issue create --project <UUID> --title "计划:<slug>" [--parent <research-issue-id>]`(取回 issue id 完整 UUID)。
+3. **产出 HTML**:填 `tc-render/templates/plan.html`(占位 + 两处动态注入:文件名日期、空列表→`(无)`),存本地 `docs/plans/plan_<YYYY-MM-DD>_<slug>.html`(git/离线副本)。
+4. **发布**:照 `tc-render/PUBLISH.md` 命门A(upload 带 issue_id + X-Workspace-ID → raw POST 评论带 `!file` + attachment_ids)。成功真信号 = 返回评论 `attachments` 非空。
+5. **更新(原 plan_upgrade 行为)**:用命门A **再发一条新评论**(文件名 `_v2`/`_v3`…),永不改附件、永不改 issue 描述(CLI 也传不回附件)。
+
+> **护栏(原 plan_create zod 约束 · 迁移后无 zod 兜底,须自检 · 对抗验收非 grep)**:
+> ① **goal ≥10 字符**且具体可验(非「做得更好」);② **完成标准 ≥1 条**,每条非空且可观测;③ projectId 用**完整 UUID**(rule #6)。任一不满足 → 不产出、不发布,回去补。
 
 ## Review gate (non-negotiable)
 

@@ -21,12 +21,11 @@ Run `git status --short`. Report to user.
 
 ### 2. Decide WIP fate
 Three options — ask user if not obvious:
-- **commit** — `git add -A && git commit -m "wip: <one-line state>"` —
-  default for any meaningful work
-- **stash** — `git stash push -m "wip: <one-line>"` — when not sure it's
+- **commit** — 显式暂存本次相关文件 `git add <具体路径>`,再 `git commit -m "wip: <one-line state>"` —
+  default for any meaningful work. **绝不 `git add -A`**:工作树常有别项目/别人未提交文件(本仓即如此),`-A` 会一并裹挟;先 `git status --short` 看清再按路径 add。
+- **stash** — `git stash push -m "wip: <one-line>" -- <具体路径>` — when not sure it's
   worth keeping but might want it back
-- **discard** — `git checkout .` — ONLY with explicit user confirmation,
-  never default
+- **discard** — `git checkout -- <具体路径>` — **ONLY with explicit user confirmation(confirmDiscard 门:discard 前必须用户显式点头),never default**;别用裸 `git checkout .`(会连带别项目改动一起丢)
 
 ### 3. Locate active plan doc
 Look in `docs/plans/` for the .html file with most recent mtime matching this
@@ -52,13 +51,11 @@ work. If multiple plans or none, ask.
     **Context pollution signal** (why we are clearing):
     - <one sentence>
 
-### 5. Persist to the multica issue
-If this work is tracked in a multica issue, post the Current State block as
-an issue comment. The `session_handoff` MCP tool does this for you, and also
-regenerates the plan HTML with this state folded in and posts it as a NEW
-comment (append-only · renders inline via `!file` · old versions kept ·
-evolution traceable).
-Manual fallback: `multica issue comment add <id> --content-file <path>`
+### 5. Persist to the multica issue(经 tc-render 命门A · 不再走 session_handoff MCP)
+If this work is tracked in a multica issue:
+- **防重复 handoff(原 session_handoff <60s 幂等门 · 净损失须复刻)**:先查当期 plan / issue 是否已有 `handoff @ YYYY-MM-DD HH:MM` 标记且在 **<60 秒**前 —— 若是,**拒绝重复 handoff**(提示 `last handoff <N>s ago — refusing duplicate within 60s`),不重发,直接进第 6 步。
+- **Current State 评论**:把上面的 Current State 块发为一条评论。快捷=纯 markdown:`multica issue comment add <id> --content-file <path>`;或要内联渲染=填 `tc-render/templates/handoff.html` 经 `tc-render/PUBLISH.md` 命门A 发布(自检 `attachments` 非空)。
+- **plan 同步(原 session_handoff 重生成 plan 行为)**:把 handoff section(handoff.html「当前状态」片段,含 `handoff @ <时间戳>`)追加进当期 `docs/plans/plan_*.html` 的 `<footer>` 之前,经命门A **再发一条新评论**(append-only · 内联渲染 · 旧版本留存 · 演化可追溯)。projectId/issueId 一律完整 UUID。
 
 ### 6. Final confirmation
 Show user the updated plan + commit hash + (if posted) multica comment URL.
