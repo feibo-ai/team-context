@@ -63,7 +63,10 @@ multica issue comment delete <comment_id>     # 实测可删,修正后重发
 3. `!file[name](url)` 用步骤1 返回的**相对 url 原样**,不拼 $SERVER 域名。
 4. 成功自检看返回评论 `attachments` **非空**(绑定真信号),不看 url 前缀。
 
+## CLI 版本门槛
+命门B `comment add --inline`、`multica skill pull`、`multica skill lint` 需 **multica CLI v0.4.11+**(--inline v0.4.11 · pull v0.4.12 · lint v0.4.13)。旧版(如 v0.4.10 dev-build)无这些命令 → 先 `multica update`。命门A(publish.py raw HTTP)与版本无关,任何版本可用。
+
 ## Dead ends —— 不要再试
-- **不用** `multica issue comment add --attachment <url>`(拒 url 形;attachment_ids 非用户 flag)。能力收口走命门B `multica issue comment add --inline <doc.html>`(v0.4.11+;迭代2 A→B 切换后 publish.py 可改调它)。
+- `multica issue comment add --attachment <本地文件>` **会**上传并绑定附件(comment.attachments 非空),但**不会**在正文注入 `!file[name](url)` 内联标记 —— 是「附件」形态,**不是命门A 的正文内联渲染**。`--attachment <url>`(url 形)才被直接拒。**要正文内联渲染**:用 publish.py(命门A)或 `comment add --inline`(命门B,v0.4.11+)。
 - 实测:此 workspace token 下,带/不带 issue_id upload url 都是 /uploads/workspaces/;失败模式是 attachment_ids 没绑(comment.attachments 空),不是 url 前缀。
 - 别再调研 local 改 HTTP transport / doc_publish 纯 CLI 单命令复现内联渲染(均已证不行)。
