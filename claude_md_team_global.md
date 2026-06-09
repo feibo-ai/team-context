@@ -63,3 +63,4 @@ AI MIQ — 5 人 AI-Native 团队。以 SOP v0.4 参考 Handbook 为准。通才
 | 架构决策 | `<project>/decisions/` + team-context `decisions/` |
 | Multica workspace | `team-context`（server URL：跑 `multica config show`） |
 | Multica CLI 参考 | `multica --help` 或 `~/.claude/skills/multica-cli/` |
+| 方案A 渲染+内联发布(单源逻辑) | team-context `skills/tc-render/`（CSS+4 模板+`PUBLISH.md`=命门A 发布序列）。Claude 走 tc-render skill;Codex/其他 agent 直读该目录照做 — 勿把多步序列内联进本文件 |
