@@ -74,9 +74,9 @@ docs/research/research_YYYY-MM-DD_<topic>.html
 > **文档怎么进 issue(经 tc-render · 不再走 research_create / doc_publish MCP · append-only 评论制)**:
 > 1. **选定项目** `multica project list --full-id` 取**完整 UUID**(拿不准问用户/或 `multica project create`);绝不建孤儿 issue(rule #6)。
 > 2. **建研究 issue** `multica issue create --project <UUID> --title "研究:<topic>"`。
-> 3. **本地骨架** 填 `tc-render/templates/research.html`(Findings 先填字面「(待 fresh session 深度调研填充)」),存 `docs/research/research_<YYYY-MM-DD>_<topic>.html`,**此刻不发布**。
-> 4. **填发现后发布** 把 findings 填进本地 HTML,照 `tc-render/PUBLISH.md` 命门A(upload 带 issue_id → raw POST 评论带 `!file` + attachment_ids)发为一条**评论**(内联渲染 · 自检 `attachments` 非空)。
-> 之后每次更新 = 用命门A **再发一条新评论**(新文件名)。**永不**改附件(CLI 传不回)或把文档塞进 issue 描述 —— 那正是之前卡死的弯路。本地 `docs/research/*.html` 留作 git/离线副本。
+> 3. **本地骨架(调脚本 · dry-run)** 把 `{question, slug}` 写成 `fields.json`(findings 留空=占位),调 `python3 ~/.claude/skills/tc-render/publish.py --type research --data fields.json --dry-run --out docs/research/research_<YYYY-MM-DD>_<topic>.html`,**此刻 dry-run 只渲染不发布**。
+> 4. **填发现后发布** 把 findings 填进 fields.json,去掉 `--dry-run`、加 `--issue <UUID>` 再调一次:脚本渲染 + 命门A 发评论(内联渲染 · 自检 attachments)。
+> 之后每次更新 = 换新 `--out` 再调一次。**永不**改附件或把文档塞进 issue 描述。本地 `docs/research/*.html` 留作 git/离线副本。
 > projectId 一律**完整 UUID**(8 位短 ID 报 400 · rule #6)。
 
 ## What this session does NOT do

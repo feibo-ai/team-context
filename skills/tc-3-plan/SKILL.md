@@ -92,12 +92,12 @@ docs/research/research_YYYY-MM-DD_<topic>.html
 
 1. **选定项目**:`multica project list --full-id` 取**完整 UUID** 作 projectId(8 位短 ID 报 400;**拿不准就问用户**:对不对?要不要 `multica project create` 新建?)。绝不建无项目的孤儿 issue。(rule #6)
 2. **建/定位 plan issue**:`multica issue create --project <UUID> --title "计划:<slug>" [--parent <research-issue-id>]`(取回 issue id 完整 UUID)。
-3. **产出 HTML**:填 `tc-render/templates/plan.html`(占位 + 两处动态注入:文件名日期、空列表→`(无)`),存本地 `docs/plans/plan_<YYYY-MM-DD>_<slug>.html`(git/离线副本)。
-4. **发布**:照 `tc-render/PUBLISH.md` 命门A(upload 带 issue_id + X-Workspace-ID → raw POST 评论带 `!file` + attachment_ids)。成功真信号 = 返回评论 `attachments` 非空。
-5. **更新(原 plan_upgrade 行为)**:用命门A **再发一条新评论**(文件名 `_v2`/`_v3`…),永不改附件、永不改 issue 描述(CLI 也传不回附件)。
+3. **产出+发布(一步 · 调脚本)**:把字段写成 `fields.json`(`goal` / `completionCriteria` / `dri` / `layer` / `exec` / `collab` / `reviewer` / `appetite` / `approach` / `slug`),调:
+   `python3 ~/.claude/skills/tc-render/publish.py --type plan --data fields.json --issue <issue-UUID> --out docs/plans/plan_<YYYY-MM-DD>_<slug>.html`
+   脚本**渲染 + 硬校验 + 命门A 发布 + 自检 attachments** 一步到位,成功打印 `comment_id`/`url`。先 `--dry-run` 预览。
+4. **更新(原 plan_upgrade)**:换新 `--out` 文件名(`_v2`…)再调一次,append-only;永不改附件、永不改 issue 描述。
 
-> **护栏(原 plan_create zod 约束 · 迁移后无 zod 兜底,须自检 · 对抗验收非 grep)**:
-> ① **goal ≥10 字符**且具体可验(非「做得更好」);② **完成标准 ≥1 条**,每条非空且可观测;③ projectId 用**完整 UUID**(rule #6)。任一不满足 → 不产出、不发布,回去补。
+> **硬校验(publish.py 内建 · exit 1 硬挡,不再靠自觉)**:`goal` ≥10 字符、完成标准 ≥1 条、`--issue` 完整 UUID。违约脚本直接报错、发不出,回去补。
 
 ## Review gate (non-negotiable)
 

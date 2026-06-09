@@ -20,11 +20,11 @@ case 是 HTML,作为**评论**内联渲染(append-only),走共享地基 **tc-ren
 
 1. **选定项目** `multica project list --full-id` 取**完整 UUID**(归到被复盘的那个项目;拿不准核对或问用户)。绝不建孤儿 issue(rule #6)。
 2. **建/定位 case issue** `multica issue create --project <UUID> --title "复盘:<slug>" [--parent <plan-issue-id>]`(parent 指向被复盘的 plan,便于回溯/自动关闭)。
-3. **产出 HTML** 填 `tc-render/templates/case.html`(5 段 + 两处动态注入:文件名日期、规则候选空→`_(无)_`),存 `cases/<YYYY-MM-DD>-<slug>.html`(git/离线副本)。
-4. **发布** 照 `tc-render/PUBLISH.md` 命门A 发为评论(自检 `attachments` 非空)。永不改附件/改描述。
+3. **产出+发布(一步 · 调脚本)** 把字段写成 `fields.json`(`goal` / `whatHappened` / `criteriaResults`[{criterion,met,notMetReason}] / `keyJudgments`[{title,context,options,chose,inHindsight,ancientImpossible}] / `ruleCandidates` / `slug`),调:
+   `python3 ~/.claude/skills/tc-render/publish.py --type case --data fields.json --issue <case-issue-UUID> --out cases/<YYYY-MM-DD>-<slug>.html`
+   脚本渲染 + 硬校验 + 命门A 发布 + 自检 attachments。先 `--dry-run` 预览。永不改附件/改描述。
 
-> **护栏(原 case_create / case_review zod · 迁移后须自检 · 对抗验收非 grep)**:
-> ① **关键判断(section 4)≥1 个**,且该段实质内容 **≥100 字符**(非占位;复盘的存在理由就是这段);② 完成标准每条标 met/not + 信号;③ projectId **完整 UUID**(rule #6 · 8 位短 ID 报 400)。任一不满足 → 回去补,不发布。
+> **硬校验(publish.py 内建 · exit 1 硬挡)**:关键判断 ≥1 个、关键判断段合计 **≥100 字符**(非占位;复盘的存在理由就是这段)、`--issue` 完整 UUID。违约脚本报错、发不出。完成标准每条标 met/not + 信号。
 
 ## The 5 mandatory sections
 
