@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{SLUG}}</title>
+<style>__STYLE__</style></head>
+<body>
+<div class="eyebrow">HANDOFF · 交接</div>
+<h1>{{SLUG}}</h1>
+<div class="meta"><span>Phase <b>RPI Handoff</b></span></div>
+<h2>当前状态 · handoff @ {{AT}}</h2>
+<div class="callout">
+<div class="field-label">Last commit</div><code>{{LAST_COMMIT}}</code> · <code>{{BRANCH}}</code>
+<div class="field-label">What's done</div>{{DONE}}
+<div class="field-label">Next action</div>{{NEXT_ACTION}}
+<div class="field-label">Dead ends — do NOT retry</div>{{DEAD_ENDS_OR_无}}
+<div class="field-label">Pollution signal</div>{{POLLUTION_SIGNAL}}
+</div>
+<footer>team-context · RPI handoff · multica issue 内渲染</footer>
+</body></html>
+<!--
+  tc-render handoff 模板 — 逐字复刻 team-context-mcp render/plan-html.ts renderHandoff() + renderShell。
+  两种用法:
+    (a) 独立 handoff doc(本文件整体)→ 经命门A 作为 issue 评论发布,!file 内联渲染(与 plan/research/case 一致)。
+    (b) section 片段(下方 <h2>当前状态…</h2> 到对应 </div> 之间那段)→ tc-handoff 追加进当期 plan doc 的 <footer> 之前,
+        使 plan doc 本身也带 handoff 快照(MCP 原行为:session_handoff 重生成带 handoff section 的 plan)。
+  产出前替换:
+    __STYLE__               ← assets/style.css 全文(独立 doc 用法才需要;section 片段用法不含 <style>)
+    {{SLUG}}                ← slug
+    {{AT}}                  ← 时间戳 'YYYY-MM-DD HH:MM'(date -u +'%F %H:%M')          ← 动态注入①:日期/时间
+    {{LAST_COMMIT}}         ← 最近 commit(<short-sha> <msg>,esc)
+    {{BRANCH}}              ← 分支名(esc)
+    {{DONE}}                ← What's done(esc)
+    {{NEXT_ACTION}}         ← Next action — fresh session 冷启动可直接做(esc)
+    {{DEAD_ENDS_OR_无}}     ← dead ends:有则 <ul><li>…</li></ul>;空 → 字面 (无)        ← 动态注入②:空列表→(无)
+    {{POLLUTION_SIGNAL}}    ← 污染信号判定(esc)
+  净损失护栏(对抗验收,见 tc-handoff):discard 前用户显式确认(confirmDiscard 门);<60s 内重复 handoff 须警告防重复。
+  所有文本字段须 HTML-escape。
+-->

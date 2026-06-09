@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{SLUG}}</title>
+<style>__STYLE__</style></head>
+<body>
+<div class="eyebrow">CASE · 复盘</div>
+<h1>{{SLUG}}</h1>
+<div class="meta"><span>Phase <b>RPI Debrief</b></span></div>
+<h2>1 · 目标</h2><div class="field">{{GOAL}}</div>
+<h2>2 · 实际发生</h2><div class="field">{{WHAT_HAPPENED}}</div>
+<h2>3 · 完成标准</h2><div class="field crit"><ul><li>{{CRIT_MARK}} {{CRITERION}}{{NOT_MET_REASON}}</li></ul></div>
+<h2>4 · 关键判断</h2><div class="field"><div class="field-label">判断:{{J_TITLE}}</div>
+<b>背景</b> {{J_CONTEXT}}<br>
+<b>选项</b> {{J_OPTIONS}}<br>
+<b>选择</b> {{J_CHOSE}}<br>
+<b>事后看</b> {{J_IN_HINDSIGHT}}<br>
+<b>古法不可能</b> {{J_ANCIENT_IMPOSSIBLE}}</div>
+<h2>5 · 规则候选</h2><div class="field">{{RULES_OR_无}}</div>
+<footer>team-context · RPI Debrief · SOP 非妥协 #2 · multica issue 内渲染</footer>
+</body></html>
+<!--
+  tc-render case 模板 — 逐字复刻 team-context-mcp render/case-html.ts + renderShell。
+  产出前替换:
+    __STYLE__              ← assets/style.css 全文(见 PUBLISH.md «CSS 内联»)
+    {{SLUG}}               ← slug(title + h1)
+    {{GOAL}}               ← 1·目标(esc)
+    {{WHAT_HAPPENED}}      ← 2·实际发生(esc)
+    完成标准列表(3):每条一个 <li>,按条重复:
+      {{CRIT_MARK}}        ← met ? ✅ : ❌
+      {{CRITERION}}        ← 标准文本(esc)
+      {{NOT_MET_REASON}}   ← 未达成且有原因时 ' — <reason>'(esc);否则空串
+    关键判断(4):每个判断一个 <div class="field">…</div>,按判断数重复(净损失护栏:≥1 个 keyJudgment):
+      {{J_TITLE}} 标题 · {{J_CONTEXT}} 背景 · {{J_OPTIONS}} 选项 join(' / ')
+      {{J_CHOSE}} 选择 · {{J_IN_HINDSIGHT}} 事后看 · {{J_ANCIENT_IMPOSSIBLE}} 古法不可能(均 esc)
+    {{RULES_OR_无}}        ← 规则候选:有则 <ul><li>…</li></ul>;空 → 字面 _(无)_   ← 动态注入②:空列表→(无)
+  动态注入①(日期):文件名 cases/<YYYY-MM-DD>-<slug>.html 用今天日期(date -u +%F)。
+  净损失护栏(对抗验收,见 tc-5-review):keyJudgments ≥1;若走 case_review 流程,第4段「事后看/复盘」≥100 字符。
+  所有文本字段须 HTML-escape。
+-->
