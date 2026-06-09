@@ -56,7 +56,7 @@ multica workspace switch team-context
 
 > `multica login` 走浏览器授权到 `https://teamctx.actionow.ai`,搞定后再 `workspace switch team-context`。
 
-`multica login` 把**你自己的 token** 存进 `~/.multica/config.json`。tcmcp-local 启动只读 env(不读 multica config),所以把 3 个 export 写进 shell rc —— token 直接从你的 login 结果读出来(**不用任何人发给你**):
+`multica login` 把**你自己的 token** 存进 `~/.multica/config.json`。`multica` CLI 自己读这个 config;但 remote MCP server(`tcmcp-remote`)启动只读 env,所以把 3 个 export 写进 shell rc —— token 直接从你的 login 结果读出来(**不用任何人发给你**):
 
 ```bash
 cat >> ~/.zshrc <<'EOF'
@@ -86,118 +86,46 @@ Token:   mul_xxxxxxxx...
 
 ---
 
-## 2 · 装 tcmcp-local (本地 SOP 工具 · 2 分钟)
+## 2 · 同步团队 skill (`multica skill pull` · 1 分钟)
+
+RPI 文档流(plan / research / case / handoff 的生成+发布)现在全靠 **skill + multica CLI + `tc-render/publish.py`** —— **不再 clone/build 本地 MCP**。skill(含携带的脚本)从 multica registry 一条命令拉下来:
 
 ```bash
-cd ~
-git clone https://github.com/feibo-ai/team-context-mcp.git
-cd team-context-mcp
-npm install -g pnpm@11
-CI=true pnpm install --frozen-lockfile   # CI=true 避开非交互式 TTY 阻塞
-pnpm --filter @tcmcp/shared build
-pnpm --filter @tcmcp/local  build
+# 从 registry 把全部团队 skill(含脚本如 tc-render/publish.py)同步到 ~/.claude/skills
+multica skill pull --all
 ```
 
-**验证 2:** (会等 ~4 秒 · 起 server → 列工具 → 杀掉)
+> 本地 MCP `@tcmcp/local` 本期作兜底仍在两端保留注册,但**日常不调**(迭代 2 删)。你**不需要** clone team-context-mcp、不需要 pnpm build、不需要起 stdio server。
+
+**验证 2:** (registry 拉下来的 tc-* 团队 skill 是否落地为非空文件)
 ```bash
-# sleep 不能省 · 给 server 时间响应。notifications/initialized 不能漏,
-# 否则严格/慢的 server 不回 tools/list。
-{
-  echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"v","version":"0"}}}'
-  echo '{"jsonrpc":"2.0","method":"notifications/initialized"}'
-  echo '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
-  sleep 2
-} | node ~/team-context-mcp/packages/local/dist/server.js 2>/dev/null \
-  | jq -r 'select(.id==2)|.result.tools[].name'
-```
-期望:列出 `plan_create` / `research_create` / `case_create` / `doc_publish` / `plan_approve` 等核心工具(**数量随版本增长 · 不必纠结具体数字**)。
-
-返回 `0 / empty / error`:
-- 报 `multica config missing. Set MULTICA_SERVER_URL/MULTICA_TOKEN/MULTICA_WORKSPACE_ID` → 你 Step 1 那 3 个 env 没 source · 跑 `source ~/.zshrc` 或重开 terminal
-- build 没成功 → `cd ~/team-context-mcp && CI=true pnpm install --frozen-lockfile && pnpm --filter @tcmcp/local build` 重跑
-
----
-
-## 3 · 同步 12 个团队 skill (1 分钟)
-
-把下面整段贴到终端跑 · 会写一个 sync 脚本到 `~/.local/bin/`:
-
-```bash
-mkdir -p ~/.local/bin
-cat > ~/.local/bin/sync-skills.sh <<'SYNC_EOF'
-#!/usr/bin/env bash
-# Pull all team skills from multica → ~/.claude/skills/
-set -euo pipefail
-: "${MULTICA_SERVER_URL:=https://api.teamctx.actionow.ai}"
-: "${MULTICA_WORKSPACE_ID:?MULTICA_WORKSPACE_ID must be set}"
-: "${MULTICA_TOKEN:?MULTICA_TOKEN must be set}"
-
-TARGET="${HOME}/.claude/skills"
-mkdir -p "$TARGET"
-ids=$(curl -fsS -H "Authorization: Bearer $MULTICA_TOKEN" \
-  "${MULTICA_SERVER_URL}/api/skills?workspace_id=${MULTICA_WORKSPACE_ID}" \
-  | jq -r '.[].id')
-n=0
-for id in $ids; do
-  json=$(curl -fsS -H "Authorization: Bearer $MULTICA_TOKEN" \
-    "${MULTICA_SERVER_URL}/api/skills/${id}?workspace_id=${MULTICA_WORKSPACE_ID}")
-  name=$(echo "$json" | jq -r .name)
-  desc=$(echo "$json" | jq -r .description)
-  body=$(echo "$json" | jq -r .content)
-  d="${TARGET}/${name}"; mkdir -p "$d"
-  {
-    printf -- '---\n'
-    printf 'name: %s\n' "$name"
-    printf 'description: %s\n' "$(echo "$desc" | jq -R -s .)"
-    printf -- '---\n'
-    printf '%s\n' "$body"
-  } > "${d}/SKILL.md"
-  echo "synced: $name"
-  n=$((n+1))
-done
-echo "Done · $n skills → $TARGET"
-SYNC_EOF
-chmod +x ~/.local/bin/sync-skills.sh
-
-# 跑
-MULTICA_WORKSPACE_ID=$(multica config show | awk '/workspace_id:/{print $2}') \
-  bash ~/.local/bin/sync-skills.sh
-```
-
-**验证 3:** (别数整个目录 —— 你机器上本来就有个人 skill;只看这 12 个 tc-* 团队 skill 到没到)
-```bash
-for nm in tc-1-start tc-2-research tc-3-plan tc-4-build tc-5-review tc-handoff \
-          tc-health-check tc-self-check tc-roles tc-conflict tc-monday tc-friday; do
+for nm in tc-1-start tc-2-research tc-3-plan tc-4-build tc-5-review tc-handoff tc-render; do
   [ -s ~/.claude/skills/$nm/SKILL.md ] && echo "✓ $nm" || echo "✗ $nm 缺"
 done
-head -3 ~/.claude/skills/tc-handoff/SKILL.md
+# tc-render 携带的发布脚本也应到位
+[ -s ~/.claude/skills/tc-render/publish.py ] && echo "✓ publish.py" || echo "✗ publish.py 缺"
 ```
-期望:12 行全 `✓`,且 head 前 3 行是:
-```
----
-name: tc-handoff
-description: "Use BEFORE running /clear...
-```
+期望:每行 `✓`(数量随 registry 增长 · 不必纠结具体数字)。
 
-出现 `✗` · 重跑 sync 脚本 · 仍缺看 stderr 哪个 skill 失败。
+返回 `✗ / empty / error`:
+- 报 `invalid token` / 拉不到 → 你 Step 1 没 login 或 token 失效 · 重新 `multica login` 再 `multica skill pull --all`
+- 缺 `publish.py` → registry 里该 skill 未携带脚本 · 重跑 `multica skill pull --all`,仍缺找 DRI
 
 ---
 
-## 4 · 配 MCP (你装哪个 CLI 就走哪节)
+## 3 · 配 MCP (你装哪个 CLI 就走哪节)
 
 ### 4a · Codex 用户
 
-编辑 `~/.codex/config.toml` · 加 2 段(放在文件末尾即可):
+编辑 `~/.codex/config.toml` · 只需加 `tcmcp-remote`(放在文件末尾即可):
 
 ```toml
-[mcp_servers.tcmcp-local]
-command = "node"
-args = ["/Users/<把-我换成你的用户名>/team-context-mcp/packages/local/dist/server.js"]
-
 [mcp_servers.tcmcp-remote]
 url = "https://mcp.teamctx.actionow.ai/mcp"
 bearer_token_env_var = "TCMCP_AGENT_TOKEN"
 ```
+
+> RPI 文档流(plan/research/case/handoff)走 skills + `multica` CLI,**不再需要本地 MCP**。`tcmcp-local`(@tcmcp/local)迭代2 删除,本期仅作兜底——新成员**不必** clone/build/注册它。
 
 设 token 环境变量(MCP server 启动时读):
 ```bash
@@ -221,10 +149,6 @@ source ~/.zshrc
 ```json
 {
   "mcpServers": {
-    "tcmcp-local": {
-      "command": "node",
-      "args": ["/Users/<把-我换成你的用户名>/team-context-mcp/packages/local/dist/server.js"]
-    },
     "tcmcp-remote": {
       "url": "https://mcp.teamctx.actionow.ai/mcp",
       "headers": { "Authorization": "Bearer ${MULTICA_TOKEN}" }
@@ -233,16 +157,17 @@ source ~/.zshrc
 }
 ```
 
+> 只配 `tcmcp-remote`。RPI 文档流走 skills + `multica` CLI,`tcmcp-local` 迭代2 删除、本期仅兜底,新成员不必注册它。
+
 **验证 4b:** 重启 Claude Code · `/clear` · 输入:
-> list mcp tools whose name contains 'notify' or 'plan_create'
+> list mcp tools whose name contains 'notify'
 
 期望看到至少:
 - `tcmcp-remote/notify_team` (远程飞书工具)
-- `tcmcp-local/plan_create` (本地 RPI 工具)
 
 ---
 
-## 5 · 端到端冒烟 (30 秒)
+## 4 · 端到端冒烟 (30 秒)
 
 任一 CLI 里说:
 > 用 search_chat 查一下飞书群,告诉我「Team Context」群的 chat_id
@@ -257,9 +182,9 @@ source ~/.zshrc
 
 ---
 
-## 6 · 用 12 个 skill 开发一个项目(使用流程)
+## 5 · 用团队 skill 开发一个项目(使用流程)
 
-接入完成 = 工具到位。这一节讲**怎么用这 12 个 skill 把一个项目从想法做到收尾** —— 就是团队的 **RPI(Research → Plan → Implement)** 工作法。
+接入完成 = 工具到位。这一节讲**怎么用这套 tc-* skill 把一个项目从想法做到收尾** —— 就是团队的 **RPI(Research → Plan → Implement)** 工作法。
 
 > **一条铁律先记住**:R / P / I 是**三个分离的 session**,不要混在一个里。每个阶段用对应的 skill 起头,Claude Code 会按 skill 的 `description` 自动激活(说一句话就触发)。
 
@@ -269,9 +194,9 @@ source ~/.zshrc
 |---|---|---|---|---|
 | 1 | 启动 | `tc-1-start` | 「我想启动一个新项目」→ 走 Phase 01 六步 | project + 研究/计划 issue |
 | 2 | **Research**(新 session) | `tc-2-research` | 并行子代理调研 · 只汇报发现、不做决策 | `docs/research/*.html`(发到研究 issue 评论) |
-| 3 | **Plan**(再新 session) | `tc-3-plan` | 读 research 当输入,写计划(目标 / 完成标准 / 谁做什么 / appetite 四个必填)→ `plan_create` → 第二个 session 评审 → `plan_approve` | `docs/plans/*.html` · issue `计划-已批准` |
+| 3 | **Plan**(再新 session) | `tc-3-plan` | 读 research 当输入,写计划(目标 / 完成标准 / 谁做什么 / appetite 四个必填)→ `tc-3-plan`+publish.py → 第二个 session 评审 → 批准转换(`multica issue label/status`) | `docs/plans/*.html` · issue `计划-已批准` |
 | 4 | **Implement** | `tc-4-build` | 对着**已批准的 plan** 写代码 · 30 秒 CoT 监督 · 方向不对就 ESC | 代码 + commit |
-| 5 | 收尾 | `tc-5-review` | 写复盘 case(5 个必填段)→ `case_create` → `case_review` | `cases/*.html` |
+| 5 | 收尾 | `tc-5-review` | 写复盘 case(5 个必填段)→ `tc-5-review`+publish.py → `tc-5-review`收尾(`multica issue label/status`) | `cases/*.html` |
 
 ```
 [ tc-1-start ] → [ tc-2-research ] → [ tc-3-plan ] → [ tc-4-build ] → [ tc-5-review ]
@@ -301,7 +226,7 @@ source ~/.zshrc
 
 ---
 
-## 7 · (可选) 建你的个人 autopilot
+## 6 · (可选) 建你的个人 autopilot
 
 接入完成后,可一键建你自己的 5 个 autopilot(早会 / 日报 / 周一 / 周三 / 月度):数据范围只你自己 · 全部推团队群(卡片标题带你名字 · 不是私信)。
 
@@ -325,7 +250,7 @@ bash scripts/my-autopilot.sh all codex     # provider: codex | claude | hermes
 |---|---|---|
 | `multica auth status` → invalid token | 你的 token 失效 / 没 login | 重新 `multica login`(拿你自己的新 token)· 再 `source ~/.zshrc` |
 | `multica auth status` → connection refused | DNS/网络 | `curl https://api.teamctx.actionow.ai/healthz` 应返 200 |
-| Step 2 验证缺核心工具(missing:…)| tcmcp-local build 失败 | `cd ~/team-context-mcp && pnpm install --frozen-lockfile && pnpm --filter @tcmcp/local build` 重跑 |
+| Step 3 skill 缺(`✗`)| `multica skill pull` 没拉到 | 重跑 `multica skill pull --all`;仍缺查 `multica login` token / 网络 |
 | Step 3 同步 0 个 skill | workspace_id 抄错 | `multica config show` 看;DRI 给的应是 UUID 36 字符 |
 | Step 4 MCP 工具找不到 | config 路径里 `<把-我换成你的用户名>` 没改 | 改成 `whoami` 输出的真实用户名 |
 | Codex 4a 验证看不到 search_chat | 没重启 Codex | 完全退出再开 |

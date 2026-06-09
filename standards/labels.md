@@ -8,32 +8,32 @@
 
 | Label | 颜色 | 含义 | 加 / 删时机 | 谁加 |
 |---|---|---|---|---|
-| `计划-草稿` | `#94A3B8` 灰 | plan markdown 已生成、未 review | `plan_create` 自动加 | MCP 工具 |
+| `计划-草稿` | `#94A3B8` 灰 | plan markdown 已生成、未 review | `tc-3-plan`+publish.py 发布时 | skill/CLI |
 | `计划-评审中` | `#F59E0B` 琥珀 | 已请 reviewer，等 verdict | `plan_request_review` 加 + `计划-草稿` 不动 | MCP 工具 |
-| `计划-已批准` | `#10B981` 绿 | SOP 非妥协 #1 通过 · implement 可启动 | `plan_approve` 加 | MCP 工具 |
-| `计划-已升级` | `#A855F7` 紫 | plan 升级到 v1.x · 需重新 review | `plan_upgrade` 加 + 重新加 `计划-草稿` | MCP 工具 |
-| `复盘-待审` | `#3B82F6` 蓝 | case file 已生成 · 待 review section 4 | `case_create` 加 | MCP 工具 |
-| `复盘-已审` | `#059669` 深绿 | section 4 DRI 签字 · issue 可 close | `case_review` 加 | MCP 工具 |
+| `计划-已批准` | `#10B981` 绿 | SOP 非妥协 #1 通过 · implement 可启动 | 批准转换 `multica issue label add` | skill/CLI |
+| `计划-已升级` | `#A855F7` 紫 | plan 升级到 v1.x · 需重新 review | publish.py 再发新版 + 重新加 `计划-草稿` | skill/CLI |
+| `复盘-待审` | `#3B82F6` 蓝 | case file 已生成 · 待 review section 4 | `tc-5-review`+publish.py 发布时 | skill/CLI |
+| `复盘-已审` | `#059669` 深绿 | section 4 DRI 签字 · issue 可 close | `tc-5-review` 收尾 `multica issue label` | skill/CLI |
 | `古法不可能` | `#EC4899` 粉 | "在传统 5 人团队不可能"的事件 · AI Native 终极指标 | 团队成员手工加 / 月度复盘加 | 任何人 |
 | `投注表` | `#F97316` 橙 | 周五 betting table issue | `betting_table_capture` 加 | MCP 工具 |
 | `倦怠预警` | `#DC2626` 红 | burnout check 任何 yes → 自动建 issue | `burnout_check_distribute` 加 | MCP 工具 |
 | `代码评审` | `#8B5CF6` 紫罗兰 | code review 请求 issue | `code_review_request` 加 | MCP 工具 |
-| `研究` | `#06B6D4` 青 | RPI Research session 产物 issue | `research_create` 加 | MCP 工具 |
+| `研究` | `#06B6D4` 青 | RPI Research session 产物 issue | `tc-2-research`+publish.py | skill/CLI |
 
 ## State Machine (核心 issue 路径)
 
 ```
 新项目 issue
-  └─> [plan_create] ──> 计划-草稿
+  └─> [tc-3-plan] ──> 计划-草稿
        └─> [plan_request_review] ──> 计划-评审中 (+计划-草稿)
-            └─> [plan_approve] ──> 计划-已批准
+            └─> [批准转换] ──> 计划-已批准
                  │
                  ├─> [implement work happens]
                  │
-                 ├─> [plan_upgrade if 卡住 30 分钟] ──> 计划-已升级 + 计划-草稿 (重新 review)
+                 ├─> [plan 升级 if 卡住 30 分钟] ──> 计划-已升级 + 计划-草稿 (重新 review)
                  │
-                 └─> [case_create on完工] ──> 复盘-待审
-                      └─> [case_review by DRI] ──> 复盘-已审
+                 └─> [tc-5-review on完工] ──> 复盘-待审
+                      └─> [tc-5-review 评审 by DRI] ──> 复盘-已审
                            └─> [issue close 允许]
 ```
 

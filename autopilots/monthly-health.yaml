@@ -1,6 +1,6 @@
 name: monthly-health
 description: |
-  Trigger monthly_health_report MCP tool, upload markdown to feishu doc,
+  Run tc-ops monthly health 脚本, upload markdown to feishu doc,
   push link to team group, archive to wiki.
   SOP coverage: P-6 Monthly M-01
 
@@ -15,7 +15,7 @@ agent:
   name: monthly-health-bot-codex
   integration_ref: team-context-mcp  # resolved at apply time
 
-# PB-04 guardrails (autopilot_lint enforces)
+# PB-04 guardrails (ac_lint_yaml + CI enforce; 原 autopilot_lint MCP → tc-ops/autopilot_lint.py)
 # Note: monthly-health writes to /tmp/ only. Local git archive is done by humans (or
 # a separate cron sync script with elevated trust outside autopilot scope).
 guardrails:
@@ -39,11 +39,11 @@ prompt: |
   **输出语言要求：报告 markdown + 飞书全部用简体中文。** 命令行操作可英文。
 
   读环境变量 AUTOPILOT_SCOPE 决定范围:
-    - "team"    → 全队 monthly_health_report
+    - "team"    → 全队月度健康报告(tc-ops 脚本)
     - "<email>" → 本人月度切片
 
   Step 1 · 生成报告
-    team:  Call MCP tool monthly_health_report({ teamContextRepo: ~/team-context, projectRepos: [...] })
+    team:  运行月度健康报告:`multica skill pull tc-ops` 后 `python3 ~/.claude/skills/tc-ops/monthly_health.py ~/team-context [<project-repo>...]`(输出 markdown);取代旧 monthly_health_report MCP 工具
            Tool writes markdown to /tmp/monthly-health-{{date}}.md.
     个人:  汇总本人本月 issue / case / commit + SOP 信号 (handoff 次数 · 未写 debrief 等)
            写到 /tmp/monthly-personal-${AUTOPILOT_SCOPE%@*}-{{date}}.md

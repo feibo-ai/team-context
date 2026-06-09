@@ -15,7 +15,7 @@ agent:
   name: weekly-roundup-bot-codex
   integration_ref: team-context-mcp  # resolved at apply time
 
-# PB-04 guardrails (autopilot_lint enforces)
+# PB-04 guardrails (ac_lint_yaml + CI enforce; 原 autopilot_lint MCP → tc-ops/autopilot_lint.py)
 guardrails:
   forbidden_commands:
     - "git push"

@@ -14,7 +14,7 @@ agent:
   name: wednesday-stats-bot-codex
   integration_ref: team-context-mcp  # resolved at apply time
 
-# PB-04 guardrails (autopilot_lint enforces)
+# PB-04 guardrails (ac_lint_yaml + CI enforce; 原 autopilot_lint MCP → tc-ops/autopilot_lint.py)
 guardrails:
   forbidden_commands:
     - "git push"
@@ -35,11 +35,11 @@ prompt: |
   **输出语言要求：飞书 card 全部用简体中文。** 命令行操作可英文。
 
   读环境变量 AUTOPILOT_SCOPE 决定范围:
-    - "team"    → 全 workspace skill_lint 统计
+    - "team"    → 全 workspace skill lint 统计
     - "<email>" → 只本人 owned skill
 
   1. cd ~/team-context && git log --since="last Sunday" claude_md_team_global.md
-  2. Call MCP tool skill_lint (find stale + missing-owner)
+  2. 运行 `multica skill lint`(找 stale + 缺 owner;取代旧 skill_lint MCP 工具)
        个人: 只看 owner == $AUTOPILOT_SCOPE 的 skill
   3. Heuristic regex for duplicate rules
 

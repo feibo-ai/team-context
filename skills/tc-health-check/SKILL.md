@@ -1,6 +1,8 @@
 ---
 name: tc-health-check
 description: "Use when conversation shows signs of going in circles, model seems confused, or you suspect the session has entered SOP v0.4 'dumb zone'. Triggers '走偏了', '感觉不对', 'going in circles', '怎么回事', repeated rejected solutions in conversation, model agreeing too readily. Outputs explicit pollution signals detected and recommends invoke tc-handoff or continue."
+owner: 曾振华
+last_reviewed_at: 2026-06-09
 ---
 
 # Context Pollution Detector

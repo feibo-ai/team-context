@@ -18,7 +18,7 @@ multica autopilot 的 YAML 模板。
 | `daily-summary.yaml`   | 工作日 18:00 | `run_only`     | 每日 SOP 总结 → 飞书群 (notify_team · 个人/全队 scope) |
 | `monday-kickoff.yaml`  | 周一 09:30   | `create_issue` | 周计划汇总 → 飞书群 + 创建 issue |
 | `wednesday-stats.yaml` | 周三 09:00   | `run_only`     | CLAUDE.md 周度统计 → 飞书群 |
-| `monthly-health.yaml`  | 月 1 号 10:00 | `run_only`     | 触发 `monthly_health_report` → 飞书 doc + wiki |
+| `monthly-health.yaml`  | 月 1 号 10:00 | `run_only`     | 运行 tc-ops monthly health 脚本 → 飞书 doc + wiki |
 
 ## 每个 YAML 必含的 PB-04 guardrails
 

@@ -1,6 +1,8 @@
 ---
 name: tc-self-check
 description: "Use mid-work or at any moment of doubt to check yourself against SOP v0.4 10 anti-patterns. Triggers 'am I doing this right', '反 pattern', 'self check', user reports feeling something is off, monthly review, or any time the model feels uncertain about the meta-approach. Returns explicit OK/FLAG/? per anti-pattern + status on the 3 red lines specific to AI MIQ team."
+owner: 曾振华
+last_reviewed_at: 2026-06-09
 ---
 
 # Anti-Pattern Self-Check (SOP v0.4 P-7)

@@ -1,6 +1,8 @@
 ---
 name: tc-5-review
 description: "Use when project or task is wrapping up. Triggers: 'let us debrief', '收尾', 'wrap up', '写 case', 'project done', user marks completion criteria met. Generates a case file at cases/YYYY-MM-DD-<slug>.html with the 5 mandatory SOP v0.4 sections. Required for SOP non-negotiable #2 (every project/task ends with debrief)."
+owner: 曾振华
+last_reviewed_at: 2026-06-09
 ---
 
 # Debrief / Case File Template

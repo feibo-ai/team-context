@@ -31,7 +31,7 @@ config_fields:
     type: string
     required: false
     pattern: "^wikcn[a-zA-Z0-9]+$"
-    description: "Feishu wiki space ID for monthly_health_report archiving."
+    description: "Feishu wiki space ID for monthly health 报告 archiving (tc-ops/monthly_health.py)."
   feishu_wiki_default_parent:
     type: string
     required: false

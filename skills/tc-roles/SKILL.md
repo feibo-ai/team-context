@@ -1,6 +1,8 @@
 ---
 name: tc-roles
 description: "Use when starting a project and assigning roles. Triggers '认领角色', 'role assignment', '谁做什么', 'DRI 是谁', '认领'. Walks through SOP v0.4 P-5: 4 role types (DRI/EXEC/COLLAB/REVIEW) + 6 assignment rules. Generates the 'How to split' section of the plan doc."
+owner: 曾振华
+last_reviewed_at: 2026-06-09
 ---
 
 # Role Assignment — 4 types + 6 rules

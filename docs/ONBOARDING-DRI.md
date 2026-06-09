@@ -292,7 +292,7 @@ zeabur -i=false variable list --id $TCMCP
 | 任务 | 命令 / 文档 |
 |---|---|
 | 看 monthly-health autopilot 报告 | 飞书群应自动收到 · 没收到看 `multica autopilot runs <monthly-id>` |
-| Skill 健康检查 (90 天 stale) | `multica skill list --output json \| jq '.[] \| select(.last_reviewed_at == null) \| .name'` · 没 review 过的 |
+| Skill 健康检查 (frontmatter + 90 天 stale + body token) | `multica skill lint --dir ~/.claude/skills`(本地 · v0.4.13+);或全队报告跑 `python3 ~/.claude/skills/tc-ops/monthly_health.py ~/team-context` |
 | Label 跟 standards 对齐 | `multica label list` 跟 `team-context/standards/labels.md` diff · 不一致更新代码或 label |
 | CLAUDE.md token check | `wc -w team-context/claude_md_team_global.md` · ≤ 2800 (CI 限);超了 prune |
 | Cost check | Zeabur dashboard → project team-context → Resource Usage |

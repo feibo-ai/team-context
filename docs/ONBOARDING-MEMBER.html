@@ -287,7 +287,6 @@ code.mono, code { background: var(--paper-deep); padding: 1px 6px; font-size: 13
     <li><a href="#sec-get"><span class="num">—</span>你拿到 (DRI 给你)</a></li>
     <li><a href="#sec-0"><span class="num">0</span>前置 (一次性)</a></li>
     <li><a href="#sec-1"><span class="num">1</span>连云 multica</a></li>
-    <li><a href="#sec-2"><span class="num">2</span>装 tcmcp-local</a></li>
     <li><a href="#sec-3"><span class="num">3</span>同步 12 个团队 skill</a></li>
     <li><a href="#sec-4"><span class="num">4</span>配 MCP</a></li>
     <li><a href="#sec-4a"><span class="num"></span>&nbsp;&nbsp;4a · Codex 用户</a></li>
@@ -404,7 +403,7 @@ multica workspace switch team-context</div>
       <code>multica login</code> 走浏览器授权到 <code>https://teamctx.actionow.ai</code>,搞定后再 <code>workspace switch team-context</code>。
     </div>
 
-    <p style="color:var(--ink-soft);"><code>multica login</code> 把<strong>你自己的 token</strong> 存进 <code>~/.multica/config.json</code>。tcmcp-local 启动只读 env(不读 multica config),所以把 3 个 export 写进 shell rc —— token 直接从你的 login 结果读出来(<strong>不用任何人发给你</strong>):</p>
+    <p style="color:var(--ink-soft);"><code>multica login</code> 把<strong>你自己的 token</strong> 存进 <code>~/.multica/config.json</code>。remote MCP server(tcmcp-remote)启动只读 env(不读 multica config),所以把 3 个 export 写进 shell rc —— token 直接从你的 login 结果读出来(<strong>不用任何人发给你</strong>):</p>
 
     <div class="code-block">cat &gt;&gt; ~/.zshrc &lt;&lt;'EOF'
 export MULTICA_SERVER_URL=https://api.teamctx.actionow.ai
@@ -435,110 +434,35 @@ Token:   mul_xxxxxxxx...</div>
     </div>
   </section>
 
-  <!-- ===== 2 · 装 tcmcp-local ===== -->
-  <section id="sec-2">
-    <div class="section-header">
-      <div class="section-num">STEP 02 · 本地 SOP 工具 · 2 分钟</div>
-      <h2 class="section-title">2 · 装 tcmcp-local (本地 SOP 工具 · 2 分钟)</h2>
-    </div>
-
-    <div class="code-block">cd ~
-git clone https://github.com/feibo-ai/team-context-mcp.git
-cd team-context-mcp
-npm install -g pnpm@11
-CI=true pnpm install --frozen-lockfile   # CI=true 避开非交互式 TTY 阻塞
-pnpm --filter @tcmcp/shared build
-pnpm --filter @tcmcp/local  build</div>
-
-    <div class="step">
-      <div class="step-num">VERIFY 2 · 会等 ~4 秒</div>
-      <div class="step-title">验证 2 (起 server → 列工具 → 杀掉)</div>
-      <div class="code-block"># sleep 不能省 · 给 server 时间响应。notifications/initialized 不能漏,
-# 否则严格/慢的 server 不回 tools/list。
-{
-  echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"v","version":"0"}}}'
-  echo '{"jsonrpc":"2.0","method":"notifications/initialized"}'
-  echo '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
-  sleep 2
-} | node ~/team-context-mcp/packages/local/dist/server.js 2&gt;/dev/null \
-  | jq -r 'select(.id==2)|.result.tools[].name'</div>
-      <p>期望:列出 <code>plan_create</code> / <code>research_create</code> / <code>case_create</code> / <code>doc_publish</code> / <code>plan_approve</code> 等核心工具(<strong>数量随版本增长 · 不必纠结具体数字</strong>)。</p>
-    </div>
-
-    <div class="callout red">
-      返回 <code>0 / empty / error</code>:
-      <ul style="margin-left:22px;margin-top:8px;">
-        <li>报 <code>multica config missing. Set MULTICA_SERVER_URL/MULTICA_TOKEN/MULTICA_WORKSPACE_ID</code> → 你 Step 1 那 3 个 env 没 source · 跑 <code>source ~/.zshrc</code> 或重开 terminal</li>
-        <li>build 没成功 → <code>cd ~/team-context-mcp &amp;&amp; CI=true pnpm install --frozen-lockfile &amp;&amp; pnpm --filter @tcmcp/local build</code> 重跑</li>
-      </ul>
-    </div>
-  </section>
-
   <!-- ===== 3 · 同步 skill ===== -->
   <section id="sec-3">
     <div class="section-header">
       <div class="section-num">STEP 03 · 1 分钟</div>
-      <h2 class="section-title">3 · 同步 12 个团队 skill (1 分钟)</h2>
+      <h2 class="section-title">3 · 同步团队 skill (multica skill pull · 10 秒)</h2>
     </div>
 
-    <p style="color:var(--ink-soft);margin-bottom:14px;">把下面整段贴到终端跑 · 会写一个 sync 脚本到 <code>~/.local/bin/</code>:</p>
+    <p style="color:var(--ink-soft);margin-bottom:14px;">skill 从 multica registry 拉(含 <code>tc-render/publish.py</code> 等脚本),一条命令:</p>
 
-    <div class="code-block">mkdir -p ~/.local/bin
-cat &gt; ~/.local/bin/sync-skills.sh &lt;&lt;'SYNC_EOF'
-#!/usr/bin/env bash
-# Pull all team skills from multica → ~/.claude/skills/
-set -euo pipefail
-: "${MULTICA_SERVER_URL:=https://api.teamctx.actionow.ai}"
-: "${MULTICA_WORKSPACE_ID:?MULTICA_WORKSPACE_ID must be set}"
-: "${MULTICA_TOKEN:?MULTICA_TOKEN must be set}"
+    <div class="code-block">multica skill pull --all          # 拉全部团队 skill → ~/.claude/skills/(含脚本 · 幂等)</div>
 
-TARGET="${HOME}/.claude/skills"
-mkdir -p "$TARGET"
-ids=$(curl -fsS -H "Authorization: Bearer $MULTICA_TOKEN" \
-  "${MULTICA_SERVER_URL}/api/skills?workspace_id=${MULTICA_WORKSPACE_ID}" \
-  | jq -r '.[].id')
-n=0
-for id in $ids; do
-  json=$(curl -fsS -H "Authorization: Bearer $MULTICA_TOKEN" \
-    "${MULTICA_SERVER_URL}/api/skills/${id}?workspace_id=${MULTICA_WORKSPACE_ID}")
-  name=$(echo "$json" | jq -r .name)
-  desc=$(echo "$json" | jq -r .description)
-  body=$(echo "$json" | jq -r .content)
-  d="${TARGET}/${name}"; mkdir -p "$d"
-  {
-    printf -- '---\n'
-    printf 'name: %s\n' "$name"
-    printf 'description: %s\n' "$(echo "$desc" | jq -R -s .)"
-    printf -- '---\n'
-    printf '%s\n' "$body"
-  } &gt; "${d}/SKILL.md"
-  echo "synced: $name"
-  n=$((n+1))
-done
-echo "Done · $n skills → $TARGET"
-SYNC_EOF
-chmod +x ~/.local/bin/sync-skills.sh
-
-# 跑
-MULTICA_WORKSPACE_ID=$(multica config show | awk '/workspace_id:/{print $2}') \
-  bash ~/.local/bin/sync-skills.sh</div>
+    <p style="color:var(--ink-soft);margin-bottom:14px;">旧版手写 <code>curl /api/skills</code> + sync 脚本已废弃 —— <code>multica skill pull</code> 内建拉取+写盘+携带脚本(v0.4.12+)。</p>
 
     <div class="step">
       <div class="step-num">VERIFY 3</div>
-      <div class="step-title">验证 3 (别数整个目录 —— 你机器上本来就有个人 skill;只看这 12 个 tc-* 团队 skill 到没到)</div>
+      <div class="step-title">验证 3 (只看 tc-* 团队 skill 到没到)</div>
       <div class="code-block">for nm in tc-1-start tc-2-research tc-3-plan tc-4-build tc-5-review tc-handoff \
-          tc-health-check tc-self-check tc-roles tc-conflict tc-monday tc-friday; do
+          tc-render tc-ops tc-health-check tc-self-check tc-roles tc-conflict tc-monday tc-friday; do
   [ -s ~/.claude/skills/$nm/SKILL.md ] &amp;&amp; echo "✓ $nm" || echo "✗ $nm 缺"
 done
 head -3 ~/.claude/skills/tc-handoff/SKILL.md</div>
-      <p>期望:12 行全 <code>✓</code>,且 head 前 3 行是:</p>
+      <p>期望:全 <code>✓</code>,且 head 前 3 行是:</p>
       <div class="code-block">---
 name: tc-handoff
 description: "Use BEFORE running /clear...</div>
     </div>
 
     <div class="callout red">
-      出现 <code>✗</code> · 重跑 sync 脚本 · 仍缺看 stderr 哪个 skill 失败。
+      出现 <code>✗</code> · 重跑 <code>multica skill pull --all</code> · 仍缺找 DRI。
     </div>
   </section>
 
@@ -551,13 +475,9 @@ description: "Use BEFORE running /clear...</div>
 
     <div class="sub-section">
       <h3 id="sec-4a">4a · Codex 用户</h3>
-      <p>编辑 <code>~/.codex/config.toml</code> · 加 2 段(放在文件末尾即可):</p>
+      <p>编辑 <code>~/.codex/config.toml</code> · 只需加 <code>tcmcp-remote</code>(放文件末尾):</p>
 
-      <div class="code-block">[mcp_servers.tcmcp-local]
-command = "node"
-args = ["/Users/&lt;把-我换成你的用户名&gt;/team-context-mcp/packages/local/dist/server.js"]
-
-[mcp_servers.tcmcp-remote]
+      <div class="code-block">[mcp_servers.tcmcp-remote]
 url = "https://mcp.teamctx.actionow.ai/mcp"
 bearer_token_env_var = "TCMCP_AGENT_TOKEN"</div>
 
@@ -584,10 +504,6 @@ source ~/.zshrc</div>
 
       <div class="code-block">{
   "mcpServers": {
-    "tcmcp-local": {
-      "command": "node",
-      "args": ["/Users/&lt;把-我换成你的用户名&gt;/team-context-mcp/packages/local/dist/server.js"]
-    },
     "tcmcp-remote": {
       "url": "https://mcp.teamctx.actionow.ai/mcp",
       "headers": { "Authorization": "Bearer ${MULTICA_TOKEN}" }
@@ -597,11 +513,10 @@ source ~/.zshrc</div>
 
       <div class="callout blue">
         <strong>验证 4b:</strong> 重启 Claude Code · <code>/clear</code> · 输入:<br>
-        <em>list mcp tools whose name contains 'notify' or 'plan_create'</em><br><br>
+        <em>list mcp tools whose name contains 'notify'</em><br><br>
         期望看到至少:
         <ul style="margin-left:22px;margin-top:6px;">
           <li><code>tcmcp-remote/notify_team</code> (远程飞书工具)</li>
-          <li><code>tcmcp-local/plan_create</code> (本地 RPI 工具)</li>
         </ul>
       </div>
     </div>
@@ -669,7 +584,7 @@ source ~/.zshrc</div>
           <td class="bold">3</td>
           <td><span class="phase-tag p">PLAN</span><br>(再新 session)</td>
           <td><code>tc-3-plan</code></td>
-          <td>读 research 当输入,写计划(目标 / 完成标准 / 谁做什么 / appetite 四个必填)→ <code>plan_create</code> → 第二个 session 评审 → <code>plan_approve</code></td>
+          <td>读 research 当输入,写计划(目标 / 完成标准 / 谁做什么 / appetite 四个必填)→ <code>tc-3-plan</code>+publish.py → 第二个 session 评审 → 批准转换(<code>multica issue label/status</code>)</td>
           <td><code>docs/plans/*.html</code> · issue <code>计划-已批准</code></td>
         </tr>
         <tr>
@@ -683,7 +598,7 @@ source ~/.zshrc</div>
           <td class="bold">5</td>
           <td>收尾</td>
           <td><code>tc-5-review</code></td>
-          <td>写复盘 case(5 个必填段)→ <code>case_create</code> → <code>case_review</code></td>
+          <td>写复盘 case(5 个必填段)→ <code>tc-5-review</code>+publish.py → <code>tc-5-review</code> 收尾(<code>multica issue label/status</code>)</td>
           <td><code>cases/*.html</code></td>
         </tr>
       </tbody>
@@ -787,7 +702,7 @@ bash scripts/my-autopilot.sh all codex     # provider: codex | claude | hermes</
       <tbody>
         <tr><td><code>multica auth status</code> → invalid token</td><td>你的 token 失效 / 没 login</td><td>重新 <code>multica login</code>(拿你自己的新 token)· 再 <code>source ~/.zshrc</code></td></tr>
         <tr><td><code>multica auth status</code> → connection refused</td><td>DNS/网络</td><td><code>curl https://api.teamctx.actionow.ai/healthz</code> 应返 200</td></tr>
-        <tr><td>Step 2 验证缺核心工具(missing:…)</td><td>tcmcp-local build 失败</td><td><code>cd ~/team-context-mcp &amp;&amp; pnpm install --frozen-lockfile &amp;&amp; pnpm --filter @tcmcp/local build</code> 重跑</td></tr>
+        <tr><td>Step 3 skill 缺(<code>✗</code>)</td><td><code>multica skill pull</code> 没拉到</td><td>重跑 <code>multica skill pull --all</code>;仍缺查 <code>multica login</code> token / 网络</td></tr>
         <tr><td>Step 3 同步 0 个 skill</td><td>workspace_id 抄错</td><td><code>multica config show</code> 看;DRI 给的应是 UUID 36 字符</td></tr>
         <tr><td>Step 4 MCP 工具找不到</td><td>config 路径里 <code>&lt;把-我换成你的用户名&gt;</code> 没改</td><td>改成 <code>whoami</code> 输出的真实用户名</td></tr>
         <tr><td>Codex 4a 验证看不到 search_chat</td><td>没重启 Codex</td><td>完全退出再开</td></tr>

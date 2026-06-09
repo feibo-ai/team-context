@@ -1,6 +1,8 @@
 ---
 name: tc-1-start
 description: "Use when starting a new PROJECT-LAYER effort. Triggers '启动新项目', 'kickoff', 'new project', 'phase 01', 'Phase 01 启动', '我想做一个新项目'. Walks through SOP v0.4 P-3 Phase 01 6-step in order: 5min intent → Research → Plan → review → DRI 拍板 → broadcast. 去本地MCP:用 multica CLI(project/issue create + label/status)+ tc-render/publish.py 手动编排,不再依赖 project_kickoff MCP。"
+owner: 曾振华
+last_reviewed_at: 2026-06-09
 ---
 
 # Phase 01 Kickoff — 6-step Wizard

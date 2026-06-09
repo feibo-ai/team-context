@@ -79,7 +79,7 @@ team-context/
 │   ├── daily-summary.yaml             ← 工作日 18:00 → 飞书 (今日回顾)
 │   ├── monday-kickoff.yaml            ← 周一 09:30 → 飞书 + 建 issue
 │   ├── wednesday-stats.yaml           ← 周三 09:00 → 飞书
-│   └── monthly-health.yaml            ← 月 1 号 10:00 → 触发 monthly_health_report
+│   └── monthly-health.yaml            ← 月 1 号 10:00 → 运行 tc-ops monthly_health.py 脚本
 │
 ├── standards/                         ← 跨项目判断标准 (无上限累积)
 │   ├── labels.md                      ← 11 个 multica label 字典 (owner: DRI)
@@ -166,7 +166,7 @@ L3 中间 (本仓库)
 每月 1 号 monthly-health autopilot 自动跑 → 飞书 doc。但<u>有些事工具替不了</u>：
 
 - 11 个 label 仍然存在? 看 `multica label list`
-- skills/* 谁 own / 90 天未 review? `monthly_health_report` 列出
+- skills/* 谁 own / 90 天未 review? `multica skill lint` + tc-ops/monthly_health.py 列出
 - claude_md_team_global.md token 数过 2800? CI 失败 → 手动 prune
 
 每季度（3/6/9/12 月）额外：
@@ -179,12 +179,12 @@ L3 中间 (本仓库)
 | 加什么 | 怎么走 |
 |---|---|
 | 新 skill (跨项目) | PR · 含 SKILL.md + smoke test result + owner_email + last_reviewed_at frontmatter |
-| 新 autopilot YAML | PR · 含完整 guardrails 段 (autopilot_lint 必须 pass) |
+| 新 autopilot YAML | PR · 含完整 guardrails 段 (tc-ops/autopilot_lint.py 必须 pass) |
 | 新 label | 改 `standards/labels.md` + 重跑 `create-labels.sh` · PR review |
 | 新 standard | PR · 写 `standards/<topic>.md` · owner = 写的人 |
 | 新 decision | 开 `decisions/YYYY-MM-DD-<topic>.md` · 不修改既有 decision |
 | 新 script | PR · 含 `bash -n` 语法验证 |
-| 调 CLAUDE.md (L1 提升) | <u>只能</u>通过 `case_promote_rule` MCP 工具 · 不能手改 |
+| 调 CLAUDE.md (L1 提升) | 经 tc-5-review 流程手动追加(原 case_promote_rule)· 走月度 review |
 
 ## License
 

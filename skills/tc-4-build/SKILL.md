@@ -1,6 +1,8 @@
 ---
 name: tc-4-build
 description: "Use during Implement phase of RPI framework — when actually writing or running code against an approved plan. Triggers: user enters execution session, '执行', 'implement', 'start coding', or you are in a Claude Code session with an approved plan doc (HTML) loaded. Enforces 30-second CoT supervision, ESC patterns, pollution signal detection, and the discipline checklist that prevents vibe code. Pairs with tc-handoff skill on context pollution."
+owner: 曾振华
+last_reviewed_at: 2026-06-09
 ---
 
 # RPI · Implement Session

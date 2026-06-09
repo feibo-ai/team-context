@@ -1,6 +1,8 @@
 ---
 name: tc-friday
-description: "Use Friday afternoon for the 30-min demo + 15-min betting table double-session. Triggers '周五 demo', 'Friday demo', 'betting table', '周五演示', '下周做什么'. Guides DRI through demo (real artifacts not slides) + betting (decide next week's work, NO backlog). Pairs with betting_table_capture MCP tool."
+description: "Use Friday afternoon for the 30-min demo + 15-min betting table double-session. Triggers '周五 demo', 'Friday demo', 'betting table', '周五演示', '下周做什么'. Guides DRI through demo (real artifacts not slides) + betting (decide next week's work, NO backlog). Pairs with `betting_table_capture`(**remote** MCP · 非本地,本期保留)."
+owner: 曾振华
+last_reviewed_at: 2026-06-09
 ---
 
 # Friday Demo + Betting Table — 45-min protocol
@@ -28,7 +30,7 @@ Real food/drink ideally. Mark week as done.
 ## Betting Table · 15 min (decide next week)
 
 ### Setup
-Use MCP `betting_table_capture`:
+Use `betting_table_capture`(remote MCP):
 1. Anyone propose ≤ 5 candidates (1 sentence each)
 2. 5 min silent thinking
 3. Each person votes for ≤ 3 candidates

@@ -93,7 +93,7 @@ MULTICA_TOKEN="$(jq -r '.token // empty' "$HOME/.multica/config.json")"
 [ -n "$MULTICA_TOKEN" ] || { echo "ABORT_NO_TOKEN: run 'multica login' first"; exit 1; }
 
 # Pick shell rc · prefer zsh on macOS · idempotent line replace
-# (tcmcp-local reads ALL 3 env vars at startup · multica config alone is not enough)
+# (remote MCP server + multica CLI read these env vars at startup · tcmcp-local 已不装)
 RC="$HOME/.zshrc"; [ -n "$BASH_VERSION" ] && [ ! -f "$RC" ] && RC="$HOME/.bashrc"
 touch "$RC"
 grep -vE '^export (MULTICA_TOKEN|MULTICA_SERVER_URL|MULTICA_WORKSPACE_ID)=' "$RC" > "$RC.tmp" && mv "$RC.tmp" "$RC"
@@ -123,77 +123,33 @@ multica auth status 2>&1 | awk '/^User:/ {found=1} END {exit found?0:1}' \
 
 ---
 
-## STEP-02 · tcmcp-local build (stdio SOP tools)
+## STEP-02 · 同步团队 skill (multica skill pull)
 
 ```bash
-TCMCP_DIR="$HOME/team-context-mcp"
-if [ ! -d "$TCMCP_DIR/.git" ]; then
-  git clone https://github.com/feibo-ai/team-context-mcp.git "$TCMCP_DIR"
-fi
-cd "$TCMCP_DIR"
-git pull --ff-only 2>/dev/null || true   # fail-open: continue with current commit
-CI=true pnpm install --frozen-lockfile 2>&1 | tail -3   # CI=true: avoid no-TTY purge prompt on re-runs
-pnpm --filter @tcmcp/shared build 2>&1 | tail -3
-pnpm --filter @tcmcp/local  build 2>&1 | tail -3
+# RPI 文档流走 skills + multica CLI + tc-render/publish.py —— 不再 clone/build 本地 MCP。
+# 从 registry 拉全部团队 skill(含携带脚本如 publish.py)到 ~/.claude/skills/。
+multica skill pull --all
 ```
 
-**VERIFY:** (spawns server, completes the MCP handshake, asserts the core tools exist, kills)
+**VERIFY:** (核心 tc-* skill 落地为非空文件 + tc-render 携带脚本到位)
 ```bash
-names=$({
-  printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"v","version":"0"}}}'
-  printf '%s\n' '{"jsonrpc":"2.0","method":"notifications/initialized"}'
-  printf '%s\n' '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
-  sleep 2
-} | node "$TCMCP_DIR/packages/local/dist/server.js" 2>/dev/null \
-  | jq -r 'select(.id==2)|.result.tools[].name' 2>/dev/null)
-# Assert the core SOP tools are present — NOT a hardcoded count. The tool set
-# grows (e.g. doc_publish took it 12→13); pinning an exact number false-FAILs a
-# correct build. The `notifications/initialized` line is required — a stricter /
-# slower server won't answer tools/list without it (else it races the sleep).
-missing=""
-for t in plan_create plan_approve plan_upgrade case_create case_review research_create doc_publish session_handoff project_kickoff; do
-  printf '%s\n' "$names" | grep -qx "$t" || missing="$missing $t"
+miss=""
+for nm in tc-1-start tc-2-research tc-3-plan tc-4-build tc-5-review tc-handoff tc-render tc-ops; do
+  [ -s "$HOME/.claude/skills/$nm/SKILL.md" ] || miss="$miss $nm"
 done
-n=$(printf '%s\n' "$names" | grep -c .)
-[ -z "$missing" ] && echo "VERIFY_02_OK ($n tools)" || echo "VERIFY_02_FAIL ($n tools · missing:$missing)"
+[ -s "$HOME/.claude/skills/tc-render/publish.py" ] || miss="$miss publish.py"
+[ -z "$miss" ] && echo VERIFY_02_OK || echo "VERIFY_02_FAIL (missing:$miss)"
 ```
 
 **Expected:** stdout contains `VERIFY_02_OK`.
-**ON_FAIL:**
-- empty output / `missing:` lists core tools → build broke OR handshake didn't complete. Run `pnpm install --frozen-lockfile` again, then VERIFY.
-- After 2 attempts still missing core tools → ABORT, attach `pnpm install` output to report.
-
----
+**ON_FAIL:** skill 没拉到 → token 失效/未登录 → re-run `multica login` then `multica skill pull --all`;仍缺 publish.py 找 DRI。
 
 ## STEP-03 · Sync the team skills from multica
 
 ```bash
-SKILLS_DIR="$HOME/.claude/skills"
-mkdir -p "$SKILLS_DIR"
-
-ids=$(curl -fsS -H "Authorization: Bearer $MULTICA_TOKEN" \
-  "https://api.teamctx.actionow.ai/api/skills?workspace_id=$MULTICA_WORKSPACE_ID" \
-  | jq -r '.[].id')
-
-n=0
-for id in $ids; do
-  json=$(curl -fsS -H "Authorization: Bearer $MULTICA_TOKEN" \
-    "https://api.teamctx.actionow.ai/api/skills/$id?workspace_id=$MULTICA_WORKSPACE_ID")
-  name=$(echo "$json" | jq -r .name)
-  desc=$(echo "$json" | jq -r .description)
-  body=$(echo "$json" | jq -r .content)
-  d="$SKILLS_DIR/$name"
-  mkdir -p "$d"
-  {
-    printf -- '---\n'
-    printf 'name: %s\n' "$name"
-    printf 'description: %s\n' "$(echo "$desc" | jq -R -s .)"
-    printf -- '---\n'
-    printf '%s\n' "$body"
-  } > "$d/SKILL.md"
-  n=$((n+1))
-done
-echo "synced=$n"
+# 幂等再拉一次(idempotent · 覆盖本地为 registry 最新),并用 multica skill lint 验质量
+multica skill pull --all
+multica skill lint --dir "$HOME/.claude/skills" >/dev/null 2>&1 || true
 ```
 
 **VERIFY:**
@@ -214,7 +170,7 @@ done
 **Expected:** stdout contains `VERIFY_03_OK`.
 **ON_FAIL:**
 - `count = 0` → curl returned error. Check:
-  - `curl -fsS -H "Authorization: Bearer $MULTICA_TOKEN" https://api.teamctx.actionow.ai/api/skills?workspace_id=$MULTICA_WORKSPACE_ID | head -c 100`
+  - `multica skill list --output json | head -c 100`(token/网络是否通)
   - If `{"error":"invalid token"}` → ABORT (PAT issue, re-do STEP-01)
   - If `[]` → ABORT (wrong workspace_id, ask user to verify)
 - `count > 0 && count < 12` → partial sync · network flake. Re-run STEP-03 once. If still < 12, ABORT.
@@ -232,16 +188,7 @@ mkdir -p "$(dirname "$CFG")"
 touch "$CFG"
 cp "$CFG" "$CFG.bak.$(date +%s)"   # backup
 
-# Idempotent: append only if section doesn't already exist
-if ! grep -q '^\[mcp_servers\.tcmcp-local\]' "$CFG"; then
-  cat >> "$CFG" <<TOMLEOF
-
-[mcp_servers.tcmcp-local]
-command = "node"
-args = ["$TCMCP_DIR/packages/local/dist/server.js"]
-TOMLEOF
-fi
-
+# 只配 tcmcp-remote(RPI 文档流走 skills+CLI · tcmcp-local 迭代2 删除·不再注册)
 if ! grep -q '^\[mcp_servers\.tcmcp-remote\]' "$CFG"; then
   cat >> "$CFG" <<TOMLEOF
 
@@ -264,8 +211,8 @@ echo 'export TCMCP_AGENT_TOKEN=$MULTICA_TOKEN' >> "$RC"
 
 **VERIFY:**
 ```bash
-count=$(grep -c '^\[mcp_servers\.tcmcp-' "$HOME/.codex/config.toml")
-[ "$count" -ge "2" ] \
+count=$(grep -c '^\[mcp_servers\.tcmcp-remote\]' "$HOME/.codex/config.toml")
+[ "$count" -ge "1" ] \
  && grep -q '^export TCMCP_AGENT_TOKEN=' "$HOME/.zshrc" "$HOME/.bashrc" 2>/dev/null \
  && echo VERIFY_04a_OK \
  || echo "VERIFY_04a_FAIL sections=$count"
@@ -293,15 +240,14 @@ echo "$base" | jq \
   --arg tcmcp_dir "$TCMCP_DIR" \
   --arg url "https://mcp.teamctx.actionow.ai/mcp" \
 '
-  .mcpServers["tcmcp-local"]  = {"command":"node","args":[($tcmcp_dir + "/packages/local/dist/server.js")]}
-  | .mcpServers["tcmcp-remote"] = {"url":$url, "headers":{"Authorization":"Bearer ${MULTICA_TOKEN}"}}
+  .mcpServers["tcmcp-remote"] = {"url":$url, "headers":{"Authorization":"Bearer ${MULTICA_TOKEN}"}}
 ' > "$CFG.new" && mv "$CFG.new" "$CFG"
 ```
 
 **VERIFY:**
 ```bash
 keys=$(jq -r '.mcpServers | keys[]' "$HOME/.claude/mcp.json" 2>/dev/null | sort | tr '\n' ' ')
-echo "$keys" | grep -q 'tcmcp-local' && echo "$keys" | grep -q 'tcmcp-remote' \
+echo "$keys" | grep -q 'tcmcp-remote' \
  && echo VERIFY_04b_OK \
  || echo "VERIFY_04b_FAIL keys=$keys"
 ```
@@ -402,4 +348,4 @@ Orchestrators: grep for these literals; do not parse natural-language status mes
 **Spec version:** 1
 **Last reviewed:** 2026-06-01
 **Tested:** all 5 steps' VERIFY commands ran during 2026-05-28 W5 cloud bootstrap (DRI mac · macOS) + STEP-03 + STEP-04a (Codex branch) re-validated with throwaway `teammate-test@actionow.ai` member PAT before doc commit.
-**2026-06-01 audit:** workspace migrated to UUID `fb23cf99-5f4c-4815-b2b3-8d5e323659f6` (slug `team-context`) — updated INPUTS example + added `WORKSPACE_SLUG` constant and STEP-01 `multica workspace switch`. CLI confirmed `multica v0.4.6`; env vars / MCP URL / regexes verified current; local tool count is now **13** (doc_publish added, was 12) + 10 remote = **23 total**. VERIFY commands not re-executed end-to-end this pass (values-only audit).
+**2026-06-01 audit:** workspace migrated to UUID `fb23cf99-5f4c-4815-b2b3-8d5e323659f6` (slug `team-context`) — updated INPUTS example + added `WORKSPACE_SLUG` constant and STEP-01 `multica workspace switch`. CLI confirmed `multica v0.4.6`; env vars / MCP URL / regexes verified current; RPI 文档流已迁至 skills + multica CLI(tc-render/publish.py · skill pull/lint · comment add --inline);local MCP @tcmcp/local 迭代2 删除,本期作兜底;remote 10 工具保留。 VERIFY commands not re-executed end-to-end this pass (values-only audit).
