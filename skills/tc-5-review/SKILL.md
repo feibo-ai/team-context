@@ -60,8 +60,10 @@ project — it was a task. Move to the weekly task bucket instead.
 DRI marks each: `[ ] needs DRI promotion decision`.
 
 Promotion rule (SOP P-4): "does this apply to ALL future similar projects?"
-- YES → DRI promotes to CLAUDE.md via `case_promote_rule` MCP tool
-  (低频 · 写 CLAUDE.md 走月度 review · 本迭代**仍用 MCP 兜底**,迁移见迭代2;非 RPI 闭环工具)
+- YES → DRI promotes to CLAUDE.md(去本地MCP · 原 case_promote_rule,手动做):
+  ① 确认规则文本与 case「规则候选」段某条**匹配**(防晋升错字/臆造);
+  ② 追加到 `claude_md_team_global.md` 的「## Claude 不能再犯的错」段末,带来源 `(来源:case <id> · <project>)`;
+  ③ 在 case 文件把该候选标为「已晋升」;④ commit。改 CLAUDE.md 走月度 review · **红线文件仅在此处碰**。
 - NO → leave in case file only
 
 About 10% of candidates promote. 90% stay local.
