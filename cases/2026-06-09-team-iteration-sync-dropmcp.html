@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>team-iteration-sync-dropmcp-iter1</title>
+<style>
+:root{--ink:#1A1A1A;--ink2:#2D2D2D;--paper:#F5F2EB;--paper2:#EDE8DC;--accent:#C73E1D;--gray:#8B8680;--border:#D4CFC4;--green:#4A6B3A;--gold:#B8862E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Songti SC","Noto Serif SC",Georgia,serif;background:var(--paper);color:var(--ink);line-height:1.8;font-size:15px;padding:48px 40px;max-width:760px;margin:0 auto}
+.eyebrow{font-family:"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:14px}
+h1{font-weight:900;font-size:40px;line-height:1.15;letter-spacing:-1px;margin-bottom:18px;border-bottom:3px double var(--ink);padding-bottom:20px}
+.meta{display:flex;gap:32px;flex-wrap:wrap;font-family:"SF Mono",Menlo,monospace;font-size:12px;color:var(--gray);margin-bottom:36px}
+.meta b{color:var(--ink);font-weight:600}
+h2{font-weight:700;font-size:22px;margin:36px 0 14px;padding-left:14px;border-left:4px solid var(--accent)}
+.field{background:#fff;border:1px solid var(--border);padding:18px 22px;margin-bottom:14px}
+.field-label{font-family:"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1.5px;color:var(--gray);text-transform:uppercase;margin-bottom:6px}
+ul{list-style:none;margin:8px 0}
+li{padding:6px 0 6px 24px;position:relative}
+li::before{content:"▸";position:absolute;left:4px;color:var(--accent)}
+.crit li::before{content:"☐";color:var(--green)}
+code{font-family:"SF Mono",Menlo,monospace;background:var(--paper2);padding:1px 6px;border-radius:2px;font-size:13px}
+.callout{background:var(--paper2);border-left:4px solid var(--gold);padding:14px 18px;margin:18px 0;font-size:14px}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--gray)}
+</style></head>
+<body>
+<div class="eyebrow">CASE · 复盘</div>
+<h1>team-iteration-sync-dropmcp-iter1</h1>
+<div class="meta"><span>Phase <b>RPI Debrief</b></span></div>
+<h2>1 · 目标</h2><div class="field">去本地MCP·迭代1:把日常 RPI 四类文档(plan/research/case/handoff)的生成与方案A内联渲染,迁到 Claude skills + Codex AGENTS.md prose 指针 + multica CLI + agent raw HTTP;渲染逻辑单源在 repo(tc-render/)并经 multica skill update 同步 registry,两端共享。Claude 侧日常 RPI 零 local MCP 调用(可验证闭环);Codex 侧建成 prose 渲染路径并冒烟。命门(内联渲染)以 A=agent raw HTTP 为版本无关默认,B=tc-multica CLI --inline 为能力收口。</div>
+<h2>2 · 实际发生</h2><div class="field">严格顺序执行。① 命门A 先端到端实测验通(raw HTTP 两步 upload+comment),实测推翻 plan「url 形态随 issue_id 变」的说法——真信号是返回评论的 attachments 非空。② 清 12 个 tc-* 软链脏态(物理 SKILL.md+自指子软链 → 顶层软链 →team-context/skills,物理备份在 repo 外),skill-list 实时刷新印证 Claude 重新发现 team-context 源。③ 建 tc-render 地基:CSS byte-exact 1775B 单源 + 4 模板(复刻 renderShell + 日期/空列表→(无)两处动态注入)+ PUBLISH.md;skill_lint 231 token;模板→CSS内联→命门A 全管线真发绑定 OK。④ 迁 4 个 skill 去 MCP→tc-render+CLI+命门A,净损失 6 条护栏复刻成 prose。⑤ Codex 指针用 stash 隔离单行提交(红线文件已 M,不污染月度 review 项)。⑥ 命门B:cmd_issue.go --inline(~35 行 mini-publishDoc)+ UploadFileWithURL 加 issueID;go build/test + 真二进制冒烟全过;push main + tag v0.4.11 触发 CI 发版。⑦ registry 同步 5 skill(skill get 逐字节== repo)。全程显式 git add 从不 -A,三处红线文件未碰。</div>
+<h2>3 · 完成标准</h2><div class="field crit"><ul><li>✅ tc-render 建成(CSS 单源+4模板+PUBLISH.md+skill_lint&lt;2000)</li><li>✅ 软链转换:物理备份→删物理目录→顶层软链→冒烟</li><li>✅ 命门A 端到端验通(真发 attachments 绑定)</li><li>✅ Claude 4 skill 经 tc-render 发布、净损失6条复刻</li><li>⚠️ Codex prose 指针建成 — 指针已加+AGENTS.md 可见;Codex 实跑 1 次冒烟=跨工具,待 DRI/下次</li><li>✅ registry 同步(skill list/get == repo 源)</li><li>⚠️ 双端验收 — Claude 5 skill grep 零 mcp__tcmcp-local__* ✓、新 issue projectId 完整 UUID ✓;Codex prose 实跑冒烟待</li><li>✅ tc-multica 命门B fork 发版 — --inline 实现+测试+真二进制冒烟;v0.4.11 tag 已推、CI goreleaser 构建中</li><li>✅ 净损失复刻 6 条(对抗点全在位)</li><li>✅ 守门+回滚(不删包/不删注册/物理备份/delete 撤回)</li><li>⏳ 迭代2收口 issue — 本 case 后创建</li></ul></div>
+<h2>4 · 关键判断</h2><div class="field"><div class="field-label">判断:命门A 成功信号纠正:attachments 非空,而非 url 前缀</div>
+<b>背景</b> plan v1.3 称「不带 issue_id → url=/uploads/users/、静默不绑」,把 url 形态当成功判据。<br>
+<b>选项</b> 信 plan 的 url-shape 判据 / 自己端到端实测复核<br>
+<b>选择</b> 实测复核:workspace mul_ token 下带不带 issue_id,upload url 都是 /uploads/workspaces/;真正的失败模式是评论 attachments 为空。PUBLISH.md 自检改以 attachments 非空为准,issue_id 仍照带(绑 issue 关联+匹配 CLI UploadFile)。<br>
+<b>事后看</b> 对的。url-shape 判据会在别的 token 类型下误报/漏报;attachments 非空是稳健的真信号。源码(publishDoc)+实测双印证才敢推翻 plan 的「已实测」。<br>
+<b>古法不可能</b> 是。能在几分钟内对真服务端发→查→撤、并交叉读 Go/TS 源码三方对账,古法(纯人工读 plan 照做)只会把误判一路带进发布。</div>
+<div class="field"><div class="field-label">判断:发评论 JSON body:python json.dumps 严格转义,弃 jq -n --arg 拼 shell 换行</div>
+<b>背景</b> content 里 caption 与 !file 间要空行(\n\n)。第一版 PUBLISH.md 用 jq -n --arg c &quot;$cap&quot;$&#x27;\n\n&#x27;... 拼。<br>
+<b>选项</b> jq -n --arg(shell 拼真实换行)/ python json.dumps(程序内转义)<br>
+<b>选择</b> 实测 jq 路径产出 body 含裸换行(JSON 规范禁止),靠 server 宽容才没报错,且发布偶发 SSL 抖动。改 python json.dumps 严格转义 + --data-binary + --retry。<br>
+<b>事后看</b> 对的。不该把正确性押在 server 对非法 JSON 的宽容上;python json.dumps 与 MCP 的 JSON.stringify 行为一致,稳。<br>
+<b>古法不可能</b> 否。这条是经典工程判断,AI 只是更快地通过实测把它逼出来。</div>
+<div class="field"><div class="field-label">判断:软链脏态:12 个 tc-* 全清,而非只清本期改的 4 个</div>
+<b>背景</b> ~/.claude/skills 下 12 个 tc-* 都是「物理 SKILL.md+自指子软链」脏态;本期只改 4 个。<br>
+<b>选项</b> 只清 4 个(最小范围)/ 全清 12 个(彻底)<br>
+<b>选择</b> 全清。plan 决策5b 立「整目录软链→team-context/skills」单一真相;cp -R 物理副本到 repo 外备份后 rm-rf 建顶层软链;只清 4 个会留半脏态。<br>
+<b>事后看</b> 对的。半清是更坏的 smell,且转软链是纯基建(不改 skill 内容,迭代2 改 tc-1-start 内容反而更顺);备份+源在 git 双保险可回滚。<br>
+<b>古法不可能</b> 是。能一次性对 12 个目录做「备份→校验字节→删→重建→冒烟」的机械批处理且当场用 skill-list 刷新验证,古法手工逐个极易漏。</div>
+<div class="field"><div class="field-label">判断:命门B:改 UploadFileWithURL 签名加 issueID,而非新增方法</div>
+<b>背景</b> --inline 要 upload 既绑 issue(issue_id)又返回 url;现有 UploadFile 绑定但不返 url,UploadFileWithURL 返 url 但不绑定。<br>
+<b>选项</b> 改 UploadFileWithURL 签名(+issueID)/ 新增 UploadFileWithURLForIssue 方法<br>
+<b>选择</b> 改签名。只有 1 个真调用方(agent avatar,传&quot;&quot;)+ 5 处 test;复用其 url 返回,mini-publishDoc 仅 ~35 行,远小于复制一份新方法。<br>
+<b>事后看</b> 对的。~35 行落在 plan「~40-70 行」估内;新方法会重复整段 multipart+解码逻辑。先 grep 全调用方(含 _test.go)一次更新,build/test 一次过。<br>
+<b>古法不可能</b> 否。这是常规重构判断;AI 的价值在一次性把 def+1 真调用+5 测试点改齐且即时 go test 验证。</div>
+<h2>5 · 规则候选</h2><div class="field"><ul><li>内联渲染附件「绑定成功」的真信号是返回评论的 attachments 数组非空,不是 upload 返回 url 的前缀(后者随 token/workspace 类型变,不可靠)。[ ] needs DRI promotion decision</li><li>给 multica/HTTP API 发带换行的 JSON body,用 python json.dumps(或等价严格 JSON 编码),别用 jq -n --arg 把 shell 真实换行拼进字符串(产裸换行的非法 JSON,靠 server 宽容才不炸)。[ ] needs DRI promotion decision</li></ul></div>
+<footer>team-context · RPI Debrief · SOP 非妥协 #2 · multica issue 内渲染</footer>
+</body></html>
