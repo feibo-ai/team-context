@@ -144,3 +144,9 @@ jobs:
           # 硬校验 + red-team + 契约自洽全跑。要 CI 也防前端正则漂移:checkout tc-multica
           # 或注入 FILE_CARDS_TS=<file-cards.ts 路径>(前端正则的权威应在 tc-multica 仓 CI 守护)。
           python -m pytest skills/tc-render/tests/ -q
+
+      - name: repo→registry skill 对账 (④c)
+        run: |
+          # 已知取舍:GitHub runner 无 multica CLI / 无 token → 脚本诚实 SKIP(exit 0)。
+          # 装 multica + 注入 MULTICA_TOKEN(secret)后,repo 有而 registry 缺的 skill → CI fail。
+          bash scripts/check-registry-sync.sh

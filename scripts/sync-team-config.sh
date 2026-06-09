@@ -8,16 +8,47 @@
 # 同步策略:能软链就软链(改源 → 各界面自动最新);multica registry 走 CLI 推送。
 # MCP 配置不在此脚本(含 per-user token)—— 见 docs/SYNC.md 手动按界面配。
 #
-# 用法:  bash scripts/sync-team-config.sh           # 全同步
-#         bash scripts/sync-team-config.sh --no-multica   # 跳过 multica 推送
+# 用法:  bash scripts/sync-team-config.sh              # 全同步(create-or-update + 推 files[])
+#         bash scripts/sync-team-config.sh --no-multica   # 跳过 multica registry 推送
+#         bash scripts/sync-team-config.sh --dry-run      # 只打印 registry 将做什么,不改动
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 GLOBAL_MD="$REPO/claude_md_team_global.md"
 SKILLS_DIR="$REPO/skills"
-SKIP_MULTICA="${1:-}"
+DRY_RUN=0
+SKIP_MULTICA=0
+for arg in "$@"; do
+  case "$arg" in
+    --no-multica) SKIP_MULTICA=1 ;;
+    --dry-run)    DRY_RUN=1 ;;
+    *) echo "unknown arg: $arg (use --no-multica | --dry-run)" >&2; exit 2 ;;
+  esac
+done
 
 say() { printf '  %s\n' "$*"; }
+
+# registry skill name → id(stdin = `multica skill list --output json`)
+_json_find_id() {
+  python3 -c 'import sys,json
+n=sys.argv[1]
+try: ss=json.load(sys.stdin)
+except Exception: ss=[]
+print(next((s.get("id","") for s in ss if s.get("name")==n), ""))' "$1"
+}
+# owner 名字 → user UUID(stdin = `multica user list --output json`);空名字→空
+_json_find_owner() {
+  python3 -c 'import sys,json
+n=sys.argv[1]
+try: us=json.load(sys.stdin)
+except Exception: us=[]
+print(next((u.get("user_id","") for u in us if u.get("name")==n), "") if n else "")' "$1"
+}
+# skill 目录里 bundled 文件 = registry files[]。排除 SKILL.md(正文走 --content)、
+# tests/(CI 资产非 skill 运行时)、缓存。skill-relative 路径。
+_each_skill_file() {
+  ( cd "$1" && find . -type f ! -name SKILL.md ! -path '*/tests/*' ! -path '*/__pycache__/*' ! -name '*.pyc' | sed 's|^\./||' )
+}
 
 echo "== 规范源:$REPO =="
 
@@ -38,25 +69,66 @@ ln -sfn "$GLOBAL_MD" "$HOME/.claude/CLAUDE.md"; say "✓ ~/.claude/CLAUDE.md →
 ln -sfn "$GLOBAL_MD" "$HOME/.codex/AGENTS.md";  say "✓ ~/.codex/AGENTS.md → claude_md_team_global.md"
 # 注:Codex 无原生 skill 机制 —— AGENTS.md 把 tc-* 当"流程描述"读;skill 正文经 multica registry / 直接读 repo。
 
-# 3) Skills → multica registry(共享存储:daemon/autopilot + 任意界面经 MCP 发现)
-if [ "$SKIP_MULTICA" != "--no-multica" ] && command -v multica >/dev/null 2>&1; then
-  echo "[3] Skills → multica registry (multica skill, 缺则建)"
-  EXISTING="$(multica skill list 2>/dev/null | awk 'NR>1{print $2}')" || EXISTING=""
+# 3) Skills → multica registry(create-or-update + 推 files[] + owner 解析)
+#    registry 是派生只读投影:开发机走 git 软链(步骤1),此处把规范源推上去。
+if [ "$SKIP_MULTICA" = 0 ] && command -v multica >/dev/null 2>&1; then
+  echo "[3] Skills → multica registry (create-or-update + files[])"
+  skills_json="$(multica skill list --output json 2>/dev/null || echo '[]')"
+  # `multica user list` 是批次2 新增命令(owner 名字→UUID 解析源);旧二进制无此命令 → [].
+  users_json="$(multica user list --output json 2>/dev/null || echo '[]')"
+  users_available=1
+  if [ "$(printf '%s' "$users_json" | tr -d '[:space:]')" = "[]" ]; then
+    users_available=0
+    say "· user list 不可用/无成员 → 本次 owner 全部留空(待新二进制部署 user list 后启用解析)"
+  fi
   for d in "$SKILLS_DIR"/tc-*; do
     [ -f "$d/SKILL.md" ] || continue
     name="$(awk -F': *' '/^name:/{gsub(/["'"'"']/,"",$2);print $2;exit}' "$d/SKILL.md")"
     [ -n "$name" ] || name="$(basename "$d")"
-    if printf '%s\n' "$EXISTING" | grep -qx "$name"; then
-      say "· $name 已在 registry(跳过;改正文用 multica skill update)"
-    else
-      desc="$(awk -F': *' '/^description:/{gsub(/^["'"'"']|["'"'"']$/,"",$2);print substr($2,1,480);exit}' "$d/SKILL.md")"
-      body="$(awk 'f{print} /^---[[:space:]]*$/{c++} c==2 && !f{f=1}' "$d/SKILL.md")"
-      if multica skill create --name "$name" --description "$desc" --content "$body" >/dev/null 2>&1; then
-        say "✓ $name 已推送 registry"
+    # description:取冒号后整行(正文含内部冒号如 publish.py:agent,不能用 -F': *' 切),
+    # 去首尾引号,按字符截 480(CJK 安全,非字节截碎)。
+    desc="$(python3 -c 'import sys,re
+for line in open(sys.argv[1], encoding="utf-8"):
+    m = re.match(r"^description:\s*(.*)$", line)
+    if m:
+        print(m.group(1).strip().strip("\"\x27")[:480]); break' "$d/SKILL.md")"
+    body="$(awk 'f{print} /^---[[:space:]]*$/{c++} c==2 && !f{f=1}' "$d/SKILL.md")"
+    owner_name="$(awk -F': *' '/^owner:/{gsub(/["'"'"']/,"",$2);print $2;exit}' "$d/SKILL.md")"
+    id="$(printf '%s' "$skills_json" | _json_find_id "$name")"
+    # owner_flag unquoted on use → 0 或 2 个 arg(UUID 无空格);避免 bash 3.2 空数组+set -u 坑
+    owner_flag=""
+    owner_uuid=""
+    if [ "$users_available" = 1 ] && [ -n "$owner_name" ]; then
+      owner_uuid="$(printf '%s' "$users_json" | _json_find_owner "$owner_name")"
+      if [ -n "$owner_uuid" ]; then
+        owner_flag="--owner $owner_uuid"
       else
-        say "✗ $name 推送失败(手动 multica skill create)"
+        say "  ! $name owner='$owner_name' 查无此人 → owner 留空"
       fi
     fi
+
+    if [ "$DRY_RUN" = 1 ]; then
+      if [ -n "$id" ]; then say "· [dry-run] update $name (id=$id) owner=${owner_uuid:-—}"
+      else say "· [dry-run] create $name owner=${owner_uuid:-—}"; fi
+      _each_skill_file "$d" | while IFS= read -r rel; do [ -n "$rel" ] && say "    [dry-run] file $rel"; done
+      continue
+    fi
+
+    if [ -n "$id" ]; then
+      multica skill update "$id" --description "$desc" --content "$body" $owner_flag >/dev/null 2>&1 \
+        && say "✓ $name 已更新 (id=$id)" || { say "✗ $name 更新失败"; continue; }
+    else
+      out="$(multica skill create --name "$name" --description "$desc" --content "$body" $owner_flag 2>/dev/null)" \
+        && id="$(printf '%s' "$out" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("id",""))' 2>/dev/null)" \
+        && say "✓ $name 已创建 (id=$id)" || { say "✗ $name 创建失败"; continue; }
+    fi
+    [ -n "$id" ] || continue
+    # 推 files[](SKILL.md 之外的 bundled 文件;upsert=幂等)
+    _each_skill_file "$d" | while IFS= read -r rel; do
+      [ -n "$rel" ] || continue
+      multica skill files upsert "$id" --path "$rel" --content "$(cat "$d/$rel")" >/dev/null 2>&1 \
+        && say "    ✓ file $rel" || say "    ✗ file $rel"
+    done
   done
 else
   echo "[3] 跳过 multica registry 同步"
