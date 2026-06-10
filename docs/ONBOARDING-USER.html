@@ -36,6 +36,8 @@ footer{margin-top:38px;padding-top:14px;border-top:1px solid var(--border);font-
 <h1>怎么用这套 AI 工具链</h1>
 <p class="lede">这是 AI MIQ 团队的 AI 工具链:去本地 MCP,改用 <b>Claude Code / Codex 的 skills + <code>multica</code> CLI + 远程 MCP</b>。环境由 agent 配好(见 <code>ONBOARDING-AGENT.html</code>),本文只讲:配好之后,你日常<b>怎么用</b>。</p>
 
+<div class="callout"><b>无需手动更新。</b>你的 CLI 二进制 + skill/md 由本机 daemon 自动验签保持最新(后台 6h 轮询 · sigstore 离线验签),无感自更。装一次,之后只管用。</div>
+
 <h2>核心工作法 · RPI</h2>
 <p><b>Research → Plan → Implement</b>,这是三个<b>分离的 session</b>,不要混在一个里。每个阶段开新 session,用对应的 skill 起头——你说一句话,它自动触发。</p>
 
@@ -58,6 +60,7 @@ footer{margin-top:38px;padding-top:14px;border-top:1px solid var(--border);font-
 <li>每个 issue 必须挂在项目下——建之前先 <code>multica project list</code> 选定项目。</li>
 <li>用 <code>multica</code> CLI 管 project / issue(创建、改 label、改 status）。</li>
 <li>拿不准是不是这个项目、要不要新建项目——<b>问 DRI</b>,绝不建无项目的孤儿 issue。</li>
+<li>定时推送的 autopilots(早晚总结 / 周一对齐等)在 agent 配环境时已自动建好,你无需手动设置——它们按 schedule 自动跑并推团队群。</li>
 </ul>
 
 <h2>几条不可妥协(团队红线)</h2>
