@@ -204,6 +204,15 @@ def test_no_second_publish_path_in_doc_skills():
     assert not offenders, f"这些 skill 仍含裸 /api/issues 发布路径:{offenders}"
 
 
+def test_tc_render_skill_describes_gate_b_not_a():
+    """②文档无污染:tc-render/SKILL.md 描述发布路径必须是命门B 收口,不得把命门A 当主路径
+    (命门A 仅作灾备契约;防 routing 层文档漂移误导 agent 以为脚本走 raw HTTP 两步)。"""
+    txt = (SKILL_DIR / "SKILL.md").read_text()
+    assert "命门A 发布" not in txt, "tc-render/SKILL.md 把命门A 当发布主路径(应为命门B 收口)"
+    assert "命门A 两步序列" not in txt, "tc-render/SKILL.md 残留命门A 主路径描述"
+    assert "命门B" in txt, "tc-render/SKILL.md 应明确命门B 收口为发布路径"
+
+
 def test_publish_md_no_raw_curl_bypass():
     """①:PUBLISH.md 删除 §2 可执行的 raw-HTTP runbook(绕过 publish.py 硬校验的旁路)。
 

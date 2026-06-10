@@ -5,7 +5,7 @@
 > **Companion**: 你的角色文档（DRI / Plan 1-3 EXEC 各一份）—— 由 DRI 在欢迎私聊里把链接发给你（别去找本地路径,新人机器上没有）
 
 > **v2 (W5+) · control plane edition**: 不需要本地装飞书命令行 · 不需要扫码 · 不需要开 scope · 不需要拿 chat_id。
-> 远程 MCP server (`tcmcp-remote` · 云端 Zeabur 跑) 处理一切飞书相关 · 你只需要 multica bearer token + 一份本地 MCP local server。
+> 远程 MCP server (`tcmcp-remote` · 云端 Zeabur 跑) 处理一切飞书相关 · 你只需要 multica bearer token + 远程 MCP。
 > 接入时间从 30 min 降到 ~5 min。
 > 详见 `decisions/2026-05-29-multica-control-plane.md` · `standards/integration-overview.md`。
 
@@ -152,16 +152,16 @@ Step 1 · 5-min 飞书声明意图
    (chat_id 由 tcmcp-remote 从 multica integration 配置中解析 · 你不需要拿 chat_id)
 
 Step 2 · Research session (fresh Claude Code session)
-   先 `multica project list` 选定项目 · 触发 `tc-2-research` skill · 调 MCP `tc-2-research`+publish.py:
+   先 `multica project list` 选定项目 · 触发 `tc-2-research` skill · 它调 publish.py:
      projectId=<选定项目 id · 必填 · 拿不准问 DRI>
      slug=<short-slug>
      question="<one paragraph: what we are trying to understand>"
    tc-2-research 建研究 issue(`multica issue create`)+ 本地骨架,经 publish.py --type research(**填充后才发**)·
-   发现填好后用 MCP `tc-render/publish.py`(命门A) 发为研究 issue 的**评论**(方案A · `!file` 内联渲染)
+   发现填好后用 **tc-render skill 的 publish.py**(命门B 收口 · 内部 exec `comment add --inline`) 发为研究 issue 的**评论**(方案A · `!file` 内联渲染)
    (花 1-3 小时 · 用 subagent 并行调研多维度)
 
 Step 3 · Plan session (yet another fresh session)
-   触发 `tc-3-plan` skill · 读 research .html 当输入 · 调 MCP `tc-3-plan`+publish.py:
+   触发 `tc-3-plan` skill · 读 research .html 当输入 · 它调 publish.py:
      projectId=<同上项目 id · 必填>
      slug=<same-slug>
      layer=project
@@ -172,14 +172,14 @@ Step 3 · Plan session (yet another fresh session)
    产出 docs/plans/plan_YYYY-MM-DD_<slug>.html(方案A · 4 必填字段)· 以**评论**形式发到计划 issue(`!file` 内联)· 加 `计划-草稿` label
 
 Step 4 · Request review
-   调 MCP `multica issue label add ... 计划-评审中`:
+   跑 `multica issue label add ... 计划-评审中`:
      multicaIssueId=<from step 3>
      reviewer=<senior teammate email>
    计划 issue label: 计划-草稿 → 计划-评审中
    等 reviewer 在 issue 上 comment "approved" 或 "changes-requested"
 
 Step 5 · DRI 拍板(你自己!)
-   调 MCP 批准转换(`multica issue label/status`):
+   跑 批准转换(`multica issue label/status`):
      multicaIssueId=<id>
      planPath=<path>
      reviewer=<reviewer email>
@@ -187,7 +187,7 @@ Step 5 · DRI 拍板(你自己!)
    (软 gate: 没 reviewer verdict 也能 approve · 但你应该等他)
 
 Step 6 · Broadcast
-   调 MCP `tc-1-start` · 它会一次性建:
+   触发 `tc-1-start` skill · 它会一次性建:
      - 1 个 project
      - 2 个 issue:研究 issue(打 `研究` label)+ 计划 issue(打 `计划-草稿` label · 引用研究 issue)
      - 2 个空 stub 文件(research_YYYY-MM-DD_<slug>.html + plan_YYYY-MM-DD_<slug>.html)
@@ -214,7 +214,7 @@ Step 6 · Broadcast
 完工后：
 
 ```
-1. 调 MCP `tc-5-review`+publish.py:
+1. 触发 `tc-5-review` skill · 它调 publish.py:
      projectId=<项目 id · 必填>
      slug=<same-slug>
      goal=<paste from plan>
@@ -230,7 +230,7 @@ Step 6 · Broadcast
    产出 cases/YYYY-MM-DD-<slug>.html(方案A · 5 sections 强制)· 以**评论**形式发到 case issue(`!file` 内联)
    (tc-5-review 经 publish.py 发 case;`multica issue label add 复盘-待审`)
 
-2. 调 MCP `tc-5-review`收尾(`multica issue label/status`):
+2. 跑 收尾(`multica issue label/status`):
      casePath=<path from step 1>
      multicaIssueId=<original project issue>
      reviewerEmail=<你自己 · 因为你是 DRI>
@@ -308,6 +308,6 @@ Step 6 · Broadcast
 
 ---
 
-**本文件版本**: v0.3 · 2026-06-02 · 同步 self-login 认证 + workspace UUID `fb23cf99…` + teamctx.actionow.ai 域名 + SOP 中间产物**评论制发布**(`tc-render/publish.py`(命门A) · `!file` 内联)+ `projectId` 必填 + 23 MCP 工具 + 5 autopilot · 接住第一个新人后写 case 再修订
+**本文件版本**: v0.4 · 2026-06-10 · 同步 self-login 认证 + workspace UUID `fb23cf99…` + teamctx.actionow.ai 域名 + SOP 中间产物**评论制发布**(tc-render skill 的 publish.py · 命门B 收口 · 内部 exec `comment add --inline` · `!file` 内联)+ `projectId` 必填 + **去本地 MCP**:RPI 四类文档流改走 tc-* skills + multica CLI + publish.py · 唯一保留 10 个 remote MCP 工具(`tcmcp-remote`) + 5 autopilot · 接住第一个新人后写 case 再修订
 **Owner**: DRI
-**Last reviewed**: 2026-06-01
+**Last reviewed**: 2026-06-10
