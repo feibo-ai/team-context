@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>issue-state-machine-hardening</title>
+<style>
+:root{--ink:#1A1A1A;--ink2:#2D2D2D;--paper:#F5F2EB;--paper2:#EDE8DC;--accent:#C73E1D;--gray:#8B8680;--border:#D4CFC4;--green:#4A6B3A;--gold:#B8862E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Songti SC","Noto Serif SC",Georgia,serif;background:var(--paper);color:var(--ink);line-height:1.8;font-size:15px;padding:48px 40px;max-width:760px;margin:0 auto}
+.eyebrow{font-family:"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:14px}
+h1{font-weight:900;font-size:40px;line-height:1.15;letter-spacing:-1px;margin-bottom:18px;border-bottom:3px double var(--ink);padding-bottom:20px}
+.meta{display:flex;gap:32px;flex-wrap:wrap;font-family:"SF Mono",Menlo,monospace;font-size:12px;color:var(--gray);margin-bottom:36px}
+.meta b{color:var(--ink);font-weight:600}
+h2{font-weight:700;font-size:22px;margin:36px 0 14px;padding-left:14px;border-left:4px solid var(--accent)}
+.field{background:#fff;border:1px solid var(--border);padding:18px 22px;margin-bottom:14px}
+.field-label{font-family:"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1.5px;color:var(--gray);text-transform:uppercase;margin-bottom:6px}
+ul{list-style:none;margin:8px 0}
+li{padding:6px 0 6px 24px;position:relative}
+li::before{content:"▸";position:absolute;left:4px;color:var(--accent)}
+.crit li::before{content:"☐";color:var(--green)}
+code{font-family:"SF Mono",Menlo,monospace;background:var(--paper2);padding:1px 6px;border-radius:2px;font-size:13px}
+.callout{background:var(--paper2);border-left:4px solid var(--gold);padding:14px 18px;margin:18px 0;font-size:14px}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--gray)}
+</style></head>
+<body>
+<div class="eyebrow">CASE · 复盘</div>
+<h1>issue-state-machine-hardening</h1>
+<div class="meta"><span>Phase <b>RPI Debrief</b></span></div>
+<h2>1 · 目标</h2><div class="field">把 multica issue 的 label↔status 双轨状态机从『散文自觉』收口为『脚本原子转换』:新增 tc-render/transition.py 六个原子子命令 + publish.py 发布即入口转换;修订 6 个 tc-* skill,把每条转换边绑定到明确执行者(评审/测试由子 agent 承担,转换由编排 session 在 verdict 返回点执行);对齐 labels.md 与 tc-friday 查询语义;新增 tc-ops 不变量巡检(全量分页);backfill 存量 31 个漂移 issue(另 2 个经父链连带,共 33 个被触达)——使『复盘-已审⇒done+连带关父』『计划-已批准⇒todo 待启动』『已升级⊕已批准互斥』等 6 条核心不变量线上违规数归零。(自 plan v3 逐字)</div>
+<h2>2 · 实际发生</h2><div class="field">起因:用户问『agent 能否按 skill 正确流转 issue 状态』。分析发现去本地MCP 迁移只迁了文档发布,状态转换散落为散文 bash 块:7 状态仅 2 个有指令、3 个入口 label 无主、收尾块无执行者、tc-friday 查询永空集、待启动桶不可达,且 label add 按名称的写法 CLI 根本不收(只收 UUID)。plan(TEA-97)经两轮独立子 agent 评审:v1 changes-requested(抓出样本被分页截断——91 个 issue 被看成 50)→ v3 approved。实现:transition.py 七子命令(name→UUID 运行时解析+幂等预读+后置复核+父链连带)、publish.py 入口转换钩子(exit 2 契约)、6 skill 修订、labels.md 双轨状态机+6 不变量、issue_invariants.py 分页巡检、69 个测试。merge 前再过一轮独立代码评审(approved,采纳 4 项:全角冒号盲区、stdout 纯 JSON、cancelled 防复活门、祖父匹配收窄)。backfill 33 个 issue,巡检硬性违规 20→0。TEA-97 全程按新语义自托管流转,本复盘(TEA-98)走的就是新链路。</div>
+<h2>3 · 完成标准</h2><div class="field crit"><ul><li>✅ transition.py 落地 6 转换子命令+publish-init,name→UUID 运行时解析(禁硬编码)、幂等预读、后置复核(P-7),test_transition.py 全绿且既有测试零回归</li><li>✅ publish.py 发布即入口转换(plan→草稿/research→研究+done/case→待审+in_review),--dry-run/--no-transition 不转换,exit 2 部分失败契约有测试覆盖</li><li>✅ 6 个 skill 全部改调 transition.py,repo 内 grep 不到旧手工状态块;批准=todo 待启动、build-start 才 in_progress,daily-kickoff 待启动桶可命中且 autopilot YAML 零改动</li><li>✅ 『第二个 session=子 agent;verdict 返回点=编排 session 转换执行点』写入 tc-3-plan/tc-5-review/tc-4-build+labels.md</li><li>✅ issue_invariants.py 分页扫描全量+6 硬性不变量+3 档警告;backfill 后线上硬性违规=0(91 issue,20→0)</li><li>✅ TEA-97 自身全程按新语义流转(草稿→评审中/in_review→已批准/todo→in_progress→本 case finalize 连带 done)作为活体验证</li><li>✅ 分支 fix/issue-state-machine 开 PR、人工 review 后 merge;merge 后 registry 同步</li></ul></div>
+<h2>4 · 关键判断</h2><div class="field"><div class="field-label">判断:批准 ≠ 开工:拆出 todo 待启动态,而不是改 autopilot 查询迁就现状</div>
+<b>背景</b> daily-kickoff『待启动』桶查 计划-已批准+todo,但旧批准块直接置 in_progress,该桶数学上不可达。两边必有一个错。<br>
+<b>选项</b> 改 autopilot 查询对齐现状(待启动桶=已批准+in_progress 且无开工标记) / 拆语义:approve→todo,build-start→in_progress<br>
+<b>选择</b> 拆语义。查询表达的语义(批准了但还没人开工)本来就是对的,错的是流转把两个事件压成了一个;且『批准即 in_progress』让 plan 在无人动工时伪装成进行中,掩盖真实负载。<br>
+<b>事后看</b> 对。autopilot YAML 零改动即自然成立是干净的验证信号;backfill 后 TEA-97 自己就是第一个走过 todo 待启动态的 issue。<br>
+<b>古法不可能</b> 判断本身不依赖 AI,但支撑它的证据(91 个 issue 全量状态考古、四条 case 链时序还原)由 agent 在分钟级完成,传统 5 人团队不会为一个查询桶做这种规模的取证。</div>
+<div class="field"><div class="field-label">判断:『第二个 session』固化为子 agent,verdict 返回点 = 转换执行点</div>
+<b>背景</b> 最大漂移源是 tc-5-review 收尾块无执行者:评审 session 不加载该 skill、原 session 已结束、DRI 是人——四行 bash 在线上两次都只被执行一半(TEA-95/70)。<br>
+<b>选项</b> 写更醒目的散文警告,指望下次记得 / 定时器/巡检兜底自动收尾 / 评审改由子 agent 承担,编排 session 在拿到 verdict 的同一回合当场执行转换<br>
+<b>选择</b> 子 agent 编排(用户点题)。子 agent 天然全新上下文,满足 SOP 独立性;转换权留在编排 session,评审与收尾在单回合闭合,结构性消去『等一个不存在的 session』;残留风险(verdict 后编排 session 死亡)交给巡检 48h staleness 警告兜底。<br>
+<b>事后看</b> 对,且当场被验证:本项目两轮 plan 评审、一轮代码评审、本复盘评审全部由子 agent 完成,零无主窗口。代价是子 agent 评审有幻觉风险——v2 评审者断言『issue ref 只收 UUID』与 live 实证矛盾,被编排 session 拒绝采纳;说明『子 agent 出 verdict、编排 session 持最终裁量』的权力结构是必要的,不是装饰。<br>
+<b>古法不可能</b> 是。5 人团队不可能为每个 plan/case 随叫随到一位独立 staff engineer 做对抗式评审;子 agent 让『第二双眼睛』从稀缺资源变成默认配置。</div>
+<div class="field"><div class="field-label">判断:backfill 政策用证据法,拒绝批量伪造也拒绝一刀切回退</div>
+<b>背景</b> 9 个陈年 复盘-待审 滞留(最久 194h)。全部 finalize 等于伪造从未发生的评审;全部回退 in_review 则否定确已发生的评审(TEA-62 有两条 CLAUDE.md 规则因它晋升)。<br>
+<b>选项</b> 全部 finalize(清账好看) / 全部置 in_review(程序正义) / 证据法:CLAUDE.md 规则晋升引用该 case = DRI 注意力确已经过 → finalize;无证据 → in_review 入待审队列,Friday 可批量改判<br>
+<b>选择</b> 证据法。规则晋升是 tc-5-review 流程里 DRI 评审后才会发生的动作,是可验证的锚点;且全部可逆,错判成本是一条 transition 命令。<br>
+<b>事后看</b> 对。TEA-62/40 finalize、7 个回退 in_review,v2 评审者独立复算后认可分界;副作用是 Friday 队列一次性吐出约 9 条积压——这是把暗债变明账,不是新增债务。<br>
+<b>古法不可能</b> 证据检索(全量 issue × CLAUDE.md 规则来源交叉比对)由 agent 分钟级完成;人工做这件事的成本会直接导致『全部 finalize 清账』的懒政。</div>
+<div class="field"><div class="field-label">判断:状态转换收口为带后置复核的脚本,而不是把散文规则写得更凶</div>
+<b>背景</b> 同一批 skill 里,文档质量边(publish.py exit 1 硬校验)零漏,状态边(散文 bash 块)几乎全漏——对照实验天然成立。且散文块存在『部分执行』模式:四行只跑两行,比完全不跑更隐蔽。<br>
+<b>选项</b> 加粗、置顶、加 checklist 强化散文块 / 收口为 transition.py 原子子命令:前置校验→执行→issue get 重读断言(P-7 内建),散文只留一行调用<br>
+<b>选择</b> 脚本收口。团队自己的教训『CLI success ≠ 做对了』(tc-1-start P-7)早已写明,但只对人/agent 的自觉生效;把复核装进脚本,违约 exit 1,才是把教训变成机器约束。<br>
+<b>事后看</b> 对。实现期后置复核立刻抓住一次真实静默失败模式(测试 mutate_on_write=False 模拟被并发插队);merge 前代码评审又在脚本里抓出全角冒号盲区——脚本自身也要被第二双眼睛看,两层防线缺一不可。<br>
+<b>古法不可能</b> 脚本本身古法可写;但『当天发现根因→当天出 plan→两轮评审→当天实现+33 issue backfill 归零』的闭环速度,没有 AI 不可能。</div>
+<h2>5 · 规则候选</h2><div class="field"><ul><li>[ ] needs DRI promotion decision — 多步状态/资源转换绝不写成 skill 散文 bash 块:收口为带后置复核(重读断言)的脚本子命令,散文只留一行调用;散文块会被部分执行,比不执行更隐蔽。</li><li>[ ] needs DRI promotion decision — 评审类『第二个 session』默认由子 agent 承担:子 agent 只出 verdict,编排 session 在 verdict 返回的同一回合执行后续动作(转换/commit),不留无主窗口;子 agent 结论与实证矛盾时编排 session 持最终裁量。</li><li>[ ] needs DRI promotion decision — 任何『全量扫描』必须显式处理分页(循环至 has_more=false 并在输出里报告总数):CLI/API 默认页大小会把 91 个对象静默截成 50 个,且不报错。</li></ul></div>
+<footer>team-context · RPI Debrief · SOP 非妥协 #2 · multica issue 内渲染</footer>
+</body></html>
