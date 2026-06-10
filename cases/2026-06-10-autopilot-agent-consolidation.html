@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>autopilot-agent-consolidation</title>
+<style>
+:root{--ink:#1A1A1A;--ink2:#2D2D2D;--paper:#F5F2EB;--paper2:#EDE8DC;--accent:#C73E1D;--gray:#8B8680;--border:#D4CFC4;--green:#4A6B3A;--gold:#B8862E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Songti SC","Noto Serif SC",Georgia,serif;background:var(--paper);color:var(--ink);line-height:1.8;font-size:15px;padding:48px 40px;max-width:760px;margin:0 auto}
+.eyebrow{font-family:"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:14px}
+h1{font-weight:900;font-size:40px;line-height:1.15;letter-spacing:-1px;margin-bottom:18px;border-bottom:3px double var(--ink);padding-bottom:20px}
+.meta{display:flex;gap:32px;flex-wrap:wrap;font-family:"SF Mono",Menlo,monospace;font-size:12px;color:var(--gray);margin-bottom:36px}
+.meta b{color:var(--ink);font-weight:600}
+h2{font-weight:700;font-size:22px;margin:36px 0 14px;padding-left:14px;border-left:4px solid var(--accent)}
+.field{background:#fff;border:1px solid var(--border);padding:18px 22px;margin-bottom:14px}
+.field-label{font-family:"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1.5px;color:var(--gray);text-transform:uppercase;margin-bottom:6px}
+ul{list-style:none;margin:8px 0}
+li{padding:6px 0 6px 24px;position:relative}
+li::before{content:"▸";position:absolute;left:4px;color:var(--accent)}
+.crit li::before{content:"☐";color:var(--green)}
+code{font-family:"SF Mono",Menlo,monospace;background:var(--paper2);padding:1px 6px;border-radius:2px;font-size:13px}
+.callout{background:var(--paper2);border-left:4px solid var(--gold);padding:14px 18px;margin:18px 0;font-size:14px}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--gray)}
+</style></head>
+<body>
+<div class="eyebrow">CASE · 复盘</div>
+<h1>autopilot-agent-consolidation</h1>
+<div class="meta"><span>Phase <b>RPI Debrief</b></span></div>
+<h2>1 · 目标</h2><div class="field">把 autopilot 体系从「每任务一个专属空壳 agent」收敛为「每个 scope 1 个身份 agent + 瘦 autopilot」:workspace 的 autopilot 专用 agent 从 22 个收敛到 6 个(5 名成员各 1 + team scope 1,AUTOPILOT_SCOPE 是 agent 级单值,个人与 team 不可共用 agent),每个 agent 以 instructions 承载身份/通用约束/custom_env;5 份 autopilots/*.yaml 的重复通用段落抽成单源;调度语义(5 类 cron)、按任务可观测性与按任务 guardrails 完整保留。(执行中经 DRI 当面拍板扩展:①群消息统一设计系统——8 个飞书卡模版进 standards/feishu-card-style.md;②全中文命名 助理·&lt;显示名&gt; / &lt;任务名&gt;·&lt;显示名&gt;;③补齐荣灿 3 个 autopilot 缺口 → 25 个。)</div>
+<h2>2 · 实际发生</h2><div class="field">上午分析否决了「每人 1 个 autopilot 按时间分派」(周三 09:00 双 cron 撞分钟、每 run 加载 5 套指令、观测与 guardrails 粒度退化),plan 经两轮独立 session 评审(v1 changes-requested 4 条 blocking → v2 approved)。下午 build:repo 改动(YAML 单源化、脚本重构、三处 lint 同步)+ 零 secret 线上迁移(rename 保 env、22 autopilot 重指、16 legacy archived、cron 对照快照零漂移),手动抽查 run 全部 completed。期间验收 run 的 `multica skill pull tc-ops` 经 ~/.claude 软链把 registry 旧版写回工作树、盖掉刚改的 lint → upsert registry 根治并文档记坑。随后按 DRI 指示扩展:飞书卡片设计系统(8 模版,新卡实测过飞书)、全中文命名、荣灿补 3。PR #12 被自家 2-approve 合并门拦 → DRI 拍板临时开门合并;发版又被 workflow 内第二道门拦 → 升级为正式自审策略(ruleset + workflow + ADR 记录 PR #13),skills-v0.0.3 签名发布(keyless attestation)。18:00 自然 tick 为最后半项验收。</div>
+<h2>3 · 完成标准</h2><div class="field crit"><ul><li>✅ 终态 agent 恰为 6 个(instructions 非空 · env 4 键),旧 22 个 &lt;kind&gt;-bot-* 身份全部退役:16 archived + 6 rename 保 id/env,活跃 agent 无 bot-* 残留</li><li>✅ 22 个 autopilot assignee 全部重指,trigger/cron 不变(全量 jq + 快照对照)</li><li>✅ 5 份 YAML 无重复通用段落,agent.name 删除,单源 _agent-instructions.md</li><li>✅ 脚本「ensure agent + ensure autopilot + archive 收尾」连跑 2 次第二次全复用</li><li>✅ 三处 lint(lint.yml / autopilot_lint.py / ac_lint_yaml)同步且 CI 绿</li><li>❌ 线上验收:手动 trigger 抽查 + 下一个 daily 触发点无新增 failed — 前半已过:手动 trigger 5/5 completed(含新模版卡,notify_team 均返回 messageId);后半 18:00 自然 tick 在写 case 时(16:30)未到点。核验监控挂在本 build session(18:01 起比对 每日总结×5 的 last_run_at,18:25 兜底),触发后由本 session 补录 TEA-93 评论并连带关闭;若 session 提前结束,DRI 人工跑 `multica autopilot list` 看 每日总结·* 的 last_run_at 是否刷到 2026-06-10T10:0x 后照此收尾</li><li>✅ 文档同步:README 重写 + repo-wide grep 修正(decisions/ 除外)</li></ul></div>
+<h2>4 · 关键判断</h2><div class="field"><div class="field-label">判断:压 agent 维度,不压 autopilot 维度</div>
+<b>背景</b> 用户初始提议「每人 1 个 autopilot、多时间点触发、按时间分派任务」来解决对象泛滥<br>
+<b>选项</b> 每人 1 autopilot,prompt 按当前时间分派 / 每 scope 1 身份 agent + N 瘦 autopilot(压 agent) / 折中:每人 2 个(日节律/周月节律)<br>
+<b>选择</b> 压 agent。机制实测定案:schedule trigger 的 label/payload 不注入运行上下文 → agent 只能按 `date` 推断;而周三 09:00 daily-kickoff 与 wednesday-stats 同分钟双触发 → 时间分派有不可修的歧义;且合并 prompt 让每 run token ×5、观测与 guardrails 粒度全退化。agent 才是身份(instructions/env/skills)的载体,multica 对象模型本就为多 autopilot 共享一个 agent 设计。<br>
+<b>事后看</b> 对。当天下午消息设计系统落地时,卡片骨架只改 _agent-instructions.md 一处即 6 助理全部生效——单源红利当日兑现。<br>
+<b>古法不可能</b> 22 个对象的机制审计(trigger 语义实测、撞车推演、CLI 原语逐个验证)+ 全量迁移 + 三轮验证压进一天,无 AI 杠杆不可能。</div>
+<div class="field"><div class="field-label">判断:线上迁移走 rename 保 env,不走重建</div>
+<b>背景</b> 其他 4 名成员 agent 的 custom_env 含各自 PAT,DRI 拿不到 token,重建必须等人<br>
+<b>选项</b> 各成员自跑脚本重建(token 各自注入,等 4 个人) / 选 env 最全的 agent rename 保 id 保 env + autopilot repoint(零 secret,DRI 集中执行)<br>
+<b>选择</b> rename。配套纪律:env 只增不改不删(**** 保留语义);动他人对象前先做写回相同值的无害权限探测。<br>
+<b>事后看</b> 对,2 小时完成 6 个 scope。额外验证了健壮性:bairongcan 的 agent 是另一套 env 键组(MULTICA_SERVER_URL 系),rename 路径天然兼容,重建路径反而会破坏它。<br>
+<b>古法不可能</b> 迁移前 22+22 对象全量 JSON 快照、迁移后逐项 diff 校验(assignee 集合/cron 零漂移),人工操作必漏。</div>
+<div class="field"><div class="field-label">判断:安全门挡 DRI 自合:从临时开门升级为正式自审策略</div>
+<b>背景</b> PR #12 被当天午间(13:32)刚上线的合并门拦——自己装的门 2 小时后拦住自己(需 2 个非作者 approve + last-push approval,bypass_actors=[]);临时开门合并后,发版又被 workflow 内置的第二道 invariant #7 检查拦下<br>
+<b>选项</b> 喊 2 位队友补 approve(干净但等人) / 临时加 bypass 合完即恢复(快,留审计) / 正式放宽为自审策略 + ADR 记录<br>
+<b>选择</b> 先临时开门(DRI 拍板,60 秒窗口,备份+复核+审计);当天发现门是三层成串的(平台禁自批 / ruleset / workflow 代码),最终升级为正式放宽:ruleset 留 PR 必走、去 approve 数;workflow 门留 merged-PR 溯源、去 approver 强制;ADR 偏离记录走 PR #13。<br>
+<b>事后看</b> 半对。临时开门只解决了 1/3,发版立刻又被第二道门拦——教训:bypass 任何安全门之前先盘点整条链;两步走浪费了一轮。最终落点(保 PR 溯源、去人数强制、ADR 留痕)与 5 人小团队 DRI 高频自 ship 的现实匹配。<br>
+<b>古法不可能</b> 对 workflow gate 的代码级审计(head-pinned approver 检查、排 author/pusher/bot 的精确语义)几分钟读完并复刻出监控判定,人工读 CI 日志反推要半天。</div>
+<div class="field"><div class="field-label">判断:skill pull 软链回写事故:修两源一致,不只修本地</div>
+<b>背景</b> 验收 run 执行 prompt 里的 `multica skill pull tc-ops`,经 ~/.claude/skills/tc-ops → repo 的软链把 registry 旧版(06-09)写回工作树,盖掉了刚改的 lint 文件;首次发现时险些误判为用户手动回滚<br>
+<b>选项</b> git checkout 恢复本地了事(下一次 pull 还会盖) / 恢复本地 + upsert 新版进 registry + 在 SKILL.md/lint 脚本写明双源同步义务<br>
+<b>选择</b> 后者。registry 与 repo 是双源,软链让 pull 直接写穿工作树——只修一侧必然复发。<br>
+<b>事后看</b> 对。这是「skills 同步架构」的固有坑而非偶发,已沉淀为规则候选 #1;另一收获:外部修改先查 git 状态与因果,不要急着归因于人。<br>
+<b>古法不可能</b> 从「文件被改了」到定位「自己 75 分钟前触发的 run 在跑 pull、经软链回写」——因果链横跨 autopilot run/skill registry/软链/工作树四个系统,几分钟闭环。</div>
+<h2>5 · 规则候选</h2><div class="field"><ul><li>repo 内 skills/* 任何改动必须同步 multica registry(multica skill update --content / skill files upsert),否则任意 `multica skill pull` 会经 ~/.claude/skills 软链把 registry 旧版写回 repo 工作树。</li><li>绕过任何安全门之前先盘点整条链:平台限制、ruleset、workflow 内置检查往往成串部署,bypass 单层≠通路;临时开门不得成为惯例,策略变更走 ADR 记录。</li><li>多 session 并行操作同一 checkout 时,动手前 git fetch + 重读目标文件确认基线;读过的文件可能已被并行线改掉,盲改会踩别人的提交。</li></ul></div>
+<footer>team-context · RPI Debrief · SOP 非妥协 #2 · multica issue 内渲染</footer>
+</body></html>
