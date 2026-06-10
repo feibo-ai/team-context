@@ -41,6 +41,10 @@ prompt: |
   读环境变量 AUTOPILOT_SCOPE 决定数据范围:
     - "team"    → 全队
     - "<email>" → 只本人 (assignee == $AUTOPILOT_SCOPE)
+  另读 AUTOPILOT_SCOPE_NAME = 显示名(个人版如「付雨生」· 全队版为「全队」)。
+  卡片标题/正文里标注身份(范围 / owner / 负责人)一律用 AUTOPILOT_SCOPE_NAME,绝不出现邮箱原文;
+  AUTOPILOT_SCOPE(邮箱)仅用于过滤查询与文件名。
+  卡片里如显示日期,用阿拉伯数字 ISO 格式(形如 2026-06-03):prompt 有 {{date}} 就用其值、没有就用当天日期,别因缺参数省略;绝不写成中文数字(如「二零二六年六月三日」)。
 
   这是【早晨开工】卡片 —— 前瞻「今天该推进什么」,不是回顾(回顾是傍晚的 daily-summary)。
   与周一的 monday-kickoff 互补:那条讲「本周计划」,这条讲「今日聚焦」。
@@ -59,7 +63,7 @@ prompt: |
              🟡 待启动(已批准未开工:title · DRI · appetite)
              🟣 待评审(等谁 review)
              ⚠️ 卡住(handoff > 24h 的,提醒该 handoff/换 session)
-    个人:  标题「${AUTOPILOT_SCOPE%@*} · 今日开工 {{date}}」· sections: 今日聚焦 / 待启动 / 卡住
+    个人:  标题「${AUTOPILOT_SCOPE_NAME} · 今日开工 {{date}}」· sections: 今日聚焦 / 待启动 / 卡住
 
   Step 3 · 推团队群 (唯一渠道)
     Call MCP tool: notify_team({ card: <card-json> })

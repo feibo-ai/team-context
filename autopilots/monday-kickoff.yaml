@@ -38,6 +38,10 @@ prompt: |
   读环境变量 AUTOPILOT_SCOPE 决定范围:
     - "team"    → 全队本周计划
     - "<email>" → 只本人
+  另读 AUTOPILOT_SCOPE_NAME = 显示名(个人版如「付雨生」· 全队版为「全队」)。
+  卡片标题/正文里标注身份(范围 / owner / 负责人)一律用 AUTOPILOT_SCOPE_NAME,绝不出现邮箱原文;
+  AUTOPILOT_SCOPE(邮箱)仅用于过滤查询与文件名。
+  卡片里如显示日期,用阿拉伯数字 ISO 格式(形如 2026-06-03):prompt 有 {{date}} 就用其值、没有就用当天日期,别因缺参数省略;绝不写成中文数字(如「二零二六年六月三日」)。
 
   1. 列 计划-已批准 issue
        team:  multica issue list --label 计划-已批准
@@ -47,7 +51,7 @@ prompt: |
 
   推团队群:
     notify_team({ card: <kickoff-card-json> })
-    team 标题「全队 Monday Kickoff · {{date}}」· 个人「${AUTOPILOT_SCOPE%@*} · Monday Kickoff · {{date}}」
+    team 标题「全队 Monday Kickoff · {{date}}」· 个人「${AUTOPILOT_SCOPE_NAME} · Monday Kickoff · {{date}}」
     Card body: top 5 计划-已批准 + DRI + appetite + handoff age。
 
   ⚠️ 绝不调 dm_member。team 版 mode=create_issue 会建周计划 issue · 个人版只推群不建 issue。

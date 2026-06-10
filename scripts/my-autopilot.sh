@@ -21,10 +21,12 @@ KIND="${1:-}"; PROVIDER="${2:-}"
 
 ac_preflight
 
-# scope = 自己的 email · suffix = email 前缀 (alice@x → alice)
+# scope = 自己的 email · suffix = email 前缀 (alice@x → alice) · name = 显示名 (User 行括号前)
 OWNER=$(multica auth status 2>&1 | awk -F'[()]' '/User:/{print $2; exit}')
+NAME=$(multica auth status 2>&1 | awk -F'[()]' '/User:/{n=$1; sub(/^[[:space:]]*User:[[:space:]]*/,"",n); gsub(/[[:space:]]+$/,"",n); print n; exit}')
 [ -n "$OWNER" ] || ac_die "拿不到当前用户 email (multica auth status 无 'User: Name (email)' 行)"
+[ -n "$NAME" ] || NAME="${OWNER%@*}"   # 兜底:无姓名则退回邮箱前缀
 SCOPE="$OWNER"; SUFFIX="${OWNER%@*}"
 
-echo "个人版 autopilot · owner=${OWNER} · provider=${PROVIDER}"
-ac_run "$KIND" "$PROVIDER" "$SCOPE" "$SUFFIX"
+echo "个人版 autopilot · owner=${OWNER} · name=${NAME} · provider=${PROVIDER}"
+ac_run "$KIND" "$PROVIDER" "$SCOPE" "$SUFFIX" "$NAME"

@@ -66,9 +66,9 @@ ac_lint_yaml() {
   if (( budget > 150 )); then ac_die "${name}: max_budget_usd ${budget} > 150 硬上限 (PB-04)"; fi
 }
 
-# $1=kind $2=runtime-id $3=scope $4=suffix
+# $1=kind $2=runtime-id $3=scope $4=suffix $5=name(显示名 · 默认回退 scope)
 ac_build_one() {
-  local kind="$1" rid="$2" scope="$3" suffix="$4"
+  local kind="$1" rid="$2" scope="$3" suffix="$4" name="${5:-$scope}"
   local yaml="${AC_AUTOPILOTS_DIR}/${kind}.yaml"
   [ -f "$yaml" ] || ac_die "${yaml} 不存在"
   ac_lint_yaml "$yaml"
@@ -96,8 +96,8 @@ ac_build_one() {
     local envfile created
     envfile=$(mktemp); chmod 600 "$envfile"
     # jq -n builds the JSON safely (no shell interpolation of token into JSON)
-    jq -n --arg url "$TCMCP_REMOTE_URL" --arg tok "$TCMCP_AGENT_TOKEN" --arg scope "$scope" \
-      '{TCMCP_REMOTE_URL:$url, TCMCP_AGENT_TOKEN:$tok, AUTOPILOT_SCOPE:$scope}' > "$envfile"
+    jq -n --arg url "$TCMCP_REMOTE_URL" --arg tok "$TCMCP_AGENT_TOKEN" --arg scope "$scope" --arg name "$name" \
+      '{TCMCP_REMOTE_URL:$url, TCMCP_AGENT_TOKEN:$tok, AUTOPILOT_SCOPE:$scope, AUTOPILOT_SCOPE_NAME:$name}' > "$envfile"
     created=$(multica agent create --name "$agent_name" --runtime-id "$rid" \
       --visibility workspace --custom-env-file "$envfile" --output json) \
       || { rm -f "$envfile"; ac_die "agent create 失败: ${agent_name}"; }
@@ -154,14 +154,14 @@ ac_build_one() {
   echo "AUTOPILOT_OK ${autopilot_title} ${apid}"
 }
 
-# $1=kind|all $2=provider $3=scope $4=suffix · selects runtime once, builds, prints footer
+# $1=kind|all $2=provider $3=scope $4=suffix $5=name · selects runtime once, builds, prints footer
 ac_run() {
-  local kind="$1" provider="$2" scope="$3" suffix="$4"
+  local kind="$1" provider="$2" scope="$3" suffix="$4" name="${5:-$scope}"
   local rid; rid=$(ac_select_runtime "$provider")
   if [ "$kind" = all ]; then
-    local k; for k in "${AC_KINDS[@]}"; do ac_build_one "$k" "$rid" "$scope" "$suffix"; done
+    local k; for k in "${AC_KINDS[@]}"; do ac_build_one "$k" "$rid" "$scope" "$suffix" "$name"; done
   elif ac_is_kind "$kind"; then
-    ac_build_one "$kind" "$rid" "$scope" "$suffix"
+    ac_build_one "$kind" "$rid" "$scope" "$suffix" "$name"
   else
     ac_die "未知 kind: ${kind} (应为 ${AC_KINDS[*]} 或 all)"
   fi

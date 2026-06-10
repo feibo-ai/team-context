@@ -21,8 +21,8 @@ KIND="${1:-}"; PROVIDER="${2:-}"
 
 ac_preflight
 
-# 团队版: scope 固定 team · suffix 固定 team
-SCOPE="team"; SUFFIX="team"
+# 团队版: scope 固定 team · suffix 固定 team · name 显示「全队」
+SCOPE="team"; SUFFIX="team"; NAME="全队"
 
 echo "团队版 autopilot · scope=全队 · provider=${PROVIDER}"
-ac_run "$KIND" "$PROVIDER" "$SCOPE" "$SUFFIX"
+ac_run "$KIND" "$PROVIDER" "$SCOPE" "$SUFFIX" "$NAME"
