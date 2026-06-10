@@ -5,7 +5,7 @@
 **Source of truth**: 本文件 · 加新 label 必须更新这里 + 开 PR
 **转换执行者收口**: label/status 流转一律走 `skills/tc-render/transition.py`(或 publish.py 发布时自动),**不再手敲 `multica issue label/status` 散文命令**——CLI 的 `issue label add` 只收 label UUID,按名称的手敲命令本就跑不通;transition.py 内置 name→UUID 运行时解析 + 后置复核(P-7)。
 
-## 11 个核心 label
+## 13 个核心 label
 
 | Label | 颜色(=线上实际 · 2026-06-10 核对) | 含义 | 加 / 删时机 | 谁执行 |
 |---|---|---|---|---|
@@ -13,6 +13,8 @@
 | `计划-评审中` | `#f59e0b` 琥珀 | 已派评审子 agent,等 verdict | `transition.py plan-request-review` 加(+status `in_review`);批准/取消时摘 | transition.py |
 | `计划-已批准` | `#10b981` 绿 | SOP 非妥协 #1 通过 · **待启动**(开工另有动作) | `transition.py plan-approve` 加,同时摘 草稿/评审中/**已升级**,status `todo` | transition.py |
 | `计划-已升级` | `#8b5cf6` 紫 | plan 升级 · 需重新 review | `transition.py plan-upgrade` 加(摘已批准 · 加已升级+草稿 · status `todo`);re-approve 时被 plan-approve 摘除(防与已批准并存) | transition.py |
+| `设计-待审` | `#eab308` 黄 | 设计评审中(批准后·开工前)· 等 verdict | `transition.py design-request-review` 加(+status `in_review` · 摘在场 设计-已审=复审作废旧批准);approve/cancel 时摘 | transition.py |
+| `设计-已审` | `#0ea5e9` 天蓝 | 设计评审通过 · 可开工(与 计划-已批准 共存,历史事实) | `transition.py design-approve` 加(摘待审 · status `todo` 回待启动) | transition.py |
 | `复盘-待审` | `#f97316` 橙 | case 已发布 · 待 review section 4 | publish.py 发布 case 时自动加(+status `in_review`;仅当无 复盘-已审) | publish.py→transition.py |
 | `复盘-已审` | `#14b8a6` 青绿 | section 4 评审通过 · issue 已关 | `transition.py case-finalize` 加(摘待审 · status `done` · 父链连带) | transition.py |
 | `古法不可能` | `#ef4444` 红 | "在传统 5 人团队不可能"的事件 · AI Native 终极指标 | 团队成员手工加 / 月度复盘加 | 任何人 |
@@ -31,30 +33,36 @@ issue create(status 默认 todo)
   └─> [publish.py --type plan]        label: +计划-草稿              status: todo
        └─> [plan-request-review]      label: +计划-评审中            status: in_review   ← 派评审子 agent
             ├─ approved ─> [plan-approve]
-            │                         label: +已批准 −草稿−评审中−已升级  status: todo(待启动)
-            │    └─> [build-start]    label: 不变                    status: in_progress  ← 首个 build session(开工卡同时机)
+            │                         label: +已批准 −草稿−评审中−已升级  status: todo(待启动 · 不碰 设计-*)
+            │    ├─> [design-request-review(设计评审门 · 项目层必走/任务层可跳)]
+            │    │                    label: +设计-待审 −设计-已审    status: in_review   ← 派设计评审子 agent
+            │    │    └─ approved ─> [design-approve]
+            │    │                    label: +设计-已审 −设计-待审    status: todo(回待启动)
+            │    └─> [build-start]    label: 不变                    status: in_progress  ← 首个 build session(开工卡同时机;
+            │         │                                                设计-待审 在场时告警「评审未完成就开工」)
             │         ├─> [plan-upgrade(卡住30分钟/实质改方案)]
             │         │              label: +已升级+草稿 −已批准      status: todo → 重走 request-review
             │         └─ 完工 ─> [publish.py --type case(case issue)]
             │                         label: +复盘-待审              status: in_review   ← 派评审子 agent
             │              └─ approved ─> [case-finalize]
             │                         case:  +复盘-已审 −复盘-待审    status: done
-            │                         父plan: −未决流程label(保留已批准) status: done
+            │                         父plan: −未决流程label(草稿/评审中/已升级/设计-待审 · 保留已批准+设计-已审) status: done
             │                         祖父research: 尽力 done(legacy 兜底;--keep-parent 跳过父链)
-            └─ kill ─> [cancel]       label: −全部流程label           status: cancelled
+            └─ kill ─> [cancel]       label: −全部流程label(含设计对)  status: cancelled
 
 research issue: [publish.py --type research] → +研究;findings 非空即 status done(不挂账)
 ```
 
-**in_review 的双语义**(查询一律 label 驱动,status 只是粗轨,勿用裸 `--status in_review` 查询):
+**in_review 的三语义**(查询一律 label 驱动,status 只是粗轨,勿用裸 `--status in_review` 查询):
 - plan issue + `计划-评审中` = plan 评审中
+- work issue + `设计-待审` = 设计评审中(此时 `计划-已批准` 共存合法 → 不变量 #4 的 carve-out)
 - case issue + `复盘-待审` = case 待审
 
 **执行者绑定原则**:评审/测试由**子 agent**承担(全新上下文 = SOP「第二个 session」);
 verdict 返回到编排 session 的那一刻 = 转换执行点(plan-approve / case-finalize 当场跑)。
 子 agent 只产出 verdict、不碰状态;转换权始终归编排 session。
 
-## 不变量(issue_invariants.py 巡检 · skills/tc-ops/)
+## 不变量(issue_invariants.py 巡检 · skills/tc-ops/ · **已编入 monthly-health autopilot**,report-only 随月度健康卡推飞书;--strict 留给验收/CI)
 
 硬性不变量(违规即漂移,适用于**带流程 label** 的 issue;零 label 轻任务不在审计内):
 
@@ -63,12 +71,14 @@ verdict 返回到编排 session 的那一刻 = 转换执行点(plan-approve / ca
 | 1 | `复盘-已审` ⇒ status `done` | TEA-95/70 型(收尾块漏跑) |
 | 2 | `复盘-待审` ⇒ status `in_review` | TEA-62/33 型(乱序)+ TEA-94/54 型(滞留 todo) |
 | 3 | `计划-评审中` ⇒ status `in_review` | TEA-66 型 |
-| 4 | `计划-已批准` ⇒ status ∈ {`todo`,`in_progress`,`done`} | 批准后被错误回退 |
+| 4 | `计划-已批准` ⇒ status ∈ {`todo`,`in_progress`,`done`};**`设计-待审` 在场时另允许 `in_review`**(carve-out:设计评审中=已批准+in_review 合法) | 批准后被错误回退 |
 | 5 | status `cancelled` ⇒ 无任何流程 label | TEA-75/69 型(取消不清场) |
 | 6 | `计划-已升级` ⊕ `计划-已批准` 互斥 | TEA-79/28/22/14 型(approve 不摘已升级) |
+| 7 | `设计-待审` ⇒ status `in_review` | 设计评审挂起/乱序 |
+| 8 | `设计-待审` ⊕ `设计-已审` 互斥 | 复审不作废旧批准(#6 同病型,由 design-request-review 摘除保证) |
 
 警告档(不算违规,提示人看):
-- **staleness**:`计划-评审中` 或 `复盘-待审` 挂超 48h——编排 session 在 verdict 后死亡的残留态
+- **staleness**:`计划-评审中` / `设计-待审` / `复盘-待审` 挂超 48h——编排 session 在 verdict 后死亡的残留态
 - **盲区**:标题前缀 `计划:`/`研究:`/`复盘:` 却无任何入口 label(流程 label ∪ `研究`)——入口转换缺失(TEA-90/82 型;调研中的空 research issue 命中属预期:没发布就是没交付)
 - **研究未关**:带 `研究` label 但 status≠done——研究发布即 done 语义,legacy 滞留
 
@@ -78,7 +88,7 @@ verdict 返回到编排 session 的那一刻 = 转换执行点(plan-approve / ca
 
 ```bash
 #!/usr/bin/env bash
-# create-labels.sh — populate the 11 standard labels in multica workspace
+# create-labels.sh — populate the 13 standard labels in multica workspace
 # Uses parallel arrays instead of `declare -A` so it runs on macOS's bash 3.2.
 set -euo pipefail
 
@@ -87,6 +97,8 @@ NAMES=(
   计划-评审中
   计划-已批准
   计划-已升级
+  设计-待审
+  设计-已审
   复盘-待审
   复盘-已审
   古法不可能
@@ -100,6 +112,8 @@ COLORS=(
   "#f59e0b"
   "#10b981"
   "#8b5cf6"
+  "#eab308"
+  "#0ea5e9"
   "#f97316"
   "#14b8a6"
   "#ef4444"
@@ -125,8 +139,8 @@ echo ""
 echo "Done. Verify: multica label list"
 ```
 
-保存到 `~/team-context/scripts/create-labels.sh` · 跑一次 · 月度健康度报告检查这 11 个 label 是否仍全部存在 (没人手贱删了)。
-**transition.py 依赖这 11 个 label 存在**(name→UUID 运行时解析,缺失即 exit 1 并指向本脚本)。
+保存到 `~/team-context/scripts/create-labels.sh` · 跑一次 · 月度健康度报告检查这 13 个 label 是否仍全部存在 (没人手贱删了)。
+**transition.py 依赖这 13 个 label 存在**(name→UUID 运行时解析,缺失即 exit 1 并指向本脚本)。
 
 ## 加新 label 规则
 
@@ -139,5 +153,6 @@ echo "Done. Verify: multica label list"
 - ❌ 直接在 multica web UI 改 label 颜色 · 必须改本文件 + 重跑 create-labels.sh
 - ❌ 创建本文件没列的 label · 长期下来分散语义、查询匹配不上
 - ❌ 给 `计划-已批准` issue 同时加 `计划-草稿` 或 `计划-已升级`(不变量 #6 · state machine 违反)
+- ❌ 给 `设计-待审` issue 同时加 `设计-已审`(不变量 #8 · 复审先走 design-request-review 作废旧批准)
 - ❌ 手敲 `multica issue label add <issue> <名称>`——只收 UUID,跑不通;走 transition.py
-- ❌ 用裸 `--status` 做流程查询(in_review 双语义)· 查询一律 label 驱动
+- ❌ 用裸 `--status` 做流程查询(in_review 三语义)· 查询一律 label 驱动

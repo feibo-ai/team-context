@@ -16,6 +16,8 @@ to Plan session.
 Confirm before first code action:
 - [ ] Plan doc (HTML) is loaded and READ in this session
 - [ ] Plan has an "approved" marker OR 3-sentence task plan was reviewed
+- [ ] **项目层:work issue 带 `设计-已审`**(设计评审门已过 · 见 tc-design-review;
+      任务层可跳;`设计-待审` 在场 = 评审中,不得开工,build-start 会告警)
 - [ ] You can name goal and completion criteria back without rereading
 - [ ] You can name what is IN scope and what is OUT of scope
 

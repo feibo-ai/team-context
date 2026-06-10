@@ -14,9 +14,15 @@ import 本模块做入口转换(publish-init)。
       case     → +复盘-待审(仅当无 复盘-已审)+ status in_review
       handoff  → 不动(no-op)
   plan-request-review <issue>   → +计划-评审中 · status in_review
-  plan-approve <issue>          → +计划-已批准 · −{计划-草稿,计划-评审中,计划-已升级} · status todo(待启动;in_progress 由 build-start 设)
+  plan-approve <issue>          → +计划-已批准 · −{计划-草稿,计划-评审中,计划-已升级} · status todo(待启动;in_progress 由 build-start 设;不碰 设计-*)
   plan-upgrade <issue>          → +{计划-已升级,计划-草稿} · −计划-已批准 · status todo(再走 request-review)
-  build-start <issue>           → status in_progress(首个 build session · 与开工卡同时机)
+  design-request-review <issue> → +设计-待审 · −设计-已审(复审作废旧批准) · status in_review
+      设计评审门:plan-approve 之后、build-start 之前,挂同一 work issue;与 计划-已批准 共存。
+      项目层必走、任务层可跳(执行约束见 tc-design-review / tc-4-build pre-flight)。
+  design-approve <issue>        → +设计-已审 · −设计-待审 · status todo(回待启动;
+      issue 已在建时补审,verdict 后须 design-approve→build-start 两连)
+  build-start <issue>           → status in_progress(首个 build session · 与开工卡同时机;
+      设计-待审 在场时告警「设计评审未完成就开工」)
   case-finalize <issue> [--keep-parent]
       → +复盘-已审 · −复盘-待审 · status done;
         默认连带:父 plan status done + 清父未决流程 label(草稿/评审中/已升级,保留已批准),
@@ -46,10 +52,16 @@ import sys
 # 流程 label 全集(cancel 的摘除集 = 与现场的交集;不含 研究/古法不可能/投注表/代码评审/倦怠预警)
 PROCESS_LABELS = [
     "计划-草稿", "计划-评审中", "计划-已批准", "计划-已升级",
+    "设计-待审", "设计-已审",
     "复盘-待审", "复盘-已审",
 ]
 PLAN_LABELS = ["计划-草稿", "计划-评审中", "计划-已批准", "计划-已升级"]
-PLAN_PENDING_LABELS = ["计划-草稿", "计划-评审中", "计划-已升级"]  # 父链清理:保留 已批准
+# plan-approve 的摘除集:只摘计划侧未决态,绝不碰 设计-*(TEA-99 评审 B2:
+# 幂等补救/re-approve 跑 plan-approve 不得摧毁设计门状态)
+PLAN_PENDING_LABELS = ["计划-草稿", "计划-评审中", "计划-已升级"]
+# case-finalize 父链清理集:计划未决态 + 设计-待审(未决);设计-已审 与 计划-已批准
+# 同为「历史事实」保留(TEA-99 评审 B2 拆常量:双用途常量按调用点拆开)
+PARENT_CLEAN_LABELS = PLAN_PENDING_LABELS + ["设计-待审"]
 
 
 class TransitionError(Exception):
@@ -196,9 +208,33 @@ def compute_build_start(state):
     w = []
     if "计划-已批准" not in state["labels"]:
         w.append("%s 开工时无 计划-已批准(plan 未批准就 build?意外现场,继续)" % state["identifier"])
+    if "设计-待审" in state["labels"]:
+        w.append("%s 设计评审未完成(设计-待审 在场)就开工——先 design-approve 或确认任务层可跳" % state["identifier"])
     if state["status"] not in ("todo", "in_progress"):
         w.append("%s 开工前 status=%s(预期 todo;意外现场,继续)" % (state["identifier"], state["status"]))
     return _ops_to(state, status="in_progress"), _post_to(status="in_progress"), w
+
+
+def compute_design_request_review(state):
+    """设计评审请审:发生在 plan-approve 之后、build-start 之前,挂同一 work issue。
+    同时摘除在场的 设计-已审——复审作废旧批准(TEA-99 评审 B3:否则复审路径由
+    收口工具自产 待审+已审 并存,重演 #6 的 TEA-79 病型)。不碰 计划-*(共存)。"""
+    w = []
+    if "计划-已批准" not in state["labels"]:
+        w.append("%s 请设计评审时无 计划-已批准(设计评审常态在批准后;意外现场,继续)" % state["identifier"])
+    return (_ops_to(state, add=["设计-待审"], remove=["设计-已审"], status="in_review"),
+            _post_to(add=["设计-待审"], remove=["设计-已审"], status="in_review"), w)
+
+
+def compute_design_approve(state):
+    """设计评审通过:回到 todo 待启动,等 build-start 设 in_progress(与 plan-approve
+    同惯例);issue 已在建时补审,verdict 后须 design-approve→build-start 两连
+    (见 tc-design-review skill),防滞留 todo 假象。不碰 计划-*(共存)。"""
+    w = []
+    if "设计-待审" not in state["labels"] and "设计-已审" not in state["labels"]:
+        w.append("%s 批准设计时无 设计-待审(未经请审的冷批准?意外现场,继续)" % state["identifier"])
+    return (_ops_to(state, add=["设计-已审"], remove=["设计-待审"], status="todo"),
+            _post_to(add=["设计-已审"], remove=["设计-待审"], status="todo"), w)
 
 
 def compute_case_finalize(state):
@@ -207,13 +243,14 @@ def compute_case_finalize(state):
 
 
 def compute_parent_close(parent_state):
-    """case-finalize 连带:父 plan done + 清未决流程 label(保留 计划-已批准)。
+    """case-finalize 连带:父 plan done + 清未决流程 label(保留 计划-已批准/设计-已审
+    两个「历史事实」;清掉 草稿/评审中/已升级/设计-待审 四个未决态)。
     父已 done → 只清未决 label;父 cancelled → 完全不动(绝不复活)。"""
     if parent_state["status"] == "cancelled":
         return [], [], ["父 %s 已 cancelled,不动(绝不复活)" % parent_state["identifier"]]
     status = None if parent_state["status"] == "done" else "done"
-    return (_ops_to(parent_state, remove=PLAN_PENDING_LABELS, status=status),
-            _post_to(remove=PLAN_PENDING_LABELS, status=status or "done"), [])
+    return (_ops_to(parent_state, remove=PARENT_CLEAN_LABELS, status=status),
+            _post_to(remove=PARENT_CLEAN_LABELS, status=status or "done"), [])
 
 
 def compute_grandparent_close(gp_state):
@@ -358,7 +395,8 @@ def main(argv=None):
     p_init.add_argument("--findings-filled", action="store_true", help="research findings 非空(发现已交付→done)")
 
     subparsers = [p_init]
-    for name in ("plan-request-review", "plan-approve", "plan-upgrade", "build-start", "cancel"):
+    for name in ("plan-request-review", "plan-approve", "plan-upgrade",
+                 "design-request-review", "design-approve", "build-start", "cancel"):
         sp = sub.add_parser(name)
         sp.add_argument("issue")
         subparsers.append(sp)
@@ -377,6 +415,8 @@ def main(argv=None):
         "plan-request-review": compute_plan_request_review,
         "plan-approve": compute_plan_approve,
         "plan-upgrade": compute_plan_upgrade,
+        "design-request-review": compute_design_request_review,
+        "design-approve": compute_design_approve,
         "build-start": compute_build_start,
         "cancel": compute_cancel,
     }
