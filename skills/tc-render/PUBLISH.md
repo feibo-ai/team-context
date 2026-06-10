@@ -9,15 +9,21 @@ exec CLI;**token 由 CLI 自管(读 `~/.multica/config.json`),绝不进脚本 ar
 
 ## 1 · 主路径:调脚本
 
-agent 把文档字段写成 JSON,调脚本;脚本**渲染 + 硬校验 + 命门B 收口发布 + 自检 attachments**:
+agent 把文档字段写成 JSON,调脚本;脚本**渲染 + 硬校验 + 命门B 收口发布 + 自检 attachments + 入口状态转换**:
 
 ```bash
 TCR=~/.claude/skills/tc-render          # 或 team-context/skills/tc-render
 python3 "$TCR/publish.py" --type {plan|research|case|handoff} \
-  --data fields.json --issue <完整UUID> [--caption "标题(方案A · 下方渲染)"] [--out 本地落盘路径] [--dry-run]
+  --data fields.json --issue <完整UUID> [--caption "标题(方案A · 下方渲染)"] [--out 本地落盘路径] [--dry-run] [--no-transition]
 ```
 
-- 成功 → 打印 JSON `{comment_id, attachment_id, url, doc_path}`(doc_path = git/离线副本)。
+- 成功 → 打印 JSON `{comment_id, attachment_id, url, doc_path, transition}`(doc_path = git/离线副本)。
+- **入口状态转换**(发布即流转 · 由同目录 `transition.py` 承担,语义单源见其 docstring + standards/labels.md):
+  plan→+`计划-草稿`(仅当无 计划-* label) / research→+`研究`(findings 非空即 status done) /
+  case→+`复盘-待审`+status in_review / handoff→不动。`--no-transition` 逃生口。
+- **exit code 契约:0 全成功 · 1 校验/发布失败(评论未发出,可改后重跑) · 2 评论已发但转换失败**
+  ——exit 2 时**绝不重跑 publish**(会重复发评论),按 stderr 给出的 `transition.py publish-init` 幂等命令单独补转换。
+- 后续流转(请审/批准/开工/收尾/取消)也全部走 `transition.py` 子命令,见各 tc-* skill;**不再手敲 `multica issue label/status`**(`label add` 只收 UUID,按名称的手敲命令跑不通)。
 - **校验不过 → exit 1 + 明确报错**(改不动就发不出)。阈值**派生自 `publish.py:SCHEMAS`**(单一事实源 · 无散落魔数):
   `additionalProperties:false` + `required` + `minLength`/`minItems`;计数前折叠空白 + 类型断言;拼错 key / 类型不符 / 纯空格占位 → exit 1。
 - `--out` 须 `.html` 且落在 CWD 允许根内(路径白名单 · 拒 `../` 与绝对逃逸)。
