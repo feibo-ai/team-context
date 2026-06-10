@@ -3,6 +3,7 @@
 - **状态**：**APPROVED 设计**（经三轮独立对抗安全评审收敛 · 据第三轮 8 条 RB 决定式落 MUST）。实现以本文 §0 的 10 条 implInvariants 为绑定契约;实现闭合由**第四阶段 §6 对抗验收 + 独立 code review** 裁定（非再开设计评审）。
 - **日期**：2026-06-10 · **取代** v3 · 谱系 v1→v2→v3→v4（评审 trail：v1=5 Blocker、v2=3 新 Blocker、v3=0 新架构 Blocker+8 RB 精修,均独立核验真实代码）
 - **目标**：CLI 自动无感更新**自己(二进制)+ skill + md**,daemon 静默验证写盘,人不介入——做成**安全软件分发子系统**。
+- **2026-06-10 后续实施偏离(DRI 决定 · 记录与实现一致)**:invariant #7(原设计=「签名/发版只在 **≥2-review-merged** 态发生」)落地中经 DRI 决定**逐步放宽**至「**release tag 须经 PR 合并入 main**」——**不强制独立评审**(branch ruleset `required_approving_review_count=0`,允许自审核;provenance gate 去掉「独立 approver」检查,仅验「经 PR 合并入 main」这层来源)。速度优先(5 人团队 · DRI 常 solo)。**安全后果(显式接受)**:signing 信任根从「2 人独立评审」收敛为「PR-merged 来源证明 + gated release workflow」;**B1 单成员投毒风险被接受**。其余 invariants(#1-#6 / #8-#10:keyless attestation 离线验签、写路径安全、单调防回放、吊销、fail-closed、配置探针等)**不变,仍按本 ADR 实施**。
 
 ---
 
