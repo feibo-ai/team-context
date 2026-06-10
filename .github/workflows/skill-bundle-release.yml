@@ -17,6 +17,7 @@ permissions:
   contents: write # 发 release 资产
   id-token: write # OIDC — keyless attestation 无长期私钥
   attestations: write # 写 provenance attestation
+  pull-requests: read # mini-ADR v4 invariant #7:查 PR 合并/评审态做 provenance 门
 
 jobs:
   release-skills:
@@ -26,6 +27,41 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      # mini-ADR v4 invariant #7 — provenance 合并门(镜像 tc-multica release.yml):
+      # skills-v tag 指向的 commit 必须是【合并入 main 的 PR 的 merge_commit_sha】,且该 PR
+      # 在其 head 有 ≥2 条不同【人类】APPROVED(排 author/pusher/bot)。把「skill bundle 只在
+      # 2 人评审的真合并态签名」从约定变成 CI 硬门——否则给未评审 skill 盖可信章 = B1 半安全。
+      - name: Enforce 2-review-merged-main provenance gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_SHA: ${{ github.sha }}
+          PUSHER: ${{ github.actor }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          prs="$(gh api "repos/$REPO/commits/$TAG_SHA/pulls" \
+            -H 'Accept: application/vnd.github+json' \
+            --jq '[.[] | select(.merged_at != null and .base.ref == "main" and .merge_commit_sha == "'"$TAG_SHA"'")]')"
+          if [ "$(echo "$prs" | jq 'length')" -eq 0 ]; then
+            echo "::error::skills-v tag commit $TAG_SHA 不是任何【已合并入 main 的 PR】的 merge_commit_sha — 拒绝签名/发版 skill bundle(invariant #7)。"
+            exit 1
+          fi
+          num="$(echo "$prs" | jq -r '.[0].number')"
+          author="$(echo "$prs" | jq -r '.[0].user.login')"
+          head_sha="$(echo "$prs" | jq -r '.[0].head.sha')"
+          approvers="$(gh api "repos/$REPO/pulls/$num/reviews" --paginate \
+            --jq '[.[] | select(.state=="APPROVED" and .commit_id=="'"$head_sha"'") | .user.login] | unique')"
+          clean="$(echo "$approvers" | jq -r --arg a "$author" --arg p "$PUSHER" \
+            '[.[] | select(. != $a and . != $p and (endswith("[bot]") | not))]')"
+          cnt="$(echo "$clean" | jq 'length')"
+          echo "PR #$num · author=$author · head=$head_sha · 有效 approvers($cnt): $(echo "$clean" | jq -c .)"
+          if [ "$cnt" -lt 2 ]; then
+            echo "::error::PR #$num 在 head 缺 ≥2 条不同人类 APPROVED(已排 author/pusher/bot)— 拒绝签名/发版 skill bundle(invariant #7)。"
+            exit 1
+          fi
+          echo "✓ provenance 门通过:skills-v tag commit = ≥2 人评审合并入 main 的 PR head。"
 
       - name: Build deterministic skill bundle (git-blob bytes)
         shell: bash
