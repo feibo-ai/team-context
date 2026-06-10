@@ -14,7 +14,7 @@ trigger:
 mode: run_only
 
 # 身份/通用约束(语言·SCOPE 语义·notify_team-only·issue 纪律)在 agent instructions 单源:
-# autopilots/_agent-instructions.md(由 _autopilot-common.sh 注入 assistant-bot-<scope>)
+# autopilots/_agent-instructions.md(由 _autopilot-common.sh 注入 助理·<显示名>)
 agent:
   integration_ref: team-context-mcp  # resolved at apply time
 
@@ -48,12 +48,13 @@ prompt: |
     卡住信号: 进行中 issue 里,最近一次 Current State handoff 时间戳 > 24h 的标出来
               (multica issue get <id> 看最新 handoff 评论时间)
 
-  Step 2 · Compose card
-    team:  标题「全队 · 今日开工 {{date}}」· sections:
-             🔵 进行中(title · DRI · handoff age)
-             🟡 待启动(已批准未开工:title · DRI · appetite)
-             🟣 待评审(等谁 review)
-             ⚠️ 卡住(handoff > 24h 的,提醒该 handoff/换 session)
-    个人:  标题「${AUTOPILOT_SCOPE_NAME} · 今日开工 {{date}}」· sections: 今日聚焦 / 待启动 / 卡住
+  Step 2 · Compose card(骨架/文案纪律见 agent instructions · header=wathet)
+    标题: 每日开工 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
+    概览 fields: 进行中 / 待启动 / 待评审 / 卡住
+    内容段(空段省略):
+      「进行中」 ▸ 标题 — DRI · 交接 N 小时前
+      「待启动」 ▸ 标题 — DRI · 体量
+      「待评审」 ▸ 标题 — 等谁评审
+    告警段(有卡住才出现): ⚠「卡住」 ▸ 标题 — 交接已 N 小时,建议换 session
 
   Step 3 · notify_team({ card: <card-json> }) 推团队群。

@@ -12,7 +12,7 @@ trigger:
 mode: run_only
 
 # 身份/通用约束(语言·SCOPE 语义·notify_team-only·issue 纪律)在 agent instructions 单源:
-# autopilots/_agent-instructions.md(由 _autopilot-common.sh 注入 assistant-bot-<scope>)
+# autopilots/_agent-instructions.md(由 _autopilot-common.sh 注入 助理·<显示名>)
 agent:
   integration_ref: team-context-mcp  # resolved at apply time
 
@@ -52,9 +52,11 @@ prompt: |
     })
     Returns: { docUrl, nodeToken }。个人版跳过 wiki 归档。
 
-  Step 3 · Push link to team group
-    team:  notify_team({ text: "📊 全队 Monthly Health · {{date}} — <docUrl>" })
-    个人:  notify_team({ card: 本人月度切片摘要 })
+  Step 3 · Compose card + 推团队群(骨架/文案纪律见 agent instructions · header=carmine)
+    标题: 月度健康 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
+    概览 fields: 复盘 / debrief 候选 / 交接 / 提交(个人版为本人切片,team 版为全队)
+    内容段:「报告」 ▸ 完整报告: <docUrl>(仅 team) ▸ 本地存档: health/monthly/{{date}}.md(仅 team)
+    notify_team({ card: <card-json> })
 
   Step 4 · (仅 team) Stage local archive (NO git commit · guardrails forbid)
     mkdir -p ~/team-context/health/monthly

@@ -33,6 +33,6 @@
 从 https://github.com/riba2534/feishu-cli 导入 25 个 skill 到本地 multica workspace · 时间 2026-05-27。
 
 - **导入方式**: per-skill URL（plan 原版的 `/skills/` 根路径 import 不工作，跟 team-context private repo 一样的问题）
-- **挂载**: `feishu-cli-msg` + `feishu-cli-card` + `feishu-cli-import` 全部挂到 4 个 autopilot bot (daily-summary-bot / weekly-roundup-bot / wednesday-stats-bot / monthly-health-bot)(历史记录:feishu-cli W5 已弃用;这些 per-kind bot TEA-93 2026-06-10 起已收敛为 assistant-bot-<scope> 并 archived)
+- **挂载**: `feishu-cli-msg` + `feishu-cli-card` + `feishu-cli-import` 全部挂到 4 个 autopilot bot (daily-summary-bot / weekly-roundup-bot / wednesday-stats-bot / monthly-health-bot)(历史记录:feishu-cli W5 已弃用;这些 per-kind bot TEA-93 2026-06-10 起已收敛为 scope 级身份助理「助理·<显示名>」并 archived)
 - **Owner**: riba2534 (上游) — 月度 `monthly_health_report` 跑时检查 release 同步
 - **Last reviewed**: 2026-05-27

@@ -6,7 +6,8 @@
 # the only real difference between the two entry scripts is SCOPE + naming SUFFIX;
 # everything else (preflight, runtime pick, PB-04 lint, agent/autopilot build) is shared here.
 #
-# Object model (TEA-93): ONE identity agent per scope (assistant-bot-<suffix>) carrying
+# Object model (TEA-93 · 命名规范 standards/feishu-card-style.md):
+# ONE identity agent per scope (助理·<显示名>) carrying
 # instructions (single source: autopilots/_agent-instructions.md) + custom_env; N thin
 # autopilots per scope pointing at that agent, each carrying only task-specific prompt.
 # Closing step archives legacy per-kind agents (<kind>-bot-<suffix>).
@@ -30,6 +31,19 @@ ac_is_kind() {
   local k
   for k in "${AC_KINDS[@]}"; do [ "$1" = "$k" ] && return 0; done
   return 1
+}
+
+# kind(英文文件名/代码标识) → 任务中文名(线上 autopilot title 用 · 单源映射,
+# 规范见 standards/feishu-card-style.md §1;case 写法兼容 macOS bash 3.2 无关联数组)
+ac_kind_cn() {
+  case "$1" in
+    daily-kickoff)   printf '每日开工' ;;
+    daily-summary)   printf '每日总结' ;;
+    monday-kickoff)  printf '周一计划' ;;
+    wednesday-stats) printf '周三体检' ;;
+    monthly-health)  printf '月度健康' ;;
+    *) ac_die "ac_kind_cn: 未知 kind $1" ;;
+  esac
 }
 
 ac_preflight() {
@@ -79,12 +93,12 @@ ac_scope_display_name() {
   [ -n "$dn" ] && printf '%s' "$dn" || printf '%s' "${scope%@*}"
 }
 
-# $1=runtime-id $2=scope $3=suffix → stdout = agent id (progress lines go to stderr)
-# Idempotent by name=assistant-bot-<suffix>: create with instructions + 4-key env;
+# $1=runtime-id $2=scope $3=display(范围显示名) → stdout = agent id (progress lines go to stderr)
+# Idempotent by name=助理·<显示名>: create with instructions + 4-key env;
 # on reuse sync runtime binding + instructions drift (env 只增不改不删 · reuse 不碰 env).
 ac_ensure_agent() {
-  local rid="$1" scope="$2" suffix="$3"
-  local agent_name="assistant-bot-${suffix}"
+  local rid="$1" scope="$2" display="$3"
+  local agent_name="助理·${display}"
   local instr; instr="$(cat "$AC_INSTRUCTIONS_FILE")"
   [ -n "$instr" ] || ac_die "${AC_INSTRUCTIONS_FILE} 读出来为空 · 拒绝注入空 instructions"
 
@@ -93,11 +107,10 @@ ac_ensure_agent() {
   agent_id=$(printf '%s' "$agents" | jq -r --arg n "$agent_name" '[.[] | select(.name==$n)][0].id // empty')
 
   if [ -z "$agent_id" ]; then
-    local scope_name envfile created
-    scope_name="$(ac_scope_display_name "$scope")"
+    local envfile created
     envfile=$(mktemp); chmod 600 "$envfile"
     # jq -n builds the JSON safely (no shell interpolation of token into JSON)
-    jq -n --arg url "$TCMCP_REMOTE_URL" --arg tok "$TCMCP_AGENT_TOKEN" --arg scope "$scope" --arg sname "$scope_name" \
+    jq -n --arg url "$TCMCP_REMOTE_URL" --arg tok "$TCMCP_AGENT_TOKEN" --arg scope "$scope" --arg sname "$display" \
       '{TCMCP_REMOTE_URL:$url, TCMCP_AGENT_TOKEN:$tok, AUTOPILOT_SCOPE:$scope, AUTOPILOT_SCOPE_NAME:$sname}' > "$envfile"
     created=$(multica agent create --name "$agent_name" --runtime-id "$rid" \
       --visibility workspace --custom-env-file "$envfile" --instructions "$instr" --output json) \
@@ -105,7 +118,7 @@ ac_ensure_agent() {
     rm -f "$envfile"
     agent_id=$(printf '%s' "$created" | jq -r '.id // empty')
     [ -n "$agent_id" ] || ac_die "agent create 没返回 id: ${agent_name}"
-    echo "  + agent ${agent_name} (${agent_id}) · runtime ${rid} · scope=${scope} · scope_name=${scope_name}" >&2
+    echo "  + agent ${agent_name} (${agent_id}) · runtime ${rid} · scope=${scope}" >&2
   else
     # runtime 重绑检测 (换机 / 换 provider / daemon 重启后 runtime id 会变)
     local cur_rid
@@ -128,9 +141,9 @@ ac_ensure_agent() {
   printf '%s' "$agent_id"
 }
 
-# $1=kind $2=agent-id $3=scope $4=suffix · ensure 该 kind 的瘦 autopilot 指向 scope 级 agent
+# $1=kind $2=agent-id $3=scope $4=display(范围显示名) · ensure 该 kind 的瘦 autopilot 指向 scope 级 agent
 ac_build_one() {
-  local kind="$1" agent_id="$2" scope="$3" suffix="$4"
+  local kind="$1" agent_id="$2" scope="$3" display="$4"
   local yaml="${AC_AUTOPILOTS_DIR}/${kind}.yaml"
   [ -f "$yaml" ] || ac_die "${yaml} 不存在"
   ac_lint_yaml "$yaml"
@@ -147,7 +160,7 @@ ac_build_one() {
     mode=run_only
   fi
 
-  local autopilot_title="${kind}-${suffix}"
+  local autopilot_title; autopilot_title="$(ac_kind_cn "$kind")·${display}"
   # 瘦 description = YAML desc + 任务差异 prompt (通用约束在 agent instructions 单源 · 不进 description)
   local full_desc; full_desc=$(printf '%s\n\n%s' "$desc" "$prompt")
 
@@ -204,21 +217,23 @@ ac_archive_legacy() {
 }
 
 # $1=kind|all $2=provider $3=scope $4=suffix · runtime → ensure 身份 agent → build → archive legacy
+# suffix(email 前缀/team)只用于 legacy 英文对象的 archive 匹配;新对象命名一律用 member 显示名。
 ac_run() {
   local kind="$1" provider="$2" scope="$3" suffix="$4"
-  local rid agent_id
+  local rid agent_id display
   rid=$(ac_select_runtime "$provider")
-  agent_id=$(ac_ensure_agent "$rid" "$scope" "$suffix")
+  display="$(ac_scope_display_name "$scope")"
+  agent_id=$(ac_ensure_agent "$rid" "$scope" "$display")
   if [ "$kind" = all ]; then
-    local k; for k in "${AC_KINDS[@]}"; do ac_build_one "$k" "$agent_id" "$scope" "$suffix"; done
+    local k; for k in "${AC_KINDS[@]}"; do ac_build_one "$k" "$agent_id" "$scope" "$display"; done
   elif ac_is_kind "$kind"; then
-    ac_build_one "$kind" "$agent_id" "$scope" "$suffix"
+    ac_build_one "$kind" "$agent_id" "$scope" "$display"
   else
     ac_die "未知 kind: ${kind} (应为 ${AC_KINDS[*]} 或 all)"
   fi
   ac_archive_legacy "$suffix"
   echo ""
   echo "⚠️ 这些 autopilot 只在你的 [${provider}] daemon 在线时跑 · 关机/睡眠日 cron 静默 skip。"
-  echo "验证: multica autopilot list | grep -- -${suffix}"
+  echo "验证: multica autopilot list | grep -- \"·${display}\""
   echo "手动测: multica autopilot trigger <id>  → 飞书群应收到一张卡"
 }

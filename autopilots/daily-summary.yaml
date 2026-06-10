@@ -13,7 +13,7 @@ trigger:
 mode: run_only
 
 # 身份/通用约束(语言·SCOPE 语义·notify_team-only·issue 纪律)在 agent instructions 单源:
-# autopilots/_agent-instructions.md(由 _autopilot-common.sh 注入 assistant-bot-<scope>)
+# autopilots/_agent-instructions.md(由 _autopilot-common.sh 注入 助理·<显示名>)
 agent:
   integration_ref: team-context-mcp  # resolved at apply time
 
@@ -44,9 +44,14 @@ prompt: |
     个人:  multica issue list --assignee "$AUTOPILOT_SCOPE" --updated-after $(date -v-1d +%Y-%m-%d)
            (commits 只统计 author 是本人的)
 
-  Step 2 · Compose card
-    team:  标题「全队 · 今日总结」· 按 shipping member 分 section
-    个人:  标题「${AUTOPILOT_SCOPE_NAME} · 今日总结」· section: Shipped / In Progress / Tomorrow / Signals
-    Signals (个人): 今天 `git log | grep -c "wip:"` → /clear 次数 · close 了 issue 但没 case_create → "未写 debrief" 提醒
+  Step 2 · Compose card(骨架/文案纪律见 agent instructions · header=indigo)
+    标题: 每日总结 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
+    概览 fields: 今日提交 / issue 更新 / 重启信号 / 未写复盘
+      (重启信号 = 今天 `git log | grep -c "wip:"`;未写复盘 = close 了 issue 但没写 case 的数量)
+    内容段(空段省略):
+      「已交付」 ▸ 交付要点(team 版条目按人归并: 人名 — 交付要点)
+      「进行中」 ▸ 标题 — DRI
+      「明日」   ▸ 计划要点
+    告警段(个人版 · 有未写复盘才出现): ⚠「待补复盘」 ▸ issue 号 — 已关闭未写 case
 
   Step 3 · notify_team({ card: <card-json> }) 推团队群。

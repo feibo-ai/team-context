@@ -15,7 +15,10 @@ Test: would you call this 'an independent big direction' (3+ days, has DRI, dese
 ## The 6 steps (run in order)
 
 ### Step 1 — 5-minute intent statement
-Post to team feishu: "I'm thinking about starting [X], because [Y]."
+发到团队飞书群,**纯文本**模版(刻意比卡片轻 · 规范 standards/feishu-card-style.md §5):
+```
+notify_team({ text: "【意向】<人名>:想做 <X>,因为 <Y>。仅通气、非承诺,有想法直接回。" })
+```
 Goal: let the team know, NOT commit. No formal plan yet.
 
 ### Step 2 — Research session (fresh session)
@@ -36,8 +39,12 @@ DRI reads review verdict. Final call: proceed / revise / kill.
 If proceed:走 tc-3-plan 的「批准状态转换」(`multica issue label add <plan-issue> 计划-已批准` + 去草稿/评审中 + status in_progress)。SOP non-negotiable #1 gate.
 
 ### Step 6 — Broadcast
-Post to feishu: "Starting [project]. Plan: [link]. DRI: [me]. Appetite: [X]." Tag the team.
-24h default tacit approval.
+发「项目开工」卡到团队飞书群(骨架与纪律见 standards/feishu-card-style.md §2/§3 · header=`turquoise`):
+- 标题: `项目开工 · <项目短名> · MM-DD`
+- 概览 fields: DRI / 体量 / 计划(TEA-xx + 已批准) / 评审(独立 session 通过)
+- 内容段:「目标」一句话;「完成标准」▸ 前 2 条,其余收「…其余 N 条见计划 issue」
+- note 页脚: `24 小时默许窗口 · 有异议群里提 · 计划全文见 TEA-xx`
+`notify_team({ card: ... })` 发送;24h default tacit approval。
 
 ## ⚠️ kickoff 是手动编排,不是一个工具 — 真验证 (SOP P-7)
 没有 `project_kickoff` 单一工具了:kickoff = 你按 6 步手动用 `multica project/issue create` + `tc-render/publish.py` 编排。所以**每步产物都要真验证**(SOP P-7):

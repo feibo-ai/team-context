@@ -198,14 +198,14 @@ multica daemon start                                              # 常驻 runti
 bash scripts/team-autopilot.sh all codex        # 或单个: daily-kickoff / daily-summary / monday-kickoff / wednesday-stats / monthly-health
 ```
 
-- 脚本自动(TEA-93 对象模型):选在线 runtime → ensure **身份 agent** `assistant-bot-<scope>`(注入 `autopilots/_agent-instructions.md` 单源 instructions + 4 键 custom_env:`TCMCP_REMOTE_URL`/`TCMCP_AGENT_TOKEN`/`AUTOPILOT_SCOPE`/`AUTOPILOT_SCOPE_NAME`)→ ensure 各 kind 瘦 autopilot 指向它 + cron(幂等)→ 收尾 archive legacy `<kind>-bot-<suffix>`。**不需要**手动先建 agent。
+- 脚本自动(TEA-93 对象模型):选在线 runtime → ensure **身份 agent** `助理·<显示名>`(注入 `autopilots/_agent-instructions.md` 单源 instructions + 4 键 custom_env:`TCMCP_REMOTE_URL`/`TCMCP_AGENT_TOKEN`/`AUTOPILOT_SCOPE`/`AUTOPILOT_SCOPE_NAME`)→ ensure 各 kind 瘦 autopilot 指向它 + cron(幂等)→ 收尾 archive legacy `<kind>-bot-<suffix>`。**不需要**手动先建 agent。
 - 团队成员自己跑 `bash scripts/my-autopilot.sh all codex` 建个人版(见 [`ONBOARDING-AGENT.html`](./ONBOARDING-AGENT.html) STEP-06)。
 - 改 YAML(新 autopilot / 改 prompt):仍须含 PB-04 guardrails(`forbidden_commands ≥ 5` 含 `git push` · `max_budget_usd ≤ 150`)+ `integration_ref: team-context-mcp`;脚本会 lint,缺一拒建。
 - `apply-autopilots.sh` 已 **deprecated**(不注入 `AUTOPILOT_SCOPE` · 与 scope 分支 prompt 不兼容)。
 
-### 3b · 加新身份 agent (assistant-bot · 手动 fallback)
+### 3b · 加新身份 agent (助理·<显示名> · 手动 fallback)
 
-TEA-93 起 agent 是 **scope 级身份载体**(每 scope 一个 `assistant-bot-<suffix>`,不再每 kind 一个)。
+TEA-93 起 agent 是 **scope 级身份载体**(每 scope 一个 `助理·<显示名>`,不再每 kind 一个;命名规范 standards/feishu-card-style.md §1)。
 多数情况用 team/my-autopilot.sh 自动 ensure,下面是手动 fallback:
 
 ```bash
@@ -221,7 +221,7 @@ chmod 600 /tmp/agent-env.json
 
 # 建 agent(instructions 必须注入单源 · 注空 = 砍掉全部通用约束)
 multica agent create \
-  --name assistant-bot-team \
+  --name 助理·全队 \
   --runtime-id $CODEX_RUNTIME \
   --visibility workspace \
   --custom-env-file /tmp/agent-env.json \

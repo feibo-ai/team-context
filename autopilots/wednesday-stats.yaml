@@ -11,7 +11,7 @@ trigger:
 mode: run_only
 
 # 身份/通用约束(语言·SCOPE 语义·notify_team-only·issue 纪律)在 agent instructions 单源:
-# autopilots/_agent-instructions.md(由 _autopilot-common.sh 注入 assistant-bot-<scope>)
+# autopilots/_agent-instructions.md(由 _autopilot-common.sh 注入 助理·<显示名>)
 agent:
   integration_ref: team-context-mcp  # resolved at apply time
 
@@ -40,8 +40,9 @@ prompt: |
        个人: 只看 owner == $AUTOPILOT_SCOPE 的 skill
   3. Heuristic regex for duplicate rules
 
-  Compose card:
-    team:  标题「全队 · 周三统计」· CLAUDE.md 本周 <N> 条 / Stale skills <N> 最老 <name> / 可能重复 <findings>
-    个人:  标题「${AUTOPILOT_SCOPE_NAME} · 周三统计」· 我 owned skill 健康 / 我对 claude_md 的本周改动
+  Compose card(骨架/文案纪律见 agent instructions · header=orange):
+    标题: 周三体检 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
+    概览 fields: claude_md 本周改动 / skill 数(个人版=我 owned) / 缺 owner / 最老 skill
+    内容段(空段省略):「风险」 ▸ 发现(缺 owner / stale / 疑似重复规则),给下一步动作
 
-  notify_team({ card: <stats-card-json> }) 推团队群。
+  notify_team({ card: <card-json> }) 推团队群。
