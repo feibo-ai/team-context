@@ -49,6 +49,41 @@ print(next((u.get("user_id","") for u in us if u.get("name")==n), "") if n else 
 _each_skill_file() {
   ( cd "$1" && find . -type f ! -name SKILL.md ! -path '*/tests/*' ! -path '*/__pycache__/*' ! -name '*.pyc' | sed 's|^\./||' )
 }
+# SKILL.md description 整行抽取(取冒号后整行,去引号,可选按字符截);内部冒号安全、CJK 安全
+_skill_desc() {  # $1=SKILL.md 路径 $2=最大字符数(可选,0/省略=不截)
+  python3 -c 'import sys,re
+mx = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2] else 0
+for line in open(sys.argv[1], encoding="utf-8"):
+    m = re.match(r"^description:\s*(.*)$", line)
+    if m:
+        v = m.group(1).strip().strip("\"\x27")
+        print(v[:mx] if mx else v); break' "$1" "${2:-}"
+}
+# ⑥ Codex skills-index:Codex 无原生 skill 发现 → 生成索引让它发现 tc-*,
+# 并文档化命门B 收口入口(Claude/Codex 两端经 Bash 调同一 publish.py)。
+_gen_codex_index() {  # $1=输出路径
+  {
+    echo "# AI MIQ tc-* skills 索引(Codex 用 · sync-team-config.sh 生成,勿手改)"
+    echo
+    echo "Codex 无原生 skill 机制。本索引让 Codex 发现团队 tc-* skills 并共享发布入口。"
+    echo
+    echo "## 发布收口(命门B · Claude/Codex 两端同一 Bash 入口)"
+    echo "把字段写成 JSON 调(渲染 + 硬校验 + 命门B 内联发布 + 自检 attachments;别绕开手拼 curl):"
+    echo '```'
+    echo "python3 $SKILLS_DIR/tc-render/publish.py --type {plan|research|case|handoff} \\"
+    echo "  --data fields.json --issue <完整UUID> [--dry-run]"
+    echo '```'
+    echo
+    echo "## Skills"
+    for d in "$SKILLS_DIR"/tc-*; do
+      [ -f "$d/SKILL.md" ] || continue
+      n="$(awk -F': *' '/^name:/{gsub(/["'"'"']/,"",$2);print $2;exit}' "$d/SKILL.md")"
+      [ -n "$n" ] || n="$(basename "$d")"
+      echo "- **$n** — $(_skill_desc "$d/SKILL.md")"
+      echo "  - 正文:\`$d/SKILL.md\`"
+    done
+  } > "$1.tmp" && mv "$1.tmp" "$1"   # 原子写:中途 abort 不留半截索引(保护已有文件)
+}
 
 echo "== 规范源:$REPO =="
 
@@ -69,6 +104,10 @@ ln -sfn "$GLOBAL_MD" "$HOME/.claude/CLAUDE.md"; say "✓ ~/.claude/CLAUDE.md →
 ln -sfn "$GLOBAL_MD" "$HOME/.codex/AGENTS.md";  say "✓ ~/.codex/AGENTS.md → claude_md_team_global.md"
 # 注:Codex 无原生 skill 机制 —— AGENTS.md 把 tc-* 当"流程描述"读;skill 正文经 multica registry / 直接读 repo。
 
+# ⑥ Codex skills-index:生成索引让 Codex 发现 tc-* + 共享命门B 发布入口(派生artifact,每次重生)
+_gen_codex_index "$HOME/.codex/skills-index.md"
+say "✓ ~/.codex/skills-index.md(Codex 发现 tc-* + 命门B 对称入口)"
+
 # 3) Skills → multica registry(create-or-update + 推 files[] + owner 解析)
 #    registry 是派生只读投影:开发机走 git 软链(步骤1),此处把规范源推上去。
 if [ "$SKIP_MULTICA" = 0 ] && command -v multica >/dev/null 2>&1; then
@@ -85,13 +124,8 @@ if [ "$SKIP_MULTICA" = 0 ] && command -v multica >/dev/null 2>&1; then
     [ -f "$d/SKILL.md" ] || continue
     name="$(awk -F': *' '/^name:/{gsub(/["'"'"']/,"",$2);print $2;exit}' "$d/SKILL.md")"
     [ -n "$name" ] || name="$(basename "$d")"
-    # description:取冒号后整行(正文含内部冒号如 publish.py:agent,不能用 -F': *' 切),
-    # 去首尾引号,按字符截 480(CJK 安全,非字节截碎)。
-    desc="$(python3 -c 'import sys,re
-for line in open(sys.argv[1], encoding="utf-8"):
-    m = re.match(r"^description:\s*(.*)$", line)
-    if m:
-        print(m.group(1).strip().strip("\"\x27")[:480]); break' "$d/SKILL.md")"
+    # description:整行抽取(内部冒号安全)+ 按字符截 480(CJK 安全),见 _skill_desc。
+    desc="$(_skill_desc "$d/SKILL.md" 480)"
     body="$(awk 'f{print} /^---[[:space:]]*$/{c++} c==2 && !f{f=1}' "$d/SKILL.md")"
     owner_name="$(awk -F': *' '/^owner:/{gsub(/["'"'"']/,"",$2);print $2;exit}' "$d/SKILL.md")"
     id="$(printf '%s' "$skills_json" | _json_find_id "$name")"
