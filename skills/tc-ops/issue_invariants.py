@@ -38,7 +38,7 @@ PROCESS_LABELS = {
     "复盘-待审", "复盘-已审",
 }
 ENTRY_LABELS = PROCESS_LABELS | {"研究"}  # 盲区豁免:研究 issue 的入口 label 是 研究
-TITLE_PREFIXES = ("计划:", "研究:", "复盘:", "计划:", "研究:", "复盘:")  # 全角/半角冒号都认
+TITLE_PREFIXES = tuple(w + c for w in ("计划", "研究", "复盘") for c in (":", "："))  # 半角+全角冒号都认
 STALE_HOURS = 48
 PAGE = 50
 

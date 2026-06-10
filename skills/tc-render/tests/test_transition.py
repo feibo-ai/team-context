@@ -185,9 +185,32 @@ def test_grandparent_close_only_research_and_open():
     ops, _, _ = T.compute_grandparent_close(mk_state(status="todo", labels=("研究",)))
     assert ops == [("status", "done")]
     ops, _, _ = T.compute_grandparent_close(mk_state(status="todo", labels=(), title="研究:xx"))
-    assert ops == [("status", "done")]  # title 前缀兜底(legacy 零 label)
+    assert ops == [("status", "done")]  # title 前缀兜底(legacy 零 label · 半角冒号)
+    ops, _, _ = T.compute_grandparent_close(mk_state(status="todo", labels=(), title="研究：xx"))
+    assert ops == [("status", "done")]  # 全角冒号同样认
     assert T.compute_grandparent_close(mk_state(status="done", labels=("研究",)))[0] == []
     assert T.compute_grandparent_close(mk_state(status="todo", labels=(), title="计划:xx"))[0] == []
+    # 收窄防误伤:以「研究」开头但非 研究: 前缀的普通 issue 绝不被强制 done
+    assert T.compute_grandparent_close(mk_state(status="todo", labels=(), title="研究小组周报"))[0] == []
+
+
+def test_cancelled_guard_blocks_revival():
+    """cancelled 终态防复活:显式子命令对 cancelled issue 一律硬拒(cancel 本身除外)。"""
+    ws = FakeWorkspace({"TEA-DEAD": mk(status="cancelled", labels=())})
+    with pytest.raises(T.TransitionError, match="绝不复活"):
+        T.run_publish_init("TEA-DEAD", "case", cli=cli_for(ws))
+    with pytest.raises(T.TransitionError, match="绝不复活"):
+        T.run_simple("TEA-DEAD", T.compute_build_start, cmd_name="build-start", cli=cli_for(ws))
+    with pytest.raises(T.TransitionError, match="绝不复活"):
+        T.run_case_finalize("TEA-DEAD", cli=cli_for(ws))
+    assert ws.writes == []  # 全程零写
+
+
+def test_cancel_on_cancelled_cleans_labels():
+    """cancel 对已 cancelled 的残留 label 修复路径(TEA-75/69 型)不被防复活门挡。"""
+    ws = FakeWorkspace({"TEA-75X": mk(status="cancelled", labels=("计划-草稿", "计划-评审中"))})
+    T.run_simple("TEA-75X", T.compute_cancel, cmd_name="cancel", cli=cli_for(ws))
+    assert ws.issues["TEA-75X"]["labels"] == set() and ws.issues["TEA-75X"]["status"] == "cancelled"
 
 
 def test_cancel_removes_only_present_process_labels():

@@ -217,8 +217,10 @@ def compute_parent_close(parent_state):
 
 
 def compute_grandparent_close(gp_state):
-    """祖父 research 尽力关闭(legacy 链兜底;新链 research 在发布时已 done)。"""
-    is_research = "研究" in gp_state["labels"] or gp_state["title"].startswith("研究")
+    """祖父 research 尽力关闭(legacy 链兜底;新链 research 在发布时已 done)。
+    title 兜底收窄到 研究: 前缀(半角/全角)——防误关恰好以「研究」开头的非 research issue。"""
+    is_research = ("研究" in gp_state["labels"]
+                   or gp_state["title"].startswith(("研究:", "研究：")))
     if not is_research or gp_state["status"] in ("done", "cancelled"):
         return [], [], []
     return _ops_to(gp_state, status="done"), _post_to(status="done"), []
@@ -234,7 +236,16 @@ def compute_cancel(state):
 # 执行 + 后置复核(P-7 真验证)
 # ======================================================================
 
+def guard_not_cancelled(state, cmd):
+    """cancelled 终态防复活:除 cancel 外一切转换硬拒(父链的不复活由 compute_parent_close 管)。"""
+    if state["status"] == "cancelled" and cmd != "cancel":
+        raise TransitionError(
+            "%s 已 cancelled,拒绝 %s(绝不复活;确需恢复先人工置 status 再走流程)"
+            % (state["identifier"], cmd))
+
+
 def execute_ops(cli, ref, ops, label_ids, dry_run=False):
+    # 诊断信息一律走 stderr —— stdout 留给调用方(publish.py 的 stdout 契约 = 纯 JSON)
     for op in ops:
         kind, val = op
         if kind == "label-add":
@@ -246,7 +257,7 @@ def execute_ops(cli, ref, ops, label_ids, dry_run=False):
         else:
             raise TransitionError("未知 op:%r" % (op,))
         if dry_run:
-            print("DRY-RUN · " + " ".join(argv))
+            print("DRY-RUN · " + " ".join(argv), file=sys.stderr)
         else:
             cli.run_ok(argv)
 
@@ -273,13 +284,13 @@ def apply_transition(cli, ref, ops, post, warnings, label_ids, dry_run=False):
     for m in warnings:
         warn(m)
     if not ops:
-        print("OK · %s 已在目标态(幂等空转)" % ref)
+        print("OK · %s 已在目标态(幂等空转)" % ref, file=sys.stderr)
         return
     execute_ops(cli, ref, ops, label_ids, dry_run=dry_run)
     if dry_run:
         return
     verify_post(cli, ref, post)
-    print("OK · %s → %s" % (ref, ", ".join("%s:%s" % (k, v) for k, v in ops)))
+    print("OK · %s → %s" % (ref, ", ".join("%s:%s" % (k, v) for k, v in ops)), file=sys.stderr)
 
 
 # ======================================================================
@@ -291,14 +302,16 @@ def run_publish_init(issue, doc_type, findings_filled=False, cli=None, dry_run=F
     cli = cli or Cli()
     label_ids = fetch_labels(cli)
     state = fetch_issue(cli, issue)
+    guard_not_cancelled(state, "publish-init")
     ops, post, w = compute_publish_init(state, doc_type, findings_filled)
     apply_transition(cli, issue, ops, post, w, label_ids, dry_run=dry_run)
 
 
-def run_simple(issue, compute, cli=None, dry_run=False):
+def run_simple(issue, compute, cmd_name="transition", cli=None, dry_run=False):
     cli = cli or Cli()
     label_ids = fetch_labels(cli)
     state = fetch_issue(cli, issue)
+    guard_not_cancelled(state, cmd_name)
     ops, post, w = compute(state)
     apply_transition(cli, issue, ops, post, w, label_ids, dry_run=dry_run)
 
@@ -307,10 +320,11 @@ def run_case_finalize(issue, keep_parent=False, cli=None, dry_run=False):
     cli = cli or Cli()
     label_ids = fetch_labels(cli)
     state = fetch_issue(cli, issue)
+    guard_not_cancelled(state, "case-finalize")
     ops, post, w = compute_case_finalize(state)
     apply_transition(cli, issue, ops, post, w, label_ids, dry_run=dry_run)
     if keep_parent:
-        print("OK · --keep-parent:跳过父链(phase case)")
+        print("OK · --keep-parent:跳过父链(phase case)", file=sys.stderr)
         return
     pid = state["parent_issue_id"]
     if not pid:
@@ -343,16 +357,20 @@ def main(argv=None):
     p_init.add_argument("--doc-type", required=True, choices=["plan", "research", "case", "handoff"])
     p_init.add_argument("--findings-filled", action="store_true", help="research findings 非空(发现已交付→done)")
 
+    subparsers = [p_init]
     for name in ("plan-request-review", "plan-approve", "plan-upgrade", "build-start", "cancel"):
         sp = sub.add_parser(name)
         sp.add_argument("issue")
+        subparsers.append(sp)
 
     p_fin = sub.add_parser("case-finalize", help="评审通过后由编排 session 立即执行(verdict 返回点)")
     p_fin.add_argument("issue")
     p_fin.add_argument("--keep-parent", action="store_true",
                        help="跳过父链连带(phase case:父 plan 还有其他阶段在进行)")
+    subparsers.append(p_fin)
 
-    ap.add_argument("--dry-run", action="store_true", help="只读取现场并打印将执行的写命令")
+    for sp in subparsers:  # --dry-run 挂在每个子命令上(前置/后置都能写)
+        sp.add_argument("--dry-run", action="store_true", help="只读取现场并打印将执行的写命令")
     a = ap.parse_args(argv)
 
     simple = {
@@ -368,7 +386,7 @@ def main(argv=None):
         elif a.cmd == "case-finalize":
             run_case_finalize(a.issue, keep_parent=a.keep_parent, dry_run=a.dry_run)
         else:
-            run_simple(a.issue, simple[a.cmd], dry_run=a.dry_run)
+            run_simple(a.issue, simple[a.cmd], cmd_name=a.cmd, dry_run=a.dry_run)
     except TransitionError as e:
         print("TRANSITION FAILED · %s" % e, file=sys.stderr)
         sys.exit(1)
