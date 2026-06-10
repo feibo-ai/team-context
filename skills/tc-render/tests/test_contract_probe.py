@@ -74,3 +74,42 @@ def test_frontend_regex_accepts_real_inline_url():
     assert url_re.match("/uploads/workspaces/abc/plan.html"), "前端正则不接受合法 /uploads url"
     assert url_re.match("https://multica-static.example.ai/case.html"), "前端正则不接受合法 https url"
     assert not url_re.match("javascript:alert(1)"), "前端正则误收协议注入 url"
+
+
+# ======================================================================
+# transition.py 依赖的 CLI JSON 形状探针(防 multica 升版静默漂移)。
+# 可达性同上层模式:CLI 不在/未登录则 skip,CI/本机并置时自动启用。
+# ======================================================================
+import json
+import shutil
+import subprocess
+
+
+def _cli_json(argv):
+    if not shutil.which("multica"):
+        pytest.skip("multica CLI 不可达")
+    p = subprocess.run(argv, capture_output=True, text=True)
+    if p.returncode != 0:
+        pytest.skip(f"multica 不可用(未登录/网络?):{(p.stderr or p.stdout)[:120]}")
+    return json.loads(p.stdout)
+
+
+def test_probe_label_list_shape():
+    """transition.py 依赖:label list = [{id, name, ...}](name→UUID 运行时解析的根基)。"""
+    rows = _cli_json(["multica", "label", "list", "--output", "json"])
+    assert isinstance(rows, list) and rows, "label list 形状漂移:应为非空数组"
+    assert all("id" in r and "name" in r for r in rows), "label list 行缺 id/name 键"
+
+
+def test_probe_issue_list_and_get_shape():
+    """transition.py 依赖:issue get 含 status/labels[{name}]/parent_issue_id;list 分页含 has_more。"""
+    page = _cli_json(["multica", "issue", "list", "--limit", "1", "--output", "json"])
+    assert "issues" in page and "has_more" in page, "issue list 分页形状漂移(invariants 巡检依赖 has_more)"
+    if not page["issues"]:
+        pytest.skip("workspace 无 issue")
+    ref = page["issues"][0]["id"]
+    d = _cli_json(["multica", "issue", "get", ref, "--output", "json"])
+    for key in ("status", "labels", "parent_issue_id", "identifier"):
+        assert key in d, f"issue get 缺 {key} 键(transition.py 决策输入)"
+    assert isinstance(d["labels"], list)
+    assert all("name" in l for l in d["labels"]), "issue get labels 行缺 name"

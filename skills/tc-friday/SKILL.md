@@ -2,16 +2,20 @@
 name: tc-friday
 description: "Use Friday afternoon for the 30-min demo + 15-min betting table double-session. Triggers '周五 demo', 'Friday demo', 'betting table', '周五演示', '下周做什么'. Guides DRI through demo (real artifacts not slides) + betting (decide next week's work, NO backlog). Pairs with `betting_table_capture`(**remote** MCP · 非本地,本期保留)."
 owner: 曾振华
-last_reviewed_at: 2026-06-09
+last_reviewed_at: 2026-06-10
 ---
 
 # Friday Demo + Betting Table — 45-min protocol
 
 ## Pre-flight (DRI does, 1 hr before)
-Query this week's done issues awaiting debrief review (label `复盘-待审`):
-`multica issue list --status done --label 复盘-待审`
+Query cases awaiting debrief review (label 即真值,不附加 status 条件——按状态机语义,
+待审 case 的 status 是 `in_review`,审完才 `done`,旧查询 `--status done --label 复盘-待审`
+是永空集):
+`multica issue list --label 复盘-待审`
 
 For each: identify demo-worthy artifact (deployed feature, completed migration, working prototype).
+评审通过的 case 当场收尾:`python3 ~/.claude/skills/tc-render/transition.py case-finalize <case-issue>`
+(phase case 加 `--keep-parent`;连带关闭其父 plan)。
 
 ## Demo · 30 min (celebrate, don't report)
 

@@ -11,15 +11,21 @@ agent **调用本脚本**(确定性 + 硬校验),取代手跑 PUBLISH.md 的 pro
 
 用法:
   publish.py --type {plan|research|case|handoff} --data FIELDS.json --issue <UUID> \
-             [--caption STR] [--out PATH] [--dry-run]
+             [--caption STR] [--out PATH] [--dry-run] [--no-transition]
 
   --data    JSON 文件,字段按 SCHEMAS[type] 硬校验(additionalProperties:false +
             required + 阈值派生自 schema minLength/minItems,无硬编码魔数)
   --issue   目标 issue 完整 UUID(--dry-run 时可省)
   --out     本地 html 落盘路径(须 .html 且在 CWD 允许根内 · 路径白名单);省略则按 type+date+slug 默认
-  --dry-run 只渲染+校验+落盘,不发布(评审用)
+  --dry-run 只渲染+校验+落盘,不发布也不转换(评审用)
+  --no-transition 发布后跳过入口状态转换(逃生口;默认开启转换)
 
-成功打印 JSON {comment_id, attachment_id, url, doc_path};校验失败 exit 1。
+发布成功后自动做**入口状态转换**(transition.py publish-init,语义单源见该脚本):
+  plan→+计划-草稿(仅当无 计划-* label) / research→+研究(findings 非空时 status done)
+  / case→+复盘-待审(仅当无 复盘-已审)+status in_review / handoff→不动。
+
+exit code:0 全成功 · 1 校验/发布失败(评论未发出) · 2 评论已发但入口转换失败
+(**绝不重跑 publish** —— 会重复发评论;按 stderr 给出的幂等补救命令单独补转换)。
 """
 import argparse, json, os, sys, re, subprocess, html, datetime, pathlib
 
@@ -303,6 +309,15 @@ def render_handoff(d):
 RENDERERS = {"plan": render_plan, "research": render_research, "case": render_case, "handoff": render_handoff}
 
 
+def load_transition_module():
+    """同目录 transition.py 按路径加载(不依赖 sys.path;白盒测试同款手法)。"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("tc_transition", HERE / "transition.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 # ======================================================================
 # 路径白名单 + 命门B 发布
 # ======================================================================
@@ -387,6 +402,8 @@ def main():
     ap.add_argument("--caption", default="文档(方案A · 下方渲染)")
     ap.add_argument("--out", default="", help="本地 html 落盘路径(.html · CWD 允许根内)")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--no-transition", action="store_true",
+                    help="发布后跳过入口状态转换(逃生口;默认自动转换)")
     a = ap.parse_args()
 
     if not a.dry_run:
@@ -417,8 +434,31 @@ def main():
     result = {"doc_path": str(out), "bytes": len(doc), "type": a.type}
     if a.dry_run:
         result["dry_run"] = True
-    else:
-        result.update(publish(a.issue, str(out), a.caption))
+        print(json.dumps(result, ensure_ascii=False))
+        return
+
+    result.update(publish(a.issue, str(out), a.caption))
+    if a.no_transition:
+        result["transition"] = "skipped(--no-transition)"
+        print(json.dumps(result, ensure_ascii=False))
+        return
+
+    # 入口状态转换(发布即流转 · 语义单源 = transition.py)。失败走 exit 2 契约:
+    # 评论已发成功,绝不重跑 publish(会重复发评论);补救 = 幂等的 transition.py 单独调用。
+    findings_filled = bool(a.type == "research" and str(data.get("findings") or "").strip())
+    try:
+        tr = load_transition_module()
+        tr.run_publish_init(a.issue, a.type, findings_filled=findings_filled)
+        result["transition"] = "ok"
+    except Exception as e:
+        result["transition"] = "FAILED"
+        print(json.dumps(result, ensure_ascii=False))
+        remedy = "python3 %s publish-init %s --doc-type %s%s" % (
+            HERE / "transition.py", a.issue, a.type,
+            " --findings-filled" if findings_filled else "")
+        print("PARTIAL · 评论已发布成功,但入口状态转换失败:%s" % e, file=sys.stderr)
+        print("补救(幂等 · 绝不重跑 publish):%s" % remedy, file=sys.stderr)
+        sys.exit(2)
     print(json.dumps(result, ensure_ascii=False))
 
 

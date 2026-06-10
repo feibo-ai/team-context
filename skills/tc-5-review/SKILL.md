@@ -2,7 +2,7 @@
 name: tc-5-review
 description: "Use when project or task is wrapping up. Triggers: 'let us debrief', '收尾', 'wrap up', '写 case', 'project done', user marks completion criteria met. Generates a case file at cases/YYYY-MM-DD-<slug>.html with the 5 mandatory SOP v0.4 sections. Required for SOP non-negotiable #2 (every project/task ends with debrief)."
 owner: 曾振华
-last_reviewed_at: 2026-06-09
+last_reviewed_at: 2026-06-10
 ---
 
 # Debrief / Case File Template
@@ -24,7 +24,7 @@ case 是 HTML,作为**评论**内联渲染(append-only),走共享地基 **tc-ren
 2. **建/定位 case issue** `multica issue create --project <UUID> --title "复盘:<slug>" [--parent <plan-issue-id>]`(parent 指向被复盘的 plan,便于回溯/自动关闭)。
 3. **产出+发布(一步 · 调脚本)** 把字段写成 `fields.json`(`goal` / `whatHappened` / `criteriaResults`[{criterion,met,notMetReason}] / `keyJudgments`[{title,context,options,chose,inHindsight,ancientImpossible}] / `ruleCandidates` / `slug`),调:
    `python3 ~/.claude/skills/tc-render/publish.py --type case --data fields.json --issue <case-issue-UUID> --out cases/<YYYY-MM-DD>-<slug>.html`
-   脚本渲染 + 硬校验 + 命门B 发布 + 自检 attachments。先 `--dry-run` 预览。永不改附件/改描述。
+   脚本渲染 + 硬校验 + 命门B 发布 + 自检 attachments + **入口状态转换**(自动 +`复盘-待审` · status `in_review`;exit 2 = 评论已发但转换失败,按 stderr 补救,绝不重跑 publish)。先 `--dry-run` 预览。永不改附件/改描述。
 
 > **硬校验(publish.py 内建 · exit 1 硬挡)**:关键判断 ≥1 个、关键判断段合计 **≥100 字符**(非占位;复盘的存在理由就是这段)、`--issue` 完整 UUID。违约脚本报错、发不出。完成标准每条标 met/not + 信号。
 
@@ -78,15 +78,21 @@ About 10% of candidates promote. 90% stay local.
   → these are case-specific, not general rules
 - ❌ Mark all 3 candidates for promotion without examining (most are not)
 
-## 评审收尾状态转换(原 case_review MCP · 改用 CLI 原语)
-case 经第二 session 评审通过后(section4≥100 已由 publish.py 硬挡):
+## 评审收尾(子 agent 评审 → 编排 session 当场转换 · 不留无主窗口)
+
+**「第二个 session」= 评审子 agent**:case 发布后,当前(编排)session 立即派评审子
+agent(全新上下文,role = DRI 代理/staff engineer),只给 case HTML + plan 文档路径,
+要求重点审 section 4(关键判断)并输出 `VERDICT: approved | changes-requested`。
+
+**verdict 返回点 = 收尾执行点**(由拿到 verdict 的编排 session **当场**执行——
+旧版「等第二 session 评审通过后(再找人跑)」的无主窗口即 TEA-95/70 漂移根因):
 ```bash
-multica issue label add    <case-issue> 复盘-已审
-multica issue label remove <case-issue> 复盘-待审
-multica issue status       <case-issue> done
-PARENT=$(multica issue get <case-issue> --output json | jq -r '.parent_issue_id // empty')
-[ -n "$PARENT" ] && multica issue status "$PARENT" done   # 连带关闭被复盘的 plan(§6 DRI auto)
+python3 ~/.claude/skills/tc-render/transition.py case-finalize <case-issue>
+# phase case(父 plan 还有其他阶段在进行,如 phase-a 复盘)→ 加 --keep-parent
 ```
+原子做完并复核(P-7):+`复盘-已审` · −`复盘-待审` · status `done` ·
+父 plan `done`+清未决流程 label(保留已批准)· 祖父 research 尽力关闭。
+changes-requested → 修订 fields 后 `publish.py` 再发一版(append-only),重新派审。
 
 ## Hand-off
 - Project layer: present at Friday Demo. Real artifact, not slides.
