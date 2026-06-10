@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI MIQ · 怎么用这套 AI 工具链</title>
+<style>
+:root{--ink:#1A1A1A;--ink2:#2D2D2D;--paper:#F5F2EB;--paper2:#EDE8DC;--accent:#C73E1D;--gray:#8B8680;--border:#D4CFC4;--green:#4A6B3A;--gold:#B8862E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Songti SC","Noto Serif SC",Georgia,serif;background:var(--paper);color:var(--ink);line-height:1.7;font-size:15px;padding:44px 28px 56px;max-width:760px;margin:0 auto}
+.eyebrow{font-family:"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:12px}
+h1{font-weight:900;font-size:32px;line-height:1.2;letter-spacing:-.5px;margin-bottom:14px;border-bottom:3px double var(--ink);padding-bottom:16px}
+.lede{font-size:15px;color:var(--ink2);margin-bottom:30px}
+.lede code{font-size:13px}
+h2{font-family:"SF Mono",Menlo,monospace;font-weight:600;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;margin:30px 0 12px;padding-left:11px;border-left:4px solid var(--accent);color:var(--ink)}
+p{margin-bottom:10px}
+code{font-family:"SF Mono",Menlo,monospace;background:var(--paper2);padding:1px 6px;border-radius:2px;font-size:13px}
+table{width:100%;border-collapse:collapse;background:#fff;font-size:14px;margin:6px 0 4px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+th{background:var(--paper2);font-family:"SF Mono",Menlo,monospace;font-weight:600;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gray)}
+td.k code{background:transparent;padding:0;color:var(--accent);font-weight:600}
+ol,ul{margin:6px 0 6px 4px}
+li{padding:4px 0 4px 22px;position:relative;list-style:none}
+li::before{content:"▸";position:absolute;left:2px;color:var(--accent)}
+ol{counter-reset:n}
+ol li::before{content:counter(n);counter-increment:n;font-family:"SF Mono",Menlo,monospace;font-size:11px;font-weight:600;color:var(--accent);top:6px}
+.callout{background:var(--paper2);border-left:4px solid var(--gold);padding:12px 16px;margin:14px 0;font-size:14px}
+.callout.red{border-left-color:var(--accent)}
+.callout b{color:var(--ink)}
+footer{margin-top:38px;padding-top:14px;border-top:1px solid var(--border);font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--gray);line-height:1.7}
+</style>
+</head>
+<body>
+
+<div class="eyebrow">AI MIQ · TEAM TOOLCHAIN · 用户速查</div>
+<h1>怎么用这套 AI 工具链</h1>
+<p class="lede">这是 AI MIQ 团队的 AI 工具链:去本地 MCP,改用 <b>Claude Code / Codex 的 skills + <code>multica</code> CLI + 远程 MCP</b>。环境由 agent 配好(见 <code>ONBOARDING-AGENT.html</code>),本文只讲:配好之后,你日常<b>怎么用</b>。</p>
+
+<h2>核心工作法 · RPI</h2>
+<p><b>Research → Plan → Implement</b>,这是三个<b>分离的 session</b>,不要混在一个里。每个阶段开新 session,用对应的 skill 起头——你说一句话,它自动触发。</p>
+
+<h2>怎么触发(说一句话即可)</h2>
+<table>
+<thead><tr><th>你要做什么</th><th>触发 skill</th><th>怎么说</th></tr></thead>
+<tbody>
+<tr><td>启动新项目</td><td class="k"><code>tc-1-start</code></td><td>「启动新项目」</td></tr>
+<tr><td>调研(R)</td><td class="k"><code>tc-2-research</code></td><td>「调研 X」</td></tr>
+<tr><td>写计划(P)</td><td class="k"><code>tc-3-plan</code></td><td>「做个 plan」</td></tr>
+<tr><td>写代码(I)</td><td class="k"><code>tc-4-build</code></td><td>「执行 / 实现」</td></tr>
+<tr><td>收尾复盘</td><td class="k"><code>tc-5-review</code></td><td>「收尾 / 写 case」</td></tr>
+<tr><td>/clear 之前</td><td class="k"><code>tc-handoff</code></td><td>「换个 session / 重开」</td></tr>
+<tr><td>卡住自检</td><td class="k"><code>tc-self-check</code></td><td>「自检一下」</td></tr>
+</tbody>
+</table>
+
+<h2>multica 约定</h2>
+<ul>
+<li>每个 issue 必须挂在项目下——建之前先 <code>multica project list</code> 选定项目。</li>
+<li>用 <code>multica</code> CLI 管 project / issue(创建、改 label、改 status）。</li>
+<li>拿不准是不是这个项目、要不要新建项目——<b>问 DRI</b>,绝不建无项目的孤儿 issue。</li>
+</ul>
+
+<h2>几条不可妥协(团队红线)</h2>
+<ol>
+<li><b>写代码前必有 plan 文档 + 第二个 session 评审</b>——不 vibe code。</li>
+<li><b>每段 AI 生成的 diff,commit 前过人眼</b>——你来 ship。</li>
+<li><b>每个项目 / 任务以 case 复盘收尾</b>。</li>
+</ol>
+
+<h2>卡住怎么办</h2>
+<div class="callout red"><b>30 分钟没进展</b>,就触发 <code>tc-handoff</code>(它把状态写进 issue + commit WIP)→ 然后 <code>/clear</code> 重开新 session。<b>别原地耗</b>、别在浑浊的 context 里硬修。</div>
+
+<h2>去哪找细节</h2>
+<p>环境配置 / 安装 → <code>ONBOARDING-AGENT.html</code>(那是 agent 的事,本文不讲)。<br>团队 SOP、标准、各 skill 详情 → <code>team-context</code> 仓库;某个 skill 怎么用,直接在对话里问它。</p>
+
+<footer>AI MIQ · 默认简体中文 · 宁可少不要多 · 配置看 ONBOARDING-AGENT.html · SOP 看 team-context</footer>
+
+</body>
+</html>

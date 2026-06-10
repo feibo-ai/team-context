@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MEMBER · Agent Onboarding Spec v2</title>
+<style>
+  :root{
+    --ink:#1A1A1A; --ink2:#2D2D2D; --paper:#FBFAF7; --paper2:#F0EDE6;
+    --accent:#C73E1D; --gray:#6E6A63; --gray2:#8B8680; --border:#D9D4C9;
+    --green:#4A6B3A; --gold:#B8862E; --codebg:#F2F0EB; --codeink:#2D2D2D;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--paper); color:var(--ink); line-height:1.7; font-size:15px;
+    padding:44px 24px; max-width:880px; margin:0 auto;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace}
+  .eyebrow{
+    font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    font-size:11px; letter-spacing:3px; color:var(--accent); text-transform:uppercase; margin-bottom:14px;
+  }
+  h1{
+    font-weight:800; font-size:34px; line-height:1.18; letter-spacing:-.5px;
+    margin-bottom:18px; border-bottom:3px double var(--ink); padding-bottom:18px;
+  }
+  .lead{font-size:14.5px; color:var(--ink2); margin-bottom:8px}
+  .lead b{color:var(--ink); font-weight:600}
+  h2{
+    font-weight:700; font-size:21px; margin:40px 0 14px; padding-left:13px;
+    border-left:4px solid var(--accent); scroll-margin-top:20px;
+  }
+  h3{
+    font-weight:650; font-size:16px; margin:24px 0 10px; color:var(--ink2);
+    font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace; letter-spacing:.3px;
+  }
+  p{margin:10px 0}
+  a{color:var(--accent); text-decoration:none; border-bottom:1px solid var(--border)}
+  a:hover{border-bottom-color:var(--accent)}
+  hr{border:none; border-top:1px solid var(--border); margin:34px 0}
+  ul,ol{margin:10px 0 10px 0; padding-left:26px}
+  li{padding:3px 0}
+  ul.tight{list-style:none; padding-left:0}
+  ul.tight li{padding:5px 0 5px 22px; position:relative}
+  ul.tight li::before{content:"\25B8"; position:absolute; left:2px; color:var(--accent)}
+  ul.crit{list-style:none; padding-left:0}
+  ul.crit li{padding:6px 0 6px 26px; position:relative}
+  ul.crit li::before{content:"\2610"; position:absolute; left:2px; color:var(--green); font-weight:700}
+  code{
+    font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    background:var(--paper2); padding:1px 6px; border-radius:3px; font-size:13px; color:var(--codeink);
+  }
+  pre{
+    background:var(--codebg); border:1px solid var(--border); border-radius:6px;
+    padding:16px 18px; margin:14px 0; overflow-x:auto; line-height:1.55;
+  }
+  pre code{
+    background:none; padding:0; border-radius:0; font-size:12.5px; color:var(--codeink);
+    white-space:pre; display:block;
+  }
+  .label{
+    font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    font-size:11px; letter-spacing:1.2px; color:var(--accent); text-transform:uppercase;
+    font-weight:700; margin:16px 0 6px;
+  }
+  .label.ok{color:var(--green)}
+  .expect{
+    font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    font-size:13px; margin:8px 0; color:var(--ink2);
+  }
+  .expect b{color:var(--ink)}
+  .callout{
+    background:var(--paper2); border-left:4px solid var(--gold); padding:13px 17px; margin:16px 0; font-size:14px;
+  }
+  .note{
+    background:var(--paper2); border-left:4px solid var(--gray2); padding:12px 16px; margin:14px 0; font-size:13.5px; color:var(--ink2);
+  }
+  table{
+    width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px;
+  }
+  th,td{
+    border:1px solid var(--border); padding:9px 12px; text-align:left; vertical-align:top;
+  }
+  th{
+    background:var(--paper2); font-weight:700; font-size:12px; letter-spacing:.5px;
+    text-transform:uppercase; color:var(--ink2);
+  }
+  td code, th code{font-size:12px}
+  .toc{
+    background:var(--paper2); border:1px solid var(--border); border-radius:6px;
+    padding:16px 20px; margin:24px 0; font-size:13.5px;
+  }
+  .toc .label{margin-top:0}
+  .toc ul{list-style:none; padding-left:0; margin:6px 0; columns:2; column-gap:32px}
+  .toc li{padding:3px 0}
+  footer{
+    margin-top:48px; padding-top:18px; border-top:1px solid var(--border);
+    font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    font-size:11.5px; color:var(--gray); line-height:1.9;
+  }
+  footer b{color:var(--ink2)}
+  .step-head{
+    display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;
+  }
+  @media (max-width:600px){
+    body{padding:28px 16px; font-size:14.5px}
+    h1{font-size:27px}
+    h2{font-size:19px}
+    .toc ul{columns:1}
+    th,td{padding:7px 9px}
+    pre{padding:13px 13px}
+    pre code{font-size:11.5px}
+  }
+</style>
+</head>
+<body>
+
+<div class="eyebrow">AI MIQ · Agent-Executable Env Spec</div>
+<h1>MEMBER · Agent Onboarding Spec v2</h1>
+
+<p class="lead"><b>Audience:</b> AI agent (Claude Code / Codex / generic LLM agent)</p>
+<p class="lead"><b>Purpose:</b> End-to-end configure a new team member's machine.</p>
+<p class="lead"><b>Human equivalent:</b> <a href="./ONBOARDING-MEMBER.md"><code>ONBOARDING-MEMBER.md</code></a>（don't ask user to read both —— pick one）。</p>
+
+<div class="toc">
+  <div class="label">目录</div>
+  <ul>
+    <li><a href="#contract">EXECUTION CONTRACT</a></li>
+    <li><a href="#inputs">INPUTS</a></li>
+    <li><a href="#constants">CONSTANTS</a></li>
+    <li><a href="#step-00">STEP-00 · Prereqs</a></li>
+    <li><a href="#step-01">STEP-01 · CLI config + auth</a></li>
+    <li><a href="#step-02">STEP-02 · skill pull</a></li>
+    <li><a href="#step-03">STEP-03 · skill sync + lint</a></li>
+    <li><a href="#step-04">STEP-04 · MCP config</a></li>
+    <li><a href="#step-05">STEP-05 · Cloud-side smoke</a></li>
+    <li><a href="#step-06">STEP-06 · (OPT) autopilots</a></li>
+    <li><a href="#step-final">STEP-FINAL</a></li>
+    <li><a href="#abort">ABORT / RETRY POLICY</a></li>
+    <li><a href="#dry-run">DRY-RUN MODE</a></li>
+    <li><a href="#success">SUCCESS CRITERIA</a></li>
+  </ul>
+</div>
+
+<hr>
+
+<h2 id="contract">EXECUTION CONTRACT</h2>
+<ol>
+  <li><b>Collect INPUTS first</b>（见 <a href="#inputs">INPUTS</a>）。Any missing → ABORT with explicit ask.</li>
+  <li><b>Run STEP-00 to STEP-05 in order</b>。Each STEP has a <code>VERIFY</code> clause：
+    <ul class="tight">
+      <li>VERIFY exit code 0 + stdout matches <code>Expected:</code> → proceed</li>
+      <li>Otherwise → STOP，print full step output，do <b>not</b> auto-retry except where step says so</li>
+    </ul>
+  </li>
+  <li><b>Steps are IDEMPOTENT</b>（safe to re-run on partial-completion machines）。</li>
+  <li><b>On final success</b> print exactly <code>MEMBER_ONBOARD_OK &lt;ISO-8601 UTC timestamp&gt;</code> to stdout（orchestrators grep this）。</li>
+  <li><b>NEVER:</b>
+    <ul class="tight">
+      <li>Commit <code>MULTICA_TOKEN</code> to git</li>
+      <li>Print PAT in plaintext beyond first 14 chars</li>
+      <li><code>sudo</code> unless step explicitly says so</li>
+      <li>Auto-restart user's CLI（codex / claude-code）—— print instruction instead</li>
+    </ul>
+  </li>
+</ol>
+
+<hr>
+
+<h2 id="inputs">INPUTS（collect from user · abort if missing）</h2>
+<table>
+  <thead>
+    <tr><th>key</th><th>regex</th><th>how to obtain</th><th>example</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>MULTICA_TOKEN</code></td>
+      <td><code>^mul_[a-f0-9]{40}$</code></td>
+      <td><b>非输入</b> —— STEP-01 跑 <code>multica login</code>（成员自己账号）后从 <code>~/.multica/config.json</code> 读出（per-user · 非 DRI 发）</td>
+      <td><code>mul_…</code>（你自己的）</td>
+    </tr>
+    <tr>
+      <td><code>MULTICA_WORKSPACE_ID</code></td>
+      <td><code>^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$</code></td>
+      <td>DRI 飞书 DM 给的 UUID（workspace slug <code>team-context</code>）</td>
+      <td><code>fb23cf99-5f4c-4815-b2b3-8d5e323659f6</code></td>
+    </tr>
+    <tr>
+      <td><code>CLI_TARGET</code></td>
+      <td>enum：<code>codex</code> | <code>claude-code</code></td>
+      <td>用户选</td>
+      <td><code>codex</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2 id="constants">CONSTANTS（do not parameterize）</h2>
+<pre><code>CLOUD_API      = https://api.teamctx.actionow.ai
+CLOUD_WEB      = https://teamctx.actionow.ai
+CLOUD_MCP      = https://mcp.teamctx.actionow.ai/mcp
+WORKSPACE_SLUG = team-context        # MULTICA_WORKSPACE_ID resolves to this slug
+TCMCP_REPO     = https://github.com/feibo-ai/team-context-mcp.git
+TCMCP_DIR      = $HOME/team-context-mcp
+SKILLS_DIR     = $HOME/.claude/skills</code></pre>
+
+<hr>
+
+<h2 id="step-00">STEP-00 · Prereqs</h2>
+<pre><code># macOS only · Linux: substitute apt/yum and ABORT if any tool absent
+command -v brew &gt;/dev/null || { echo "ABORT_NEED_BREW"; exit 1; }
+# jq / node via brew
+brew install jq node@22 2&gt;&amp;1 | tail -3
+# multica via official install.sh (NOT brew — brew multica is upstream CLI, missing control-plane subcommands).
+# install.sh self-detects upgrade, so re-running it is also the upgrade path.
+curl -fsSL https://raw.githubusercontent.com/feibo-ai/tc-multica/main/scripts/install.sh | bash
+command -v pnpm &gt;/dev/null || npm install -g pnpm@11</code></pre>
+
+<div class="label">VERIFY</div>
+<pre><code>multica --version 2&gt;&amp;1 | grep -qE 'multica v[0-9]+\.[0-9]+' \
+ &amp;&amp; multica integration --help &gt;/dev/null 2&gt;&amp;1 \
+ &amp;&amp; node --version | grep -qE '^v2[2-9]\.' \
+ &amp;&amp; jq --version | grep -qE 'jq-1\.[7-9]' \
+ &amp;&amp; pnpm --version | grep -qE '^1[1-9]\.' \
+ &amp;&amp; echo VERIFY_00_OK</code></pre>
+
+<p class="expect"><b>Expected:</b> stdout contains <code>VERIFY_00_OK</code>。</p>
+<p class="expect"><b>ON_FAIL:</b> print which tool's version check failed，ABORT。If <code>multica integration --help</code> errors，the wrong <code>multica</code> is installed（upstream brew CLI lacks control-plane subcommands）—— re-run the install.sh curl from STEP-00。</p>
+
+<hr>
+
+<h2 id="step-01">STEP-01 · Multica CLI config + auth</h2>
+<pre><code>multica config set server_url  https://api.teamctx.actionow.ai &gt;/dev/null
+multica config set app_url     https://teamctx.actionow.ai     &gt;/dev/null
+multica config set workspace_id "$MULTICA_WORKSPACE_ID"         &gt;/dev/null
+
+# AUTH = per-user. The member authenticates as THEMSELVES; the token is NOT
+# handed over by the DRI. `multica login` is interactive (opens a browser) —
+# prompt the human to complete it, THEN continue. (Only non-human service/bot
+# accounts use a DRI-issued PAT via `multica auth issue-token`.)
+multica login                                    # human finishes browser auth → token → ~/.multica/config.json
+multica workspace switch team-context &gt;/dev/null 2&gt;&amp;1 || true
+
+# Read the member's OWN token from the CLI config (NOT a DRI DM).
+MULTICA_TOKEN="$(jq -r '.token // empty' "$HOME/.multica/config.json")"
+[ -n "$MULTICA_TOKEN" ] || { echo "ABORT_NO_TOKEN: run 'multica login' first"; exit 1; }
+
+# Pick shell rc · prefer zsh on macOS · idempotent line replace
+# (remote MCP server + multica CLI read these env vars at startup · tcmcp-local 已不装)
+RC="$HOME/.zshrc"; [ -n "$BASH_VERSION" ] &amp;&amp; [ ! -f "$RC" ] &amp;&amp; RC="$HOME/.bashrc"
+touch "$RC"
+grep -vE '^export (MULTICA_TOKEN|MULTICA_SERVER_URL|MULTICA_WORKSPACE_ID)=' "$RC" &gt; "$RC.tmp" &amp;&amp; mv "$RC.tmp" "$RC"
+# token line stays as a literal $(jq …) (\$ escaped) → each new shell re-reads
+# the member's current token from config.json, auto-syncing after re-login.
+cat &gt;&gt; "$RC" &lt;&lt;RCEOF
+export MULTICA_SERVER_URL=https://api.teamctx.actionow.ai
+export MULTICA_WORKSPACE_ID=$MULTICA_WORKSPACE_ID
+export MULTICA_TOKEN=\$(jq -r .token ~/.multica/config.json 2&gt;/dev/null)
+RCEOF
+export MULTICA_SERVER_URL=https://api.teamctx.actionow.ai
+export MULTICA_WORKSPACE_ID
+export MULTICA_TOKEN</code></pre>
+
+<div class="label">VERIFY</div>
+<pre><code>multica auth status 2&gt;&amp;1 | awk '/^User:/ {found=1} END {exit found?0:1}' \
+ &amp;&amp; echo VERIFY_01_OK</code></pre>
+
+<p class="expect"><b>Expected:</b> stdout contains <code>VERIFY_01_OK</code>。</p>
+<p class="expect"><b>ON_FAIL:</b> not logged in OR cloud unreachable. Do not retry blindly.</p>
+<ul class="tight">
+  <li>diagnose：<code>curl -fsS https://api.teamctx.actionow.ai/healthz</code>（must return 200 with <code>{"status":"ok"}</code>）</li>
+  <li>if cloud OK but auth fails → token 失效/未登录 · re-run <code>multica login</code>（member's own account）· ABORT this run</li>
+  <li>if cloud unreachable → network · ABORT</li>
+</ul>
+
+<hr>
+
+<h2 id="step-02">STEP-02 · 同步团队 skill（multica skill pull）</h2>
+<pre><code># RPI 文档流走 skills + multica CLI + tc-render/publish.py —— 不再 clone/build 本地 MCP。
+# 从 registry 拉全部团队 skill(含携带脚本如 publish.py)到 ~/.claude/skills/。
+multica skill pull --all</code></pre>
+
+<div class="label">VERIFY</div>
+<p class="expect">（核心 tc-* skill 落地为非空文件 + tc-render 携带脚本到位）</p>
+<pre><code>miss=""
+for nm in tc-1-start tc-2-research tc-3-plan tc-4-build tc-5-review tc-handoff tc-render tc-ops; do
+  [ -s "$HOME/.claude/skills/$nm/SKILL.md" ] || miss="$miss $nm"
+done
+[ -s "$HOME/.claude/skills/tc-render/publish.py" ] || miss="$miss publish.py"
+[ -z "$miss" ] &amp;&amp; echo VERIFY_02_OK || echo "VERIFY_02_FAIL (missing:$miss)"</code></pre>
+
+<p class="expect"><b>Expected:</b> stdout contains <code>VERIFY_02_OK</code>。</p>
+<p class="expect"><b>ON_FAIL:</b> skill 没拉到 → token 失效/未登录 → re-run <code>multica login</code> then <code>multica skill pull --all</code>；仍缺 publish.py 找 DRI。</p>
+
+<hr>
+
+<h2 id="step-03">STEP-03 · Sync the team skills from multica</h2>
+<pre><code># 幂等再拉一次(idempotent · 覆盖本地为 registry 最新),并用 multica skill lint 验质量
+multica skill pull --all
+multica skill lint --dir "$HOME/.claude/skills" &gt;/dev/null 2&gt;&amp;1 || true</code></pre>
+
+<div class="label">VERIFY</div>
+<pre><code># Don't count the whole ~/.claude/skills dir — members already have personal
+# skills, so a total count never equals the team count (issue #6 ②). Verify each
+# TEAM skill (pulled from the registry above) actually landed as a non-empty file.
+ok=0; tot=0
+for nm in $(curl -fsS -H "Authorization: Bearer $MULTICA_TOKEN" \
+    "https://api.teamctx.actionow.ai/api/skills?workspace_id=$MULTICA_WORKSPACE_ID" \
+    | jq -r '.[].name'); do
+  tot=$((tot+1))
+  [ -s "$HOME/.claude/skills/$nm/SKILL.md" ] &amp;&amp; ok=$((ok+1))
+done
+{ [ "$tot" -ge 12 ] &amp;&amp; [ "$ok" = "$tot" ]; } &amp;&amp; echo "VERIFY_03_OK ($ok/$tot)" || echo "VERIFY_03_FAIL ($ok/$tot landed)"</code></pre>
+
+<p class="expect"><b>Expected:</b> stdout contains <code>VERIFY_03_OK</code>。</p>
+<p class="expect"><b>ON_FAIL:</b></p>
+<ul class="tight">
+  <li><code>count = 0</code> → curl returned error. Check：
+    <ul class="tight">
+      <li><code>multica skill list --output json | head -c 100</code>（token/网络是否通）</li>
+      <li>If <code>{"error":"invalid token"}</code> → ABORT（PAT issue，re-do STEP-01）</li>
+      <li>If <code>[]</code> → ABORT（wrong workspace_id，ask user to verify）</li>
+    </ul>
+  </li>
+  <li><code>count &gt; 0 &amp;&amp; count &lt; 12</code> → partial sync · network flake. Re-run STEP-03 once. If still &lt; 12，ABORT.</li>
+</ul>
+
+<hr>
+
+<h2 id="step-04">STEP-04 · MCP config（branch on <code>$CLI_TARGET</code>）</h2>
+
+<h3>STEP-04a · IF <code>$CLI_TARGET == codex</code></h3>
+<pre><code>TCMCP_DIR="$HOME/team-context-mcp"
+CFG="$HOME/.codex/config.toml"
+mkdir -p "$(dirname "$CFG")"
+touch "$CFG"
+cp "$CFG" "$CFG.bak.$(date +%s)"   # backup
+
+# 只配 tcmcp-remote(RPI 文档流走 skills+CLI · tcmcp-local 迭代2 删除·不再注册)
+if ! grep -q '^\[mcp_servers\.tcmcp-remote\]' "$CFG"; then
+  cat &gt;&gt; "$CFG" &lt;&lt;TOMLEOF
+
+[mcp_servers.tcmcp-remote]
+url = "https://mcp.teamctx.actionow.ai/mcp"
+bearer_token_env_var = "TCMCP_AGENT_TOKEN"
+TOMLEOF
+else
+  # Section exists · do NOT auto-modify (could clobber custom user config).
+  # Manually verify url == https://mcp.teamctx.actionow.ai/mcp and bearer_token_env_var == TCMCP_AGENT_TOKEN.
+  echo "WARN: [mcp_servers.tcmcp-remote] already exists in $CFG · agent will not modify"
+  echo "      VERIFY MANUALLY · or remove the section and re-run STEP-04a"
+fi
+
+# Set TCMCP_AGENT_TOKEN env var (codex reads via bearer_token_env_var)
+RC="$HOME/.zshrc"; [ -n "$BASH_VERSION" ] &amp;&amp; [ ! -f "$RC" ] &amp;&amp; RC="$HOME/.bashrc"
+grep -v '^export TCMCP_AGENT_TOKEN=' "$RC" &gt; "$RC.tmp" &amp;&amp; mv "$RC.tmp" "$RC"
+echo 'export TCMCP_AGENT_TOKEN=$MULTICA_TOKEN' &gt;&gt; "$RC"</code></pre>
+
+<div class="label">VERIFY</div>
+<pre><code>count=$(grep -c '^\[mcp_servers\.tcmcp-remote\]' "$HOME/.codex/config.toml")
+[ "$count" -ge "1" ] \
+ &amp;&amp; grep -q '^export TCMCP_AGENT_TOKEN=' "$HOME/.zshrc" "$HOME/.bashrc" 2&gt;/dev/null \
+ &amp;&amp; echo VERIFY_04a_OK \
+ || echo "VERIFY_04a_FAIL sections=$count"</code></pre>
+
+<p class="expect"><b>Expected:</b> stdout contains <code>VERIFY_04a_OK</code>。</p>
+
+<h3>STEP-04b · IF <code>$CLI_TARGET == claude-code</code></h3>
+<pre><code>TCMCP_DIR="$HOME/team-context-mcp"
+CFG="$HOME/.claude/mcp.json"
+mkdir -p "$(dirname "$CFG")"
+
+# Read existing (or seed empty); validate JSON; merge our 2 entries
+if [ -f "$CFG" ]; then
+  cp "$CFG" "$CFG.bak.$(date +%s)"
+  jq . "$CFG" &gt;/dev/null || { echo "ABORT: $CFG is invalid JSON"; exit 1; }
+  base=$(cat "$CFG")
+else
+  base='{"mcpServers":{}}'
+fi
+
+echo "$base" | jq \
+  --arg tcmcp_dir "$TCMCP_DIR" \
+  --arg url "https://mcp.teamctx.actionow.ai/mcp" \
+'
+  .mcpServers["tcmcp-remote"] = {"url":$url, "headers":{"Authorization":"Bearer ${MULTICA_TOKEN}"}}
+' &gt; "$CFG.new" &amp;&amp; mv "$CFG.new" "$CFG"</code></pre>
+
+<div class="label">VERIFY</div>
+<pre><code>keys=$(jq -r '.mcpServers | keys[]' "$HOME/.claude/mcp.json" 2&gt;/dev/null | sort | tr '\n' ' ')
+echo "$keys" | grep -q 'tcmcp-remote' \
+ &amp;&amp; echo VERIFY_04b_OK \
+ || echo "VERIFY_04b_FAIL keys=$keys"</code></pre>
+
+<p class="expect"><b>Expected:</b> stdout contains <code>VERIFY_04b_OK</code>。</p>
+
+<hr>
+
+<h2 id="step-05">STEP-05 · Cloud-side smoke（does NOT require restarted CLI）</h2>
+<p>Agent can verify upstream wiring without restarting user's codex/claude-code：</p>
+<pre><code># tcmcp /health must report feishu_ready true AND multica_reachable true
+curl -fsS https://mcp.teamctx.actionow.ai/health 2&gt;&amp;1 | \
+  jq -e '.feishu_ready == true and .multica_reachable == true and .status == "healthy"' \
+  &gt;/dev/null \
+ &amp;&amp; echo VERIFY_05_OK \
+ || { echo "VERIFY_05_FAIL"; curl -s https://mcp.teamctx.actionow.ai/health | jq .; }</code></pre>
+
+<p class="expect"><b>Expected:</b> stdout contains <code>VERIFY_05_OK</code>。</p>
+<p class="expect"><b>ON_FAIL:</b> This is a cloud-side issue（not the member's machine）。ABORT and tell user to contact DRI。</p>
+
+<hr>
+
+<h2 id="step-06">STEP-06 · (OPTIONAL) personal autopilots —— only if user opts in</h2>
+<div class="callout">
+  NOT part of <code>MEMBER_ONBOARD_OK</code>。Run ONLY if the user explicitly asks to set up their
+  personal autopilots。Requires：the <code>team-context</code> repo（team members have read access
+  via org membership），and the user's <code>multica daemon</code> staying online（offline days → cron silently skips）。
+</div>
+<pre><code># team members have read access via org; if clone fails it's a network issue → report &amp; skip
+[ -d "$HOME/team-context/.git" ] || git clone https://github.com/feibo-ai/team-context.git "$HOME/team-context"
+cd "$HOME/team-context" &amp;&amp; git pull --ff-only 2&gt;/dev/null || true
+export TCMCP_AGENT_TOKEN="$MULTICA_TOKEN"
+multica daemon start
+bash scripts/my-autopilot.sh all codex   # provider = registered runtime: codex | claude | hermes</code></pre>
+
+<div class="label">VERIFY（optional）</div>
+<pre><code>PREFIX=$(multica auth status 2&gt;&amp;1 | awk -F'[()]' '/User:/{print $2; exit}' | cut -d@ -f1)
+[ "$(multica autopilot list 2&gt;/dev/null | grep -c -- "-${PREFIX}")" -ge 1 ] &amp;&amp; echo VERIFY_06_OK || echo VERIFY_06_SKIP</code></pre>
+
+<p class="expect"><b>ON_FAIL:</b> not required for onboarding · print <code>VERIFY_06_SKIP</code> and continue to STEP-FINAL。</p>
+
+<hr>
+
+<h2 id="step-final">STEP-FINAL · Print success marker + next-human-action</h2>
+<pre><code>echo "MEMBER_ONBOARD_OK $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+echo "NEXT_HUMAN_ACTION_1: open a new terminal (so shell rc reloads MULTICA_TOKEN + TCMCP_AGENT_TOKEN)"
+echo "NEXT_HUMAN_ACTION_2: fully restart your CLI ($CLI_TARGET) to load MCP config"
+echo "NEXT_HUMAN_VERIFY: ask CLI 'call search_chat to find the Team Context group, return its chat_id'"
+echo "NEXT_HUMAN_EXPECT: chat_id == oc_035c15b7fb12fed8d0e022fe2f529553"</code></pre>
+
+<hr>
+
+<h2 id="abort">ABORT / RETRY POLICY（machine-actionable）</h2>
+<table>
+  <thead>
+    <tr><th>Failure class</th><th>Action</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Tool missing（STEP-00 verify）</td><td>ABORT · name the tool · do not auto-install via sudo</td></tr>
+    <tr><td>Token invalid（STEP-01/03 verify with 401-shape error）</td><td>ABORT · re-run <code>multica login</code>（member's own account）· do not retry</td></tr>
+    <tr><td>Cloud unreachable（curl exit 6/7）</td><td>Retry once after 5s · still fail → ABORT</td></tr>
+    <tr><td>Build broken（STEP-02 verify lists missing core tools）</td><td>Retry STEP-02 once · still fail → ABORT with <code>pnpm install</code> output</td></tr>
+    <tr><td>Config file invalid JSON/TOML（STEP-04）</td><td>Restore from <code>.bak.&lt;ts&gt;</code> · ABORT</td></tr>
+    <tr><td><code>[mcp_servers.tcmcp-remote]</code> already exists with conflicting url（STEP-04a）</td><td>Warn but <b>do not</b> modify · let user decide</td></tr>
+    <tr><td><code>feishu_ready=false</code>（STEP-05）</td><td>Cloud-side issue · ABORT · tell user to contact DRI</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2 id="dry-run">DRY-RUN MODE（optional）</h2>
+<p>If env <code>DRY_RUN=1</code>：</p>
+<ul class="tight">
+  <li>Skip <code>brew install</code>、the <code>install.sh</code> curl、<code>git clone</code>、<code>pnpm install</code>、<code>mkdir</code>、file writes</li>
+  <li>Still run all VERIFY commands（to assess current state）</li>
+  <li>Output：<code>WOULD_DO: &lt;command&gt;</code> instead of execution</li>
+</ul>
+
+<hr>
+
+<h2 id="success">SUCCESS CRITERIA（orchestrator checklist）</h2>
+<p>Onboarding is complete iff <b>all</b> of these hold：</p>
+<ul class="crit">
+  <li><code>VERIFY_00_OK</code> through <code>VERIFY_05_OK</code> printed in order</li>
+  <li><code>MEMBER_ONBOARD_OK &lt;timestamp&gt;</code> printed</li>
+  <li>No <code>ABORT*</code> or <code>VERIFY_*_FAIL</code> marker in output</li>
+</ul>
+<div class="note">Orchestrators：grep for these literals；do not parse natural-language status messages。</div>
+
+<hr>
+
+<footer>
+  <b>Owner:</b> DRI<br>
+  <b>Spec version:</b> 2<br>
+  <b>Last reviewed:</b> 2026-06-10<br>
+  <b>2026-06-10 修订:</b> 转为 HTML 单一产物（docs/ONBOARDING-AGENT.html · 自包含方案A 样式 · 内容由 ONBOARDING-MEMBER-AGENT.md v1 完整迁移，无步骤丢失）。<br>
+  <b>Tested:</b> all 5 steps' VERIFY commands ran during 2026-05-28 W5 cloud bootstrap（DRI mac · macOS）+ STEP-03 + STEP-04a（Codex branch）re-validated with throwaway <code>teammate-test@actionow.ai</code> member PAT before doc commit。<br>
+  <b>2026-06-01 audit:</b> workspace migrated to UUID <code>fb23cf99-5f4c-4815-b2b3-8d5e323659f6</code>（slug <code>team-context</code>）—— updated INPUTS example + added <code>WORKSPACE_SLUG</code> constant and STEP-01 <code>multica workspace switch</code>。CLI confirmed <code>multica v0.4.6</code>；env vars / MCP URL / regexes verified current；RPI 文档流已迁至 skills + multica CLI（tc-render/publish.py · skill pull/lint · comment add --inline）；local MCP @tcmcp/local 迭代2 删除，本期作兜底；remote 10 工具保留。VERIFY commands not re-executed end-to-end this pass（values-only audit）。
+</footer>
+
+</body>
+</html>
