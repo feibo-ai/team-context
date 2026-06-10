@@ -137,7 +137,7 @@
     <li><a href="#step-03">STEP-03 · skill sync + lint</a></li>
     <li><a href="#step-04">STEP-04 · MCP config</a></li>
     <li><a href="#step-05">STEP-05 · Cloud-side smoke</a></li>
-    <li><a href="#step-06">STEP-06 · (OPT) autopilots</a></li>
+    <li><a href="#step-06">STEP-06 · autopilots（强制）</a></li>
     <li><a href="#step-final">STEP-FINAL</a></li>
     <li><a href="#abort">ABORT / RETRY POLICY</a></li>
     <li><a href="#dry-run">DRY-RUN MODE</a></li>
@@ -150,14 +150,14 @@
 <h2 id="contract">EXECUTION CONTRACT</h2>
 <ol>
   <li><b>Collect INPUTS first</b>（见 <a href="#inputs">INPUTS</a>）。Any missing → ABORT with explicit ask.</li>
-  <li><b>Run STEP-00 to STEP-05 in order</b>。Each STEP has a <code>VERIFY</code> clause：
+  <li><b>Run STEP-00 to STEP-06 in order</b>（STEP-06 autopilots 现为<b>强制</b>）。Each STEP has a <code>VERIFY</code> clause：
     <ul class="tight">
       <li>VERIFY exit code 0 + stdout matches <code>Expected:</code> → proceed</li>
       <li>Otherwise → STOP，print full step output，do <b>not</b> auto-retry except where step says so</li>
     </ul>
   </li>
   <li><b>Steps are IDEMPOTENT</b>（safe to re-run on partial-completion machines）。</li>
-  <li><b>On final success</b> print exactly <code>MEMBER_ONBOARD_OK &lt;ISO-8601 UTC timestamp&gt;</code> to stdout（orchestrators grep this）。</li>
+  <li><b>On final success</b>（须先确认 <code>VERIFY_06_OK</code> · autopilot 已配）print exactly <code>MEMBER_ONBOARD_OK &lt;ISO-8601 UTC timestamp&gt;</code> to stdout（orchestrators grep this）。</li>
   <li><b>NEVER:</b>
     <ul class="tight">
       <li>Commit <code>MULTICA_TOKEN</code> to git</li>
@@ -256,14 +256,24 @@ touch "$RC"
 grep -vE '^export (MULTICA_TOKEN|MULTICA_SERVER_URL|MULTICA_WORKSPACE_ID)=' "$RC" &gt; "$RC.tmp" &amp;&amp; mv "$RC.tmp" "$RC"
 # token line stays as a literal $(jq …) (\$ escaped) → each new shell re-reads
 # the member's current token from config.json, auto-syncing after re-login.
+# seamless update: daemon 每 6h 轮询 + 离线验签后自动更新 CLI 二进制(⑨) 与 skill/md bundle(⑩)
+grep -vE '^export (MULTICA_DAEMON_AUTO_UPDATE|MULTICA_DAEMON_SKILL_WRITE)=' "$RC" &gt; "$RC.tmp" &amp;&amp; mv "$RC.tmp" "$RC"
 cat &gt;&gt; "$RC" &lt;&lt;RCEOF
 export MULTICA_SERVER_URL=https://api.teamctx.actionow.ai
 export MULTICA_WORKSPACE_ID=$MULTICA_WORKSPACE_ID
 export MULTICA_TOKEN=\$(jq -r .token ~/.multica/config.json 2&gt;/dev/null)
+export MULTICA_DAEMON_AUTO_UPDATE=true
+export MULTICA_DAEMON_SKILL_WRITE=true
 RCEOF
 export MULTICA_SERVER_URL=https://api.teamctx.actionow.ai
 export MULTICA_WORKSPACE_ID
-export MULTICA_TOKEN</code></pre>
+export MULTICA_TOKEN
+export MULTICA_DAEMON_AUTO_UPDATE=true
+export MULTICA_DAEMON_SKILL_WRITE=true</code></pre>
+
+<div class="callout">
+  <b>无感更新（seamless update）</b>：装好后 daemon 每 6h 轮询，自动用<b>内置 sigstore 信任根</b>离线验签后更新 CLI 二进制（⑨ · 锚 <code>feibo-ai/tc-multica</code>）+ skill/md bundle（⑩ · 锚 <code>feibo-ai/team-context</code>），<b>无需手动</b> <code>multica update</code> / <code>multica skill pull</code>。验签不过则 fail-closed 拒装。<b>dev 软链机</b>（<code>~/.claude/skills</code> 是 git 软链）的 skill-sync 会被 SkillWriteGuard 自动跳过（改走 <code>git pull</code>）；写盘只发生在消费机。
+</div>
 
 <div class="label">VERIFY</div>
 <pre><code>multica auth status 2&gt;&amp;1 | awk '/^User:/ {found=1} END {exit found?0:1}' \
@@ -414,29 +424,63 @@ curl -fsS https://mcp.teamctx.actionow.ai/health 2&gt;&amp;1 | \
 
 <hr>
 
-<h2 id="step-06">STEP-06 · (OPTIONAL) personal autopilots —— only if user opts in</h2>
+<h2 id="step-06">STEP-06 · personal autopilots（MANDATORY · 强制）</h2>
 <div class="callout">
-  NOT part of <code>MEMBER_ONBOARD_OK</code>。Run ONLY if the user explicitly asks to set up their
-  personal autopilots。Requires：the <code>team-context</code> repo（team members have read access
-  via org membership），and the user's <code>multica daemon</code> staying online（offline days → cron silently skips）。
+  <b>强制步骤</b>，是 <code>MEMBER_ONBOARD_OK</code> 的必要条件。逻辑：<b>先检测，没有就配</b>。
+  绑成员这台机的 runtime（建 1 个身份 agent <code>助理·&lt;显示名&gt;</code> + 5 个瘦 autopilot），只汇报成员自己、全部推团队群。
+  Requires：the <code>team-context</code> repo（team members have read access via org membership），
+  <code>yq</code>，<code>MULTICA_WORKSPACE</code> / <code>TCMCP_AGENT_TOKEN</code> env，and the user's
+  <code>multica daemon</code> staying online（offline days → cron silently skips）。
+  <b>注意</b>：旧脚本 <code>scripts/apply-autopilots.sh</code> 已 DEPRECATED（TEA-93）—— 一律用 <code>my-autopilot.sh</code>。
 </div>
-<pre><code># team members have read access via org; if clone fails it's a network issue → report &amp; skip
-[ -d "$HOME/team-context/.git" ] || git clone https://github.com/feibo-ai/team-context.git "$HOME/team-context"
-cd "$HOME/team-context" &amp;&amp; git pull --ff-only 2&gt;/dev/null || true
-export TCMCP_AGENT_TOKEN="$MULTICA_TOKEN"
-multica daemon start
-bash scripts/my-autopilot.sh all codex   # provider = registered runtime: codex | claude | hermes</code></pre>
 
-<div class="label">VERIFY（optional）</div>
-<pre><code>DNAME=$(multica auth status 2&gt;&amp;1 | sed -n 's/.*User: \(.*\) (.*/\1/p')
-[ "$(multica autopilot list 2&gt;/dev/null | grep -c -- "·${DNAME}")" -ge 1 ] &amp;&amp; echo VERIFY_06_OK || echo VERIFY_06_SKIP</code></pre>
+<div class="label">STEP-06.1 · DETECT（本成员是否已有 autopilot）</div>
+<pre><code># 本成员 autopilot 的 title 形如 &lt;任务中文名&gt;·&lt;显示名&gt;(如 "每日总结·张三")。
+# 用显示名后缀匹配,判断 5 个里已存在几个(全有则无需重配,缺则强制配)。
+DNAME=$(multica auth status 2&gt;&amp;1 | sed -n 's/.*User: \(.*\) (.*/\1/p')
+HAVE=$(multica autopilot list --output json 2&gt;/dev/null \
+  | jq -r --arg d "·${DNAME}" '[.autopilots[]? | select(.title | endswith($d))] | length')
+HAVE=${HAVE:-0}
+echo "AUTOPILOT_DETECT have=${HAVE}/5 for ·${DNAME}"</code></pre>
 
-<p class="expect"><b>ON_FAIL:</b> not required for onboarding · print <code>VERIFY_06_SKIP</code> and continue to STEP-FINAL。</p>
+<div class="label">STEP-06.2 · CONFIGURE IF MISSING（缺则强制配置 · 幂等）</div>
+<pre><code># 不存在 / 不全(&lt; 5)→ 跑 my-autopilot.sh 强制配置(幂等:重跑只同步,不重复建)。
+if [ "${HAVE:-0}" -lt 5 ]; then
+  # 前置 1: team-context repo 已 clone(没有则 clone · 成员经 org 有 read 权限)
+  [ -d "$HOME/team-context/.git" ] || git clone https://github.com/feibo-ai/team-context.git "$HOME/team-context"
+  cd "$HOME/team-context" &amp;&amp; git pull --ff-only 2&gt;/dev/null || true
+  # 前置 2: yq(脚本读 autopilot YAML 需要)
+  command -v yq &gt;/dev/null 2&gt;&amp;1 || brew install yq
+  # 前置 3: env(脚本读 daemon 在线 runtime + 远程 MCP token)
+  export MULTICA_WORKSPACE="$MULTICA_WORKSPACE_ID"
+  export TCMCP_AGENT_TOKEN="$MULTICA_TOKEN"
+  multica daemon start
+  # provider 取 $CLI_TARGET 对应 runtime: codex → codex · claude-code → claude
+  PROVIDER=codex; [ "$CLI_TARGET" = claude-code ] &amp;&amp; PROVIDER=claude
+  bash "$HOME/team-context/scripts/my-autopilot.sh" all "$PROVIDER"   # provider: codex | claude | hermes
+else
+  echo "AUTOPILOT_PRESENT 本成员 5 个 autopilot 已就绪 · skip configure"
+fi</code></pre>
+
+<div class="label">VERIFY</div>
+<pre><code># 本成员名下 ≥ 1 个 autopilot(带显示名后缀)→ VERIFY_06_OK,否则 ABORT。
+DNAME=$(multica auth status 2&gt;&amp;1 | sed -n 's/.*User: \(.*\) (.*/\1/p')
+[ "$(multica autopilot list 2&gt;/dev/null | grep -c -- "·${DNAME}")" -ge 1 ] \
+ &amp;&amp; echo VERIFY_06_OK \
+ || echo VERIFY_06_FAIL</code></pre>
+
+<p class="expect"><b>Expected:</b> stdout contains <code>VERIFY_06_OK</code>。</p>
+<p class="expect"><b>ON_FAIL:</b> 必填步骤未达成 · ABORT,不打 <code>MEMBER_ONBOARD_OK</code>。常见原因：daemon 离线（先 <code>multica daemon start</code>）· 缺 <code>yq</code>（<code>brew install yq</code>）· provider 拼错（须 codex / claude / hermes 之一且该 runtime 在线）· 缺 <code>TCMCP_AGENT_TOKEN</code> / <code>MULTICA_WORKSPACE</code> env。修后重跑 STEP-06（幂等）。</p>
 
 <hr>
 
 <h2 id="step-final">STEP-FINAL · Print success marker + next-human-action</h2>
-<pre><code>echo "MEMBER_ONBOARD_OK $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+<pre><code># 先确认 STEP-06 autopilot 已配(强制 · VERIFY_06_OK 是 MEMBER_ONBOARD_OK 前置),否则 ABORT。
+DNAME=$(multica auth status 2&gt;&amp;1 | sed -n 's/.*User: \(.*\) (.*/\1/p')
+[ "$(multica autopilot list 2&gt;/dev/null | grep -c -- "·${DNAME}")" -ge 1 ] \
+ || { echo "ABORT_NO_AUTOPILOT: STEP-06 未达成(VERIFY_06_OK 缺) · 不打 MEMBER_ONBOARD_OK · 回 STEP-06 重跑"; exit 1; }
+
+echo "MEMBER_ONBOARD_OK $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 echo "NEXT_HUMAN_ACTION_1: open a new terminal (so shell rc reloads MULTICA_TOKEN + TCMCP_AGENT_TOKEN)"
 echo "NEXT_HUMAN_ACTION_2: fully restart your CLI ($CLI_TARGET) to load MCP config"
 echo "NEXT_HUMAN_VERIFY: ask CLI 'call search_chat to find the Team Context group, return its chat_id'"
@@ -475,7 +519,7 @@ echo "NEXT_HUMAN_EXPECT: chat_id == oc_035c15b7fb12fed8d0e022fe2f529553"</code><
 <h2 id="success">SUCCESS CRITERIA（orchestrator checklist）</h2>
 <p>Onboarding is complete iff <b>all</b> of these hold：</p>
 <ul class="crit">
-  <li><code>VERIFY_00_OK</code> through <code>VERIFY_05_OK</code> printed in order</li>
+  <li><code>VERIFY_00_OK</code> through <code>VERIFY_06_OK</code> printed in order（含 <code>VERIFY_06_OK</code> · autopilots 强制）</li>
   <li><code>MEMBER_ONBOARD_OK &lt;timestamp&gt;</code> printed</li>
   <li>No <code>ABORT*</code> or <code>VERIFY_*_FAIL</code> marker in output</li>
 </ul>
@@ -489,7 +533,8 @@ echo "NEXT_HUMAN_EXPECT: chat_id == oc_035c15b7fb12fed8d0e022fe2f529553"</code><
   <b>Last reviewed:</b> 2026-06-10<br>
   <b>2026-06-10 修订:</b> 转为 HTML 单一产物（docs/ONBOARDING-AGENT.html · 自包含方案A 样式 · 内容由 ONBOARDING-MEMBER-AGENT.md v1 完整迁移，无步骤丢失）。<br>
   <b>Tested:</b> all 5 steps' VERIFY commands ran during 2026-05-28 W5 cloud bootstrap（DRI mac · macOS）+ STEP-03 + STEP-04a（Codex branch）re-validated with throwaway <code>teammate-test@actionow.ai</code> member PAT before doc commit。<br>
-  <b>2026-06-01 audit:</b> workspace migrated to UUID <code>fb23cf99-5f4c-4815-b2b3-8d5e323659f6</code>（slug <code>team-context</code>）—— updated INPUTS example + added <code>WORKSPACE_SLUG</code> constant and STEP-01 <code>multica workspace switch</code>。CLI confirmed <code>multica v0.4.6</code>；env vars / MCP URL / regexes verified current；RPI 文档流已迁至 skills + multica CLI（tc-render/publish.py · skill pull/lint · comment add --inline）；local MCP @tcmcp/local 迭代2 删除，本期作兜底；remote 10 工具保留。VERIFY commands not re-executed end-to-end this pass（values-only audit）。
+  <b>2026-06-01 audit:</b> workspace migrated to UUID <code>fb23cf99-5f4c-4815-b2b3-8d5e323659f6</code>（slug <code>team-context</code>）—— updated INPUTS example + added <code>WORKSPACE_SLUG</code> constant and STEP-01 <code>multica workspace switch</code>。CLI confirmed <code>multica v0.4.6</code>；env vars / MCP URL / regexes verified current；RPI 文档流已迁至 skills + multica CLI（tc-render/publish.py · skill pull/lint · comment add --inline）；local MCP @tcmcp/local 迭代2 删除，本期作兜底；remote 10 工具保留。VERIFY commands not re-executed end-to-end this pass（values-only audit）。<br>
+  <b>2026-06-10 修订:</b> ① STEP-01 加无感更新 env（<code>MULTICA_DAEMON_AUTO_UPDATE</code> ⑨ + <code>MULTICA_DAEMON_SKILL_WRITE</code> ⑩）+ seamless update callout（daemon 每 6h sigstore 离线验签自更 CLI 二进制/skill bundle · fail-closed · dev 软链机 SkillWriteGuard 跳过）。② STEP-06 autopilots 从 OPTIONAL 转为 <b>MANDATORY</b>（先 <code>multica autopilot list --output json</code> 检测,缺则强制 <code>bash scripts/my-autopilot.sh all &lt;provider&gt;</code> · 旧 <code>apply-autopilots.sh</code> 已 DEPRECATED/TEA-93 不再使用）· <code>VERIFY_06_OK</code> 纳入 EXECUTION CONTRACT / SUCCESS CRITERIA / STEP-FINAL 成功前置 + TOC 同步。
 </footer>
 
 </body>
