@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>autopilot-agent-consolidation</title>
+<style>
+:root{--ink:#1A1A1A;--ink2:#2D2D2D;--paper:#F5F2EB;--paper2:#EDE8DC;--accent:#C73E1D;--gray:#8B8680;--border:#D4CFC4;--green:#4A6B3A;--gold:#B8862E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Songti SC","Noto Serif SC",Georgia,serif;background:var(--paper);color:var(--ink);line-height:1.8;font-size:15px;padding:48px 40px;max-width:760px;margin:0 auto}
+.eyebrow{font-family:"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:14px}
+h1{font-weight:900;font-size:40px;line-height:1.15;letter-spacing:-1px;margin-bottom:18px;border-bottom:3px double var(--ink);padding-bottom:20px}
+.meta{display:flex;gap:32px;flex-wrap:wrap;font-family:"SF Mono",Menlo,monospace;font-size:12px;color:var(--gray);margin-bottom:36px}
+.meta b{color:var(--ink);font-weight:600}
+h2{font-weight:700;font-size:22px;margin:36px 0 14px;padding-left:14px;border-left:4px solid var(--accent)}
+.field{background:#fff;border:1px solid var(--border);padding:18px 22px;margin-bottom:14px}
+.field-label{font-family:"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1.5px;color:var(--gray);text-transform:uppercase;margin-bottom:6px}
+ul{list-style:none;margin:8px 0}
+li{padding:6px 0 6px 24px;position:relative}
+li::before{content:"▸";position:absolute;left:4px;color:var(--accent)}
+.crit li::before{content:"☐";color:var(--green)}
+code{font-family:"SF Mono",Menlo,monospace;background:var(--paper2);padding:1px 6px;border-radius:2px;font-size:13px}
+.callout{background:var(--paper2);border-left:4px solid var(--gold);padding:14px 18px;margin:18px 0;font-size:14px}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--gray)}
+</style></head>
+<body>
+<div class="eyebrow">PLAN · 计划 · project</div>
+<h1>autopilot-agent-consolidation</h1>
+<div class="meta"><span>DRI <b>feibo (actionow.ai)</b></span><span>Layer <b>project</b></span><span>Appetite <b>1 天</b></span></div>
+<h2>目标</h2><div class="field"><div class="field-label">Goal</div>把 autopilot 体系从「每任务一个专属空壳 agent」收敛为「每个 scope 1 个身份 agent + 瘦 autopilot」:workspace 的 autopilot 专用 agent 从 22 个收敛到 6 个(5 名成员各 1 个 + team scope 1 个,AUTOPILOT_SCOPE 是 agent 级单值,个人与 team 不可共用 agent),每个 agent 以 instructions 承载身份/通用约束/custom_env;5 份 autopilots/*.yaml 的重复通用段落抽成单源;调度语义(5 类 cron)、按任务可观测性与按任务 guardrails 完整保留。</div>
+<h2>完成标准</h2><div class="field crit"><ul><li>终态 agent 集合恰为 6 个:assistant-bot-{bairongcan,fys,qiuhaoqi,xieyu,actionow.ai,team},instructions 均非空(含身份+通用约束);旧 22 个 &lt;kind&gt;-bot-* agent 全部 archived(multica agent list --include-archived 验证)</li><li>现有 22 个 autopilot 的 assignee 全部指向对应 scope 的 assistant-bot,trigger/cron 不变(autopilot get 抽查 ≥3 个 + 全量 jq 校验 assignee_id ∈ 6 个新 agent 集合)</li><li>5 份 autopilots/*.yaml 不再含重复通用段落(中文输出要求/notify_team-only/不建 issue/AUTOPILOT_SCOPE 语义),通用段落只在单源文件 autopilots/_agent-instructions.md 出现一次;YAML 删除 agent.name 字段(integration_ref 保留);grep 验证 5 份 YAML 无该类重复文本</li><li>scripts/_autopilot-common.sh 改为「每 scope ensure 1 个 agent(注入 instructions + AUTOPILOT_SCOPE_NAME)+ 每 kind ensure autopilot 指向该 agent + 收尾 archive 本人旧 &lt;kind&gt;-bot-*」,连续跑 2 次第二次输出全为复用(=幂等,不重复建对象、不重复 archive)</li><li>三处 lint 同步适配并通过:.github/workflows/lint.yml 内联 yq(去掉 agent.name 必填,新增 _agent-instructions.md 存在且非空校验)、skills/tc-ops 的 autopilot_lint.py、_autopilot-common.sh 的 ac_lint_yaml;CI lint 绿</li><li>线上验收(1 天内可观察):手动 trigger 本人 scope 一个迁移后 autopilot → run completed 且飞书群收到正确卡片;monday/wednesday/monthly 三类各手动 trigger 1 个(不同 scope,选在线 runtime 的 scope)抽查 completed;下一个 daily 触发点(09:00 或 18:00 CST)所有在线 runtime 的 daily 类 autopilot last_run_at 刷新且无新增 failed —— 离线 runtime 的静默 skip 与 bairongcan Codex 限额 failure 均不计入(既有行为/既有问题)</li><li>文档同步:autopilots/README.md 重写对象模型说明(按实际分布写,现状为 2+5+5+5+4+1,不写「每人 5 个」),repo-wide grep 修正所有引用 &lt;kind&gt;-bot 命名/旧建法的文档与脚本注释(decisions/ ADR 除外)</li></ul></div>
+<h2>分工</h2><div class="field"><div class="field-label">Roles</div>DRI <code>feibo (actionow.ai)</code> · EXEC <code>Claude build session (tc-4-build)</code> · COLLAB <code>其他 4 名成员 — 仅当跨 owner 的 agent update / autopilot update --agent 被权限拒绝时启用回退路径:各自重跑更新后的 my-autopilot.sh 完成本人迁移(实测 4 人均为 workspace admin,被拒概率低)</code> · REVIEW <code>第二个 Claude session(staff engineer 角色)</code></div>
+<h2>投入预算</h2><div class="callout"><b>1 天</b> · 超时触发升版强制重审。</div>
+<h2>方案</h2><div class="field">【Research 输入】本 session 用 multica CLI 实测得出(无独立 research 文档,关键事实均经线上验证):线上 22 个 autopilot + 22 个一一对应的专属 agent,分布实况为 bairongcan 2 / fys 5 / qiuhaoqi 5 / xieyu 5 / actionow.ai 个人 4(无个人 daily-kickoff)/ team 1(仅 daily-kickoff-team,owner 与 actionow.ai 同人);所有 agent 的 instructions/model/skills/thinking_level 全空,身份能力完全未用;一个 autopilot 只有一份 prompt(description 即 prompt),schedule trigger 的 label/payload 不注入运行上下文,agent 运行时无法感知由哪个 trigger 触发。据此否决了「每人 1 个 autopilot、按时间分派」方案(周三 09:00 daily-kickoff 与 wednesday-stats 同分钟撞车导致分派歧义;每 run 加载 5 套指令 token 上升;观测与 guardrails 粒度退化)。用户已认可本方案方向。
+
+【设计】职责分离:agent = 身份载体,autopilot = 调度载体。每个 scope 一个 agent(5 人 + team = 6 个),命名 assistant-bot-&lt;suffix&gt;;instructions 来自新增单源文件 autopilots/_agent-instructions.md(内容 = 现 5 份 YAML 里重复的通用段落:简体中文输出、只 notify_team 不 P2P、run_only 不建 issue、AUTOPILOT_SCOPE/AUTOPILOT_SCOPE_NAME 语义等),脚本经 --instructions &quot;$(cat autopilots/_agent-instructions.md)&quot; 注入并先做非空断言(防空值覆盖;CLI 无 --instructions-file);custom_env 沿用现有键并补齐 AUTOPILOT_SCOPE_NAME(取值来源 = multica workspace member list 的成员显示名,team scope 用「全队」),env 原则只增不改不删。5 类 autopilot 全保留,description 瘦身为任务差异(收集哪些数据、卡片标题、sections、该任务特有约束),--agent 全部指向本 scope 的 assistant-bot。agent skills 本期不挂(skills set 是 replace-all,留待有真实共享 skill 需求时再做)。
+
+【repo 改动】(1) autopilots/*.yaml × 5:删通用 preamble 与 agent.name 字段(integration_ref 保留作文档/CI 对应),保留任务差异 prompt + guardrails 段(数值不动);(2) 新增 autopilots/_agent-instructions.md 单源;(3) scripts/_autopilot-common.sh:新增 ac_ensure_agent(scope 级,幂等 by name=assistant-bot-&lt;suffix&gt;,instructions 内容变更时 update 同步,注入 AUTOPILOT_SCOPE_NAME),ac_build_one 不再建 agent、只 ensure autopilot 并指向 scope 级 agent,新增收尾步骤 archive 本人旧 &lt;kind&gt;-bot-*(本人对象,权限无忧;已 archived 的跳过以保幂等),顺手修 L26 过期注释(实为 5 kinds);my-autopilot.sh/team-autopilot.sh 入口签名不变;(4) 三处 lint 同步:.github/workflows/lint.yml 内联 yq 校验(L59-132 区段:去 agent.name 必填、加 _agent-instructions.md 存在且非空)、skills/tc-ops/autopilot_lint.py、ac_lint_yaml —— 同一规则三份实现是现状债,本期只做同步不做合并;(5) autopilots/README.md 重写 + repo-wide 引用修正,grep 关键词含 &lt;kind&gt;-bot 与 agent.name,明确覆盖两处:scripts/apply-autopilots.sh(已 DEPRECATED,本计划落地后双重失效——读 agent.name 字段 + 指向的旧 agent 全 archived,删除或改头注为「仅历史参考 · 不可用于回滚,回滚走 git revert + 快照 repoint」)与 skills/tc-ops/SKILL.md 的 agent.name 必填描述(与 autopilot_lint.py 同 commit 改,守 doc-drift 规则)。
+
+【线上迁移】优先路径(零 secret、DRI 集中执行):迁移窗口避开 cron 触发点(09:00/09:30/18:00 CST ±15min),或对该人 autopilot 先 update --status paused、迁完恢复;对每个 scope——选其现有 agent 中 custom_env 键最全的 1 个,先 agent env get 留底(audited,DRI=owner 可执行),再 agent update 改名为 assistant-bot-&lt;suffix&gt; 并写入 instructions(custom_env 原样保留,缺 AUTOPILOT_SCOPE_NAME 则 env set 补齐);其余 autopilot 用 autopilot update --agent 重指;多余 agent 确认 status=idle 后逐个 agent archive。执行前先对本人(actionow.ai 个人 + team 两个 scope)做全流程验证,再处理其他成员;处理他人对象前,对 agent update 与 autopilot update --agent 两类原语各做一次无害探测(写入与现值相同的字段值)——若被拒,回退路径 = 该成员自跑更新后的 my-autopilot.sh(更新后的脚本含 ensure agent + 重指 + archive 旧 agent 收尾,能独立达成与优先路径相同的终态,含完成标准 #1 的 archived 要求)。
+
+【回滚】迁移前用 autopilot get 全量 + agent list 做 JSON 快照存 docs/plans/snapshot_2026-06-10_autopilot-pre-migration.json(进 git;注:agent list/get 不含 custom_env 值,env 留底靠迁移序列里的 agent env get,且 env 只增不改不删,无需回滚);任何一步异常即按快照 repoint 回旧 agent(archive 可 restore),YAML/脚本回滚走 git revert。
+
+【边界 · 不做】不合并 autopilot 条目(5 类全保留,撞车与分派问题因此不存在);不补齐历史缺口(bairongcan 缺 3 类、actionow.ai 个人无 daily-kickoff、team 仅 daily-kickoff —— autopilot 集合保持现状只换 assignee);不动 tcmcp-remote;不改 guardrails 数值与 cron;不解决 bairongcan 的 Codex 限额停摆(既有问题,单独追踪);不挂 agent skills;不合并三份 lint 实现(只同步)。
+
+【评审记录】v1 由独立 staff-engineer session 评审,verdict = changes-requested,4 条 blocking:B1 终态算术 5→6(team scope 单列);B2 补 .github/workflows/lint.yml 进改动清单并定 agent.name 去留、三处 lint 同步;B3 回退路径补 archive 收尾 + AUTOPILOT_SCOPE_NAME 注入来源;B4 完成标准 #6 改为 1 天内可观察(手动抽查代自然 cron、离线 skip 不计入)。v2 已全部吸收,并采纳非阻塞建议(迁移窗口/pause、双原语权限探测、env get 留底、README 按实况、instructions cat 注入+非空断言、修过期注释)。v2 复审(第二个独立 staff-engineer session · 2026-06-10):verdict = **approved**,B1-B4 逐条 resolved,无新增 blocking;3 条非阻塞备注已回填本版(apply-autopilots.sh 处置、SKILL.md agent.name 描述同步、注释行号 L26 + 抽查选在线 scope)。</div>
+<footer>team-context · RPI Plan phase · multica issue 内渲染</footer>
+</body></html>

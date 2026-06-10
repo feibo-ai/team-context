@@ -8,7 +8,9 @@
 #    script would run with scope undefined. Use instead:
 #        bash scripts/team-autopilot.sh all <provider>     # 全队
 #        bash scripts/my-autopilot.sh   all <provider>     # 个人
-#    Kept for reference / rollback only.
+#    仅历史参考 · 已不可用(TEA-93 2026-06-10 起双重失效:YAML 不再有它读的 agent.name
+#    字段;它指向的 <kind>-bot-* agent 已全部 archived)。也不可用于回滚——回滚走
+#    git revert + docs/plans/snapshot_*_autopilot-pre-migration.json 快照 repoint。
 set -euo pipefail
 
 # Required envs (TC-N1 + TC-N2): autopilots reach feishu via tcmcp-remote · NOT feishu-cli.

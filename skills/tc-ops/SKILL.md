@@ -23,9 +23,13 @@ case 污染人工 grep 提示。报告可经 tc-render 或直接贴月度 review
 ```bash
 python3 ~/.claude/skills/tc-ops/autopilot_lint.py <yaml-path> [<yaml-path> ...]
 ```
-硬校验:name/description/mode(run_only|create_issue)/agent.name/prompt/trigger.cron+timezone 必填;
+硬校验:name/description/mode(run_only|create_issue)/prompt/trigger.cron+timezone 必填;
+同目录 _agent-instructions.md(通用约束单源 · TEA-93 起取代 agent.name 字段)存在且非空;
 guardrails 必填且 forbidden_commands ≥5 条且含 "git push"+"npm publish"、forbidden_paths ≥1、
 max_budget_usd 是数字且 ≤150(>80 ⚠️ 大批量需 DRI 批)、max_runtime_minutes 正数。
+
+> ⚠️ 改本 skill 任何文件后必须同步 multica registry:`multica skill files upsert tc-ops --path <file> --content "$(cat <file>)"`。
+> 否则 monthly-health autopilot 每次跑 `multica skill pull tc-ops` 会经 `~/.claude/skills/tc-ops` 软链把 registry 旧版写回 repo 工作树(2026-06-10 实测发生)。
 
 ## 边界
 - 这俩是**低频**工具(月度 / autopilot 变更时),不进 RPI 闭环。

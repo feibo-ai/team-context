@@ -195,33 +195,37 @@ export TCMCP_AGENT_TOKEN=$(cat /path/to/autopilot-bot-pat.txt)   # 一次性 ops
 multica daemon start                                              # 常驻 runtime 在线
 
 # 团队版(全队汇总 · DRI 跑) —— 取代旧的 apply-autopilots.sh
-bash scripts/team-autopilot.sh all codex        # 或单个: monday-kickoff / daily-summary / wednesday-stats / monthly-health
+bash scripts/team-autopilot.sh all codex        # 或单个: daily-kickoff / daily-summary / monday-kickoff / wednesday-stats / monthly-health
 ```
 
-- 脚本自动:选在线 runtime → 建/复用 agent(注入 `AUTOPILOT_SCOPE`)→ 建/更新 autopilot + cron(幂等)。**不需要**手动先建 agent。
-- 团队成员自己跑 `bash scripts/my-autopilot.sh all codex` 建个人版(见 [`ONBOARDING-MEMBER.md`](./ONBOARDING-MEMBER.md) §6)。
+- 脚本自动(TEA-93 对象模型):选在线 runtime → ensure **身份 agent** `assistant-bot-<scope>`(注入 `autopilots/_agent-instructions.md` 单源 instructions + 4 键 custom_env:`TCMCP_REMOTE_URL`/`TCMCP_AGENT_TOKEN`/`AUTOPILOT_SCOPE`/`AUTOPILOT_SCOPE_NAME`)→ ensure 各 kind 瘦 autopilot 指向它 + cron(幂等)→ 收尾 archive legacy `<kind>-bot-<suffix>`。**不需要**手动先建 agent。
+- 团队成员自己跑 `bash scripts/my-autopilot.sh all codex` 建个人版(见 [`ONBOARDING-AGENT.html`](./ONBOARDING-AGENT.html) STEP-06)。
 - 改 YAML(新 autopilot / 改 prompt):仍须含 PB-04 guardrails(`forbidden_commands ≥ 5` 含 `git push` · `max_budget_usd ≤ 150`)+ `integration_ref: team-context-mcp`;脚本会 lint,缺一拒建。
 - `apply-autopilots.sh` 已 **deprecated**(不注入 `AUTOPILOT_SCOPE` · 与 scope 分支 prompt 不兼容)。
 
-### 3b · 加新 agent (autopilot bot)
+### 3b · 加新身份 agent (assistant-bot · 手动 fallback)
+
+TEA-93 起 agent 是 **scope 级身份载体**(每 scope 一个 `assistant-bot-<suffix>`,不再每 kind 一个)。
+多数情况用 team/my-autopilot.sh 自动 ensure,下面是手动 fallback:
 
 ```bash
 # 找当前 Codex runtime ID
 CODEX_RUNTIME=$(multica runtime list --output json | jq -r '.[] | select(.provider=="codex") | .id' | head -1)
 
-# 准备 custom_env · ⚠️ AUTOPILOT_SCOPE 必填,否则 scope 分支 prompt 落到 undefined
-# (这正是 apply-autopilots.sh 废弃的原因)。多数情况用 team/my-autopilot.sh 自动注入,下面是手动 fallback。
+# 准备 custom_env · ⚠️ AUTOPILOT_SCOPE 必填,否则 scope 分支 prompt 落到 undefined;
+# AUTOPILOT_SCOPE_NAME = 卡片显示名(个人 = member list 的 name · team = 全队)
 cat > /tmp/agent-env.json <<EOF
-{"TCMCP_REMOTE_URL":"https://mcp.teamctx.actionow.ai/mcp","TCMCP_AGENT_TOKEN":"$(cat /path/to/autopilot-bot-pat.txt)","AUTOPILOT_SCOPE":"team"}
+{"TCMCP_REMOTE_URL":"https://mcp.teamctx.actionow.ai/mcp","TCMCP_AGENT_TOKEN":"$(cat /path/to/autopilot-bot-pat.txt)","AUTOPILOT_SCOPE":"team","AUTOPILOT_SCOPE_NAME":"全队"}
 EOF
 chmod 600 /tmp/agent-env.json
 
-# 建 agent
+# 建 agent(instructions 必须注入单源 · 注空 = 砍掉全部通用约束)
 multica agent create \
-  --name new-autopilot-bot-codex \
+  --name assistant-bot-team \
   --runtime-id $CODEX_RUNTIME \
   --visibility workspace \
   --custom-env-file /tmp/agent-env.json \
+  --instructions "$(cat ~/team-context/autopilots/_agent-instructions.md)" \
   --output table
 rm /tmp/agent-env.json
 ```

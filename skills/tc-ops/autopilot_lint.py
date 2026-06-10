@@ -3,7 +3,14 @@
 
 取代本地 MCP 的 autopilot_lint(无需 MCP 服务器)。有 error 则 exit 1。
 用法:  autopilot_lint.py <yaml-path> [<yaml-path> ...]
+
+TEA-93 (2026-06-10): agent.name 不再是 YAML 字段(身份 agent assistant-bot-<scope>
+由 _autopilot-common.sh 派生);改查同目录 _agent-instructions.md(通用约束单源)存在且非空。
+三处 lint 同步: .github/workflows/lint.yml / 这里 / scripts/_autopilot-common.sh ac_lint_yaml。
+改本文件必须同步 multica registry(multica skill files upsert tc-ops),否则 monthly-health
+autopilot 的 `multica skill pull tc-ops` 会经 ~/.claude/skills 软链把旧版写回 repo。
 """
+import os
 import sys
 import yaml
 
@@ -25,8 +32,9 @@ def lint(path):
         errors.append("missing required field: description")
     if p.get("mode") not in ("run_only", "create_issue"):
         errors.append(f"invalid mode: {p.get('mode')} (must be run_only or create_issue)")
-    if not (p.get("agent") or {}).get("name"):
-        errors.append("missing required field: agent.name")
+    instr = os.path.join(os.path.dirname(os.path.abspath(path)), "_agent-instructions.md")
+    if not (os.path.isfile(instr) and os.path.getsize(instr) > 0):
+        errors.append("sibling _agent-instructions.md missing or empty (agent instructions single source)")
     if not p.get("prompt"):
         errors.append("missing required field: prompt")
     trig = p.get("trigger") or {}
