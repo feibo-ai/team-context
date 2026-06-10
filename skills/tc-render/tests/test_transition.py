@@ -30,6 +30,8 @@ LABEL_IDS = {
     "复盘-已审": "11111111-0000-0000-0000-000000000006",
     "研究": "11111111-0000-0000-0000-000000000007",
     "古法不可能": "11111111-0000-0000-0000-000000000008",
+    "设计-待审": "11111111-0000-0000-0000-000000000009",
+    "设计-已审": "11111111-0000-0000-0000-000000000010",
 }
 ID2NAME = {v: k for k, v in LABEL_IDS.items()}
 
@@ -179,6 +181,60 @@ def test_parent_close_variants():
     assert ops == [("label-remove", "计划-评审中")]  # 已 done 只清未决
     ops, _, w = T.compute_parent_close(mk_state(status="cancelled", labels=("计划-草稿",)))
     assert ops == [] and w  # 绝不复活 cancelled
+
+
+def test_parent_close_clears_design_pending_keeps_reviewed():
+    """父链清理:设计-待审(未决)清掉,设计-已审 与 计划-已批准 同为历史事实保留(B2 拆常量)。"""
+    parent = mk_state(status="in_progress", labels=("计划-已批准", "设计-已审", "设计-待审"))
+    ops, _, _ = T.compute_parent_close(parent)
+    assert ("label-remove", "设计-待审") in ops
+    assert ("label-remove", "设计-已审") not in ops
+    assert ("label-remove", "计划-已批准") not in ops
+
+
+def test_design_request_review():
+    """请设计评审:+待审 · status in_review;复审时摘除在场 设计-已审(B3 锚点);不碰 计划-*。"""
+    ops, post, w = T.compute_design_request_review(mk_state(status="todo", labels=("计划-已批准",)))
+    assert ("label-add", "设计-待审") in ops and ("status", "in_review") in ops and w == []
+    assert not any(v.startswith("计划") for k, v in ops if k.startswith("label"))
+    ops, post, _ = T.compute_design_request_review(
+        mk_state(status="todo", labels=("计划-已批准", "设计-已审")))
+    assert ("label-remove", "设计-已审") in ops  # 复审作废旧批准,堵 #8 自产违规
+    assert ("no-label", "设计-已审") in post
+    _, _, w = T.compute_design_request_review(mk_state(status="todo", labels=()))
+    assert w  # 无 计划-已批准 → warn 不阻断
+
+
+def test_design_approve():
+    state = mk_state(status="in_review", labels=("计划-已批准", "设计-待审"))
+    ops, post, _ = T.compute_design_approve(state)
+    assert set(ops) == {("label-add", "设计-已审"), ("label-remove", "设计-待审"), ("status", "todo")}
+    assert ("label-remove", "计划-已批准") not in ops  # 共存,不碰计划侧
+    ops, _, w = T.compute_design_approve(mk_state(status="todo", labels=("计划-已批准", "设计-已审")))
+    assert ops == [] and w == []  # 幂等,已审在场不算冷批准
+    _, _, w = T.compute_design_approve(mk_state(status="in_progress", labels=("计划-已批准",)))
+    assert any("冷批准" in m for m in w)  # 未经请审直接批 → warn 不阻断
+
+
+def test_plan_approve_does_not_touch_design_gate():
+    """B2 锚点:plan-approve(含幂等补救/re-approve)绝不摘 设计-待审/设计-已审。"""
+    state = mk_state(status="in_review", labels=("计划-评审中", "设计-待审", "设计-已审"))
+    ops, post, _ = T.compute_plan_approve(state)
+    removed = {v for k, v in ops if k == "label-remove"}
+    assert "设计-待审" not in removed and "设计-已审" not in removed
+    assert not any(k == "no-label" and v.startswith("设计") for k, v in post)
+
+
+def test_build_start_warns_design_pending():
+    _, _, w = T.compute_build_start(mk_state(status="todo", labels=("计划-已批准", "设计-待审")))
+    assert any("设计评审未完成" in m for m in w)
+
+
+def test_cancel_clears_design_pair():
+    state = mk_state(status="in_review", labels=("设计-待审", "设计-已审", "古法不可能"))
+    ops, _, _ = T.compute_cancel(state)
+    removed = {v for k, v in ops if k == "label-remove"}
+    assert removed == {"设计-待审", "设计-已审"}  # 清设计对,不碰非流程 label
 
 
 def test_grandparent_close_only_research_and_open():

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>design-review-gate</title>
+<style>
+:root{--ink:#1A1A1A;--ink2:#2D2D2D;--paper:#F5F2EB;--paper2:#EDE8DC;--accent:#C73E1D;--gray:#8B8680;--border:#D4CFC4;--green:#4A6B3A;--gold:#B8862E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Songti SC","Noto Serif SC",Georgia,serif;background:var(--paper);color:var(--ink);line-height:1.8;font-size:15px;padding:48px 40px;max-width:760px;margin:0 auto}
+.eyebrow{font-family:"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:14px}
+h1{font-weight:900;font-size:40px;line-height:1.15;letter-spacing:-1px;margin-bottom:18px;border-bottom:3px double var(--ink);padding-bottom:20px}
+.meta{display:flex;gap:32px;flex-wrap:wrap;font-family:"SF Mono",Menlo,monospace;font-size:12px;color:var(--gray);margin-bottom:36px}
+.meta b{color:var(--ink);font-weight:600}
+h2{font-weight:700;font-size:22px;margin:36px 0 14px;padding-left:14px;border-left:4px solid var(--accent)}
+.field{background:#fff;border:1px solid var(--border);padding:18px 22px;margin-bottom:14px}
+.field-label{font-family:"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1.5px;color:var(--gray);text-transform:uppercase;margin-bottom:6px}
+ul{list-style:none;margin:8px 0}
+li{padding:6px 0 6px 24px;position:relative}
+li::before{content:"▸";position:absolute;left:4px;color:var(--accent)}
+.crit li::before{content:"☐";color:var(--green)}
+code{font-family:"SF Mono",Menlo,monospace;background:var(--paper2);padding:1px 6px;border-radius:2px;font-size:13px}
+.callout{background:var(--paper2);border-left:4px solid var(--gold);padding:14px 18px;margin:18px 0;font-size:14px}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--gray)}
+</style></head>
+<body>
+<div class="eyebrow">PLAN · 计划 · task</div>
+<h1>design-review-gate</h1>
+<div class="meta"><span>DRI <b>feibo</b></span><span>Layer <b>task</b></span><span>Appetite <b>半天(单 session:实现+测试+部署+活体验证+case)</b></span></div>
+<h2>目标</h2><div class="field"><div class="field-label">Goal</div>在 TEA-97 状态机地基上补两个 issue 流转缺口(交接 brief 缺口 A/B):① 设计评审门收口——新增 设计-待审/设计-已审 两个 label(11→13)与 transition.py 两个子命令 design-request-review(+设计-待审 · in_review)/ design-approve(+设计-已审 · −设计-待审 · todo),插在 plan-approve 与 build-start 之间、挂同一 work issue、与 计划-已批准 共存,评审走『子 agent 产 verdict → 编排 session 当场转换』;② issue_invariants.py 编入 monthly-health autopilot(report-only,不带 --strict),让状态机漂移有 cron 兜底并随月度健康卡推飞书。缺口 C(staleness 残留态出口)按 brief 明示不做。</div>
+<h2>完成标准</h2><div class="field crit"><ul><li>transition.py 新增 design-request-review / design-approve:沿用全部通用语义(name→UUID、幂等预读、后置复核、--dry-run、cancelled 防复活、前置意外只 warn);design-request-review 同时摘除在场的 设计-已审(复审作废旧批准,堵 #8 自产违规·评审 B3);常量拆分:新增 PARENT_CLEAN_LABELS=PLAN_PENDING_LABELS+[设计-待审] 仅供父链清理,plan-approve 摘除集不碰 设计-*(评审 B2,幂等补救/re-approve 不摧毁设计门);test_transition.py 新增用例含两条锚点(plan-approve 在 设计-待审 在场时不摘之 / design-request-review 在 设计-已审 在场时摘之)全绿,既有零回归</li><li>standards/labels.md:11→13 label(设计-待审 #eab308 / 设计-已审 #0ea5e9,与现有 11 色不撞),state machine 图插入 plan-approve→design-request-review→design-approve→build-start 子环节,『谁执行』列=transition.py;scripts/create-labels.sh NAMES/COLORS 各加 2 项;merge 后跑一次,线上 13 label 可查</li><li>issue_invariants.py:自身 PROCESS_LABELS 增补两新 label(评审 B1 连带,防 #5 对残留设计 label 失明);不变量 #4 开 carve-out——设计-待审 在场时 计划-已批准 允许 status in_review(评审 B1,设计评审中=已批准+in_review 合法);新增 #7 设计-待审⇒in_review、#8 设计-待审⊕设计-已审 互斥;staleness 警告集并入 设计-待审;build-start 对带 设计-待审 的 issue 告警;全量分页 --strict 零误报且对『已批准+设计-待审+in_review』不报</li><li>新增 skills/tc-design-review/SKILL.md(触发时机、评审子 agent prompt 模板、verdict 返回点=编排 session 当场跑 design-approve、项目层必走/任务层可跳、补审场景明文:issue 已在建时 verdict 后必须 design-approve→build-start 两连,防滞留 todo 假象);tc-3-plan/tc-4-build 加交叉引用;merge 后 multica skill create 注册</li><li>autopilots/monthly-health.yaml Step 1 追加巡检步(report-only 无 --strict),违规清单并进月度报告与飞书卡;autopilot_lint.py 通过;docstring 与 labels.md 把『月度人工跑』更新为『已编入 monthly-health autopilot』</li><li>活体验证:本 plan issue(TEA-99)merge+建 label 后亲走 design-request-review(设计-待审·in_review)→ design-approve(设计-已审·todo)→ build-start(幂等回归 in_progress)全链,后置复核全过;最终全量巡检 --strict exit 0</li><li>分支开 PR,diff 经独立代码评审子 agent + 用户既授权模式 merge;merge 后 registry 逐文件同步显式执行:tc-render(transition.py)+ tc-ops(issue_invariants.py)+ 8 个涉改 skill 正文 + tc-design-review 新注册(评审 B4,防下月 autopilot pull 旧版回写);收尾按铁律 #2 出 case(经评审子 agent → case-finalize 连带关闭本 plan)</li></ul></div>
+<h2>分工</h2><div class="field"><div class="field-label">Roles</div>DRI <code>feibo</code> · EXEC <code>Claude(本 session 编排+实现)</code> · COLLAB <code>(无)</code> · REVIEW <code>子 agent(staff engineer · 独立上下文)</code></div>
+<h2>投入预算</h2><div class="callout"><b>半天(单 session:实现+测试+部署+活体验证+case)</b> · 超时触发升版强制重审。</div>
+<h2>方案</h2><div class="field">【已拍决策(采纳交接 brief 各建议项 · DRI 可在评审/批准窗口推翻,全部可逆)】D1 强制性:项目层必走、任务层可跳——与『计划评审项目层必走』对齐;执行落点在 skill 文本(tc-4-build pre-flight:项目层须见 设计-已审)+ build-start 对 设计-待审 在场时告警,**不做成巡检不变量**(偏离 brief 的『巡检软提示』:issue 数据上无 layer 字段,无法区分项目/任务层,做成巡检会对全部任务层合法跳过产生持续误报;改为转换时点告警,信号更准)。D2 命名:设计-待审/设计-已审(镜像 case 对,设计是单道评审门)。D3 载体:MVP 用现有 plan approach 段或 issue 评论,不新增 publish.py doc 类型(本期纯流转,不碰渲染层)。D4 缺口B 取方案1(monthly-health.yaml 追加一步,report-only):月巡频率与现有月度健康节奏一致,不新增 autopilot 实体;若将来要更高频,再起 weekly patrol(另期)。D5 接线:新增独立小 skill tc-design-review(评审门与 tc-5-review 同构、有自己的家),tc-3-plan/tc-4-build 只加交叉引用不膨胀。D6 颜色:#eab308/#0ea5e9。
+
+【缺口A 实现】transition.py 新增两个 compute 函数 + 子命令注册,完全复用既有骨架:compute_design_request_review(state)→ ops[+设计-待审, status in_review],前置无 计划-已批准 时 warn(设计评审常态发生在批准后);compute_design_approve(state)→ ops[+设计-已审, −设计-待审, status todo](回到待启动,等 build-start)。两者都不触碰 计划-* label(设计门与计划态共存)。cancelled 防复活门由 run_simple 的 guard 自然覆盖。PROCESS_LABELS 增补两个新 label(cancel 清场与 case-finalize 父链清理范围讨论:设计-已审 与 计划-已批准 同为『历史事实』,父链清理只清未决态——故 PLAN_PENDING_LABELS 增补 设计-待审、不含 设计-已审;cancel 仍清全部流程 label 含设计对)。测试矩阵:两边 ops 正确性、幂等空转、与 计划-已批准 共存不误摘、approve 后 待审 必摘(互斥后置)、cancelled 拒绝、--dry-run 零写。
+
+【完整链(labels.md 图)】plan-approve(已批准·todo)→ design-request-review(+设计-待审·in_review,派设计评审子 agent,verdict 返回点=编排 session 当场跑下一步)→ design-approve(+设计-已审·−待审·todo)→ build-start(in_progress)。任务层可跳:plan-approve 后直接 build-start 合法,巡检不报。
+
+【缺口B 实现】monthly-health.yaml prompt Step 1 的 team 分支追加:跑 `python3 ~/.claude/skills/tc-ops/issue_invariants.py`(无 --strict——autopilot 永远 report-only,硬 fail 留给验收/CI),输出并进 /tmp/monthly-health-{{date}}.md;Step 3 卡片概览 fields 加『状态机违规 N』一项。该 YAML 已有 `multica skill pull tc-ops` 前置,巡检脚本随 registry 分发,无新依赖。autopilot_lint.py 校验(guardrails 不动,纯 prompt 文本变更)。部署:YAML 变更 merge 后需 `bash scripts/team-autopilot.sh all &lt;provider&gt;` 重应用——该脚本需 TCMCP_AGENT_TOKEN,本 session 若无凭据则在交付清单写明命令留给 DRI 执行(与 brief『届时告诉 DRI 同步全景图注记』同列)。
+
+【活体验证(bootstrap 例外声明)】本 plan(TEA-99)自身的设计评审由 plan 评审承担——门在本期才被建出来,且 D3 决定设计载体就是 plan approach 段(本段即设计稿),plan 评审子 agent 审的就是设计本身;这是单次 bootstrap 例外,不构成先例。merge+create-labels 后,TEA-99 亲走 design-request-review→design-approve→build-start 三连作为验收(in_progress 临时离开再回归,幂等保证无害),与 TEA-97 自托管验证同构。
+
+【边界 out of scope】缺口 C(staleness 残留态 reclaim 出口)brief 明示不做;独立 设计 doc 类型(publish.py --type design)不做;weekly-invariant-patrol 不做;覆盖率门/capability-plan 度量层不在本期;全景图 multica-flow-v3.html 注记撤销由 DRI 做(交付清单提醒);claude_md_team_global.md 不碰。
+
+【风险】① transition.py 改 PROCESS_LABELS/PLAN_PENDING_LABELS 会影响 cancel/case-finalize 清场范围——测试矩阵显式覆盖『cancel 清设计对』『父链清理清 设计-待审 留 设计-已审』两条;② labels 未建就跑新转换→name→UUID 解析 exit 1 指向 create-labels.sh(既有降级路径,顺序写进交付清单);③ monthly-health autopilot 实际跑在 daemon 侧,本 session 只能验证脚本可跑+lint 过,真 cron 触发待下月 1 号(验收以『手动模拟 Step 1 巡检步产出』代替)。
+
+【评审记录 v1→v2(子 agent · staff engineer)】VERDICT changes-requested,4 blocking 全采纳:B1 不变量 #4 与新门态矛盾 → #4 carve-out(设计-待审 在场允许 in_review)+ invariants 侧 PROCESS_LABELS 同步增补;B2 PLAN_PENDING_LABELS 双用途(approve 摘除集+父链清理)→ 拆常量 PARENT_CLEAN_LABELS 只喂父链,approve 不碰设计门,补测试锚点;B3 复审不摘 设计-已审 会由收口工具自产 #8 违规(TEA-79 病型)→ design-request-review 摘除在场 已审;B4 tc-ops/tc-render registry 同步漏写会让下月 autopilot 拉旧脚本并回写工作树(同日实证事故)→ 同步清单显式入完成标准。5 条 non-blocking 全吸收:补审两连写进 tc-design-review;D1 盲区如实声明——完全跳过设计评审(从未 request)在机制上不可测,唯一防线是 tc-4-build pre-flight 纪律,issue.metadata 是将来承载 layer 的现成落点(记一笔不做);labels.md 配套含不变量表 #7/#8 行+in_review 三语义+staleness 集;测试锚点见 B2/B3;颜色保留 #eab308——与 计划-评审中 #f59e0b 同琥珀系属有意为之(均为『评审中』语义态),区分靠文字标签不靠色相(团队 a11y 规则),评审者认可 hex 不撞、纯建议不挡。</div>
+<footer>team-context · RPI Plan phase · multica issue 内渲染</footer>
+</body></html>

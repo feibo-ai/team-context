@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# create-labels.sh — populate the 11 standard labels in multica workspace
+# create-labels.sh — populate the 13 standard labels in multica workspace
 # (Content embedded above in standards/labels.md — synced here for executability)
 #
 # Uses parallel arrays instead of `declare -A` so it runs on macOS's bash 3.2.
@@ -10,6 +10,8 @@ NAMES=(
   计划-评审中
   计划-已批准
   计划-已升级
+  设计-待审
+  设计-已审
   复盘-待审
   复盘-已审
   古法不可能
@@ -23,6 +25,8 @@ COLORS=(
   "#f59e0b"
   "#10b981"
   "#8b5cf6"
+  "#eab308"
+  "#0ea5e9"
   "#f97316"
   "#14b8a6"
   "#ef4444"

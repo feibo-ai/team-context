@@ -136,6 +136,10 @@ python3 ~/.claude/skills/tc-render/transition.py plan-approve <plan-issue>
 (`计划-已批准`+`todo`)依赖此语义。
 Reviewer / Verdict 写进 plan 的 `approach`/评审字段,用 `publish.py --type plan` 再发一版(append-only)。
 
+> **批准后下一道门:设计评审(项目层必走 · 任务层可跳)**——写码前走 `tc-design-review`
+> skill(`design-request-review` → 设计评审子 agent → `design-approve`),通过后才到
+> tc-4-build `build-start`。SOP 三道评审门:①计划批准(本 skill)②设计评审 ③代码评审。
+
 ## Anti-patterns
 - ❌ Write plan and immediately start coding (skipped review)
 - ❌ Skip the 4 fields ("I know the goal in my head")
