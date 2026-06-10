@@ -123,7 +123,7 @@
 
 <p class="lead"><b>Audience:</b> AI agent (Claude Code / Codex / generic LLM agent)</p>
 <p class="lead"><b>Purpose:</b> End-to-end configure a new team member's machine.</p>
-<p class="lead"><b>Human equivalent:</b> <a href="./ONBOARDING-MEMBER.md"><code>ONBOARDING-MEMBER.md</code></a>（don't ask user to read both —— pick one）。</p>
+<p class="lead"><b>Human equivalent:</b> <a href="./ONBOARDING-USER.html"><code>ONBOARDING-USER.html</code></a>（don't ask user to read both —— pick one）。</p>
 
 <div class="toc">
   <div class="label">目录</div>
@@ -148,6 +148,11 @@
 <hr>
 
 <h2 id="contract">EXECUTION CONTRACT</h2>
+
+<div class="callout">
+  <b>核心原则 · DETECT-FIRST + 远程权威新鲜度</b>：每步<b>先预检测当前状态</b>（幂等 · 处理部分已配环境，别重复做）。是否需要（重新）配置，<b>以拉取的远程权威值动态判断，绝不固定写死</b>（版本号 / 数量 / 清单）。三态：<b>缺</b> → 配；<b>过时</b>（本地落后远程权威）→ 重置/重配；<b>已是最新</b> → skip。权威源举例：CLI 最新 release（<code>feibo-ai/tc-multica</code>）· skill registry（<code>multica skill list --output json</code>）· autopilot 规范（team-context 仓 <code>autopilots/*.yaml</code>）。无网 / 拉取失败时<b>降级</b>（用本地已知值 + 不 ABORT 非关键步；关键步按该步 ON_FAIL 处理）。
+</div>
+
 <ol>
   <li><b>Collect INPUTS first</b>（见 <a href="#inputs">INPUTS</a>）。Any missing → ABORT with explicit ask.</li>
   <li><b>Run STEP-00 to STEP-06 in order</b>（STEP-06 autopilots 现为<b>强制</b>）。Each STEP has a <code>VERIFY</code> clause：
@@ -156,7 +161,7 @@
       <li>Otherwise → STOP，print full step output，do <b>not</b> auto-retry except where step says so</li>
     </ul>
   </li>
-  <li><b>Steps are IDEMPOTENT</b>（safe to re-run on partial-completion machines）。</li>
+  <li><b>Steps are IDEMPOTENT + DETECT-FIRST</b>（safe to re-run on partial-completion machines · 每步先预检测，缺/过时才动手，已最新则 skip）。</li>
   <li><b>On final success</b>（须先确认 <code>VERIFY_06_OK</code> · autopilot 已配）print exactly <code>MEMBER_ONBOARD_OK &lt;ISO-8601 UTC timestamp&gt;</code> to stdout（orchestrators grep this）。</li>
   <li><b>NEVER:</b>
     <ul class="tight">
@@ -210,18 +215,40 @@ SKILLS_DIR     = $HOME/.claude/skills</code></pre>
 
 <hr>
 
-<h2 id="step-00">STEP-00 · Prereqs</h2>
+<h2 id="step-00">STEP-00 · Prereqs（detect → 缺/过时则装 → VERIFY）</h2>
 <pre><code># macOS only · Linux: substitute apt/yum and ABORT if any tool absent
 command -v brew &gt;/dev/null || { echo "ABORT_NEED_BREW"; exit 1; }
-# jq / node via brew
+# jq / node via brew（缺则装 · 幂等）
 brew install jq node@22 2&gt;&amp;1 | tail -3
-# multica via official install.sh (NOT brew — brew multica is upstream CLI, missing control-plane subcommands).
-# install.sh self-detects upgrade, so re-running it is also the upgrade path.
-curl -fsSL https://raw.githubusercontent.com/feibo-ai/tc-multica/main/scripts/install.sh | bash
-command -v pnpm &gt;/dev/null || npm install -g pnpm@11</code></pre>
+command -v pnpm &gt;/dev/null || npm install -g pnpm@11
+
+# --- multica fork CLI: DETECT 本地版本 vs 远程权威最新 release，再决定装/升 ---
+# multica via official install.sh (NOT brew — brew multica is upstream CLI, missing
+# control-plane subcommands). install.sh self-detects upgrade, so re-running it is
+# also the upgrade path; `multica update` is the in-place upgrade once installed.
+# 权威 = fork 仓 feibo-ai/tc-multica 最新 release tag（动态拉 · 绝不写死版本号）。
+LATEST=$(gh release view --repo feibo-ai/tc-multica --json tagName -q .tagName 2&gt;/dev/null \
+  || curl -fsSL https://api.github.com/repos/feibo-ai/tc-multica/releases/latest | jq -r .tag_name 2&gt;/dev/null)
+LOCAL=$(multica --version 2&gt;/dev/null | sed -n 's/^multica \([0-9][0-9.]*\).*/\1/p')
+LATEST_NUM=${LATEST#v}
+if [ -z "$LOCAL" ]; then
+  # 缺 → 装
+  curl -fsSL https://raw.githubusercontent.com/feibo-ai/tc-multica/main/scripts/install.sh | bash
+elif [ -n "$LATEST_NUM" ] &amp;&amp; [ "$LOCAL" != "$LATEST_NUM" ] \
+     &amp;&amp; [ "$(printf '%s\n%s\n' "$LATEST_NUM" "$LOCAL" | sort -V | tail -1)" = "$LATEST_NUM" ]; then
+  # 过时（本地 &lt; 远程权威）→ 重配/升级
+  echo "MULTICA_STALE local=$LOCAL latest=$LATEST · updating"
+  multica update 2&gt;/dev/null || curl -fsSL https://raw.githubusercontent.com/feibo-ai/tc-multica/main/scripts/install.sh | bash
+else
+  # 已是最新（或无网拉不到 LATEST → 降级:确认装了 fork CLI 即可，不强升）→ skip
+  echo "MULTICA_FRESH local=$LOCAL latest=${LATEST:-unknown} · skip"
+fi</code></pre>
 
 <div class="label">VERIFY</div>
-<pre><code>multica --version 2&gt;&amp;1 | grep -qE 'multica v[0-9]+\.[0-9]+' \
+<pre><code># 不写死最低 multica 版本号 —— 只验「装的是 fork CLI（有 control-plane 子命令）」+
+# 工具最低线（node/jq/pnpm 是外部依赖工具，非 multica 自身，沿用各自的下限）。
+# 新鲜度由上面的 DETECT 块（vs 远程权威 release）负责，VERIFY 不复判版本号。
+multica --version 2&gt;&amp;1 | grep -qE 'multica [0-9]+\.[0-9]+' \
  &amp;&amp; multica integration --help &gt;/dev/null 2&gt;&amp;1 \
  &amp;&amp; node --version | grep -qE '^v2[2-9]\.' \
  &amp;&amp; jq --version | grep -qE 'jq-1\.[7-9]' \
@@ -229,7 +256,7 @@ command -v pnpm &gt;/dev/null || npm install -g pnpm@11</code></pre>
  &amp;&amp; echo VERIFY_00_OK</code></pre>
 
 <p class="expect"><b>Expected:</b> stdout contains <code>VERIFY_00_OK</code>。</p>
-<p class="expect"><b>ON_FAIL:</b> print which tool's version check failed，ABORT。If <code>multica integration --help</code> errors，the wrong <code>multica</code> is installed（upstream brew CLI lacks control-plane subcommands）—— re-run the install.sh curl from STEP-00。</p>
+<p class="expect"><b>ON_FAIL:</b> print which tool's check failed，ABORT。If <code>multica integration --help</code> errors，the wrong <code>multica</code> is installed（upstream brew CLI lacks control-plane subcommands）—— re-run the install.sh curl from STEP-00。<b>无网降级</b>：拉不到 <code>LATEST</code> 时不强升，只要 fork CLI 在（<code>multica integration --help</code> 通）即放行。</p>
 
 <hr>
 
@@ -296,47 +323,46 @@ multica skill pull --all</code></pre>
 
 <div class="label">VERIFY</div>
 <p class="expect">（核心 tc-* skill 落地为非空文件 + tc-render 携带脚本到位）</p>
-<pre><code>miss=""
-for nm in tc-1-start tc-2-research tc-3-plan tc-4-build tc-5-review tc-handoff tc-render tc-ops; do
-  [ -s "$HOME/.claude/skills/$nm/SKILL.md" ] || miss="$miss $nm"
-done
-[ -s "$HOME/.claude/skills/tc-render/publish.py" ] || miss="$miss publish.py"
-[ -z "$miss" ] &amp;&amp; echo VERIFY_02_OK || echo "VERIFY_02_FAIL (missing:$miss)"</code></pre>
+<pre><code># pull 冒烟(不写死清单/数量):有 tc-* skill 落地 + tc-render 携带脚本 publish.py 到位。
+# registry 全量 parity(每个 skill 都在且最新)由 STEP-03 动态核对(multica skill list)。
+ls "$HOME/.claude/skills"/tc-*/SKILL.md &gt;/dev/null 2&gt;&amp;1 \
+ &amp;&amp; [ -s "$HOME/.claude/skills/tc-render/publish.py" ] \
+ &amp;&amp; echo VERIFY_02_OK || echo "VERIFY_02_FAIL"</code></pre>
 
 <p class="expect"><b>Expected:</b> stdout contains <code>VERIFY_02_OK</code>。</p>
 <p class="expect"><b>ON_FAIL:</b> skill 没拉到 → token 失效/未登录 → re-run <code>multica login</code> then <code>multica skill pull --all</code>；仍缺 publish.py 找 DRI。</p>
 
 <hr>
 
-<h2 id="step-03">STEP-03 · Sync the team skills from multica</h2>
-<pre><code># 幂等再拉一次(idempotent · 覆盖本地为 registry 最新),并用 multica skill lint 验质量
+<h2 id="step-03">STEP-03 · Sync the team skills from multica（detect → 落后则重拉 → VERIFY）</h2>
+<pre><code># 权威 = skill registry（multica skill list）· 不写死 skill 数量(原 ">= 12" 已去除)。
+# 新鲜度 = multica skill pull --all 幂等覆盖本地为 registry 最新(缺则补、过时则刷)。
 multica skill pull --all
 multica skill lint --dir "$HOME/.claude/skills" &gt;/dev/null 2&gt;&amp;1 || true</code></pre>
 
 <div class="label">VERIFY</div>
 <pre><code># Don't count the whole ~/.claude/skills dir — members already have personal
-# skills, so a total count never equals the team count (issue #6 ②). Verify each
-# TEAM skill (pulled from the registry above) actually landed as a non-empty file.
+# skills, so a total count never equals the team count (issue #6 ②). 权威数量动态
+# 取自 registry(multica skill list --output json 给当前【全部】team skill 名),
+# VERIFY = registry 每个 skill 本地都落地为非空文件,且落地数 == registry 当前数。
 ok=0; tot=0
-for nm in $(curl -fsS -H "Authorization: Bearer $MULTICA_TOKEN" \
-    "https://api.teamctx.actionow.ai/api/skills?workspace_id=$MULTICA_WORKSPACE_ID" \
-    | jq -r '.[].name'); do
+for nm in $(multica skill list --output json 2&gt;/dev/null | jq -r '.[].name'); do
   tot=$((tot+1))
   [ -s "$HOME/.claude/skills/$nm/SKILL.md" ] &amp;&amp; ok=$((ok+1))
 done
-{ [ "$tot" -ge 12 ] &amp;&amp; [ "$ok" = "$tot" ]; } &amp;&amp; echo "VERIFY_03_OK ($ok/$tot)" || echo "VERIFY_03_FAIL ($ok/$tot landed)"</code></pre>
+{ [ "$tot" -gt 0 ] &amp;&amp; [ "$ok" = "$tot" ]; } &amp;&amp; echo "VERIFY_03_OK ($ok/$tot)" || echo "VERIFY_03_FAIL ($ok/$tot landed)"</code></pre>
 
-<p class="expect"><b>Expected:</b> stdout contains <code>VERIFY_03_OK</code>。</p>
+<p class="expect"><b>Expected:</b> stdout contains <code>VERIFY_03_OK</code>（<code>$tot</code> 为 registry 当前 skill 数，<b>动态</b>，随团队增删自动跟随，不写死）。</p>
 <p class="expect"><b>ON_FAIL:</b></p>
 <ul class="tight">
-  <li><code>count = 0</code> → curl returned error. Check：
+  <li><code>tot = 0</code> → registry 拉不到。Check：
     <ul class="tight">
       <li><code>multica skill list --output json | head -c 100</code>（token/网络是否通）</li>
-      <li>If <code>{"error":"invalid token"}</code> → ABORT（PAT issue，re-do STEP-01）</li>
+      <li>If <code>{"error":"invalid token"}</code> → ABORT（token issue，re-do STEP-01）</li>
       <li>If <code>[]</code> → ABORT（wrong workspace_id，ask user to verify）</li>
     </ul>
   </li>
-  <li><code>count &gt; 0 &amp;&amp; count &lt; 12</code> → partial sync · network flake. Re-run STEP-03 once. If still &lt; 12，ABORT.</li>
+  <li><code>tot &gt; 0 &amp;&amp; ok &lt; tot</code> → partial sync · network flake. Re-run STEP-03 once（<code>multica skill pull --all</code> 幂等）. If still <code>ok &lt; tot</code>，ABORT.</li>
 </ul>
 
 <hr>
@@ -434,24 +460,30 @@ curl -fsS https://mcp.teamctx.actionow.ai/health 2&gt;&amp;1 | \
   <b>注意</b>：旧脚本 <code>scripts/apply-autopilots.sh</code> 已 DEPRECATED（TEA-93）—— 一律用 <code>my-autopilot.sh</code>。
 </div>
 
-<div class="label">STEP-06.1 · DETECT（本成员是否已有 autopilot）</div>
-<pre><code># 本成员 autopilot 的 title 形如 &lt;任务中文名&gt;·&lt;显示名&gt;(如 "每日总结·张三")。
-# 用显示名后缀匹配,判断 5 个里已存在几个(全有则无需重配,缺则强制配)。
+<div class="label">STEP-06.1 · DETECT（先拉最新规范定 CANON · 再比成员已配数）</div>
+<pre><code># 权威 = team-context 仓 autopilots/*.yaml 规范定义的 autopilot 集(动态 · 不写死 "5")。
+# 先确保本地有最新规范,再据此数出 CANON(应配几个),再数成员名下已配几个。
+# 前置: team-context repo 已 clone(没有则 clone · 成员经 org 有 read 权限),并拉最新规范。
+[ -d "$HOME/team-context/.git" ] || git clone https://github.com/feibo-ai/team-context.git "$HOME/team-context"
+git -C "$HOME/team-context" pull --ff-only 2&gt;/dev/null || true   # 无网降级:用本地已有规范
+
+# CANON = 规范里定义的 autopilot 个数(动态拉自仓库 · 绝不写死)
+CANON=$(ls "$HOME/team-context"/autopilots/*.yaml 2&gt;/dev/null | wc -l | tr -d ' ')
+# 本成员 autopilot 的 title 形如 &lt;任务中文名&gt;·&lt;显示名&gt;(如 "每日总结·张三")。
+# 用显示名后缀匹配,数成员名下已配几个。
 DNAME=$(multica auth status 2&gt;&amp;1 | sed -n 's/.*User: \(.*\) (.*/\1/p')
 HAVE=$(multica autopilot list --output json 2&gt;/dev/null \
   | jq -r --arg d "·${DNAME}" '[.autopilots[]? | select(.title | endswith($d))] | length')
 HAVE=${HAVE:-0}
-echo "AUTOPILOT_DETECT have=${HAVE}/5 for ·${DNAME}"</code></pre>
+echo "AUTOPILOT_DETECT have=${HAVE}/${CANON} for ·${DNAME}"</code></pre>
 
-<div class="label">STEP-06.2 · CONFIGURE IF MISSING（缺则强制配置 · 幂等）</div>
-<pre><code># 不存在 / 不全(&lt; 5)→ 跑 my-autopilot.sh 强制配置(幂等:重跑只同步,不重复建)。
-if [ "${HAVE:-0}" -lt 5 ]; then
-  # 前置 1: team-context repo 已 clone(没有则 clone · 成员经 org 有 read 权限)
-  [ -d "$HOME/team-context/.git" ] || git clone https://github.com/feibo-ai/team-context.git "$HOME/team-context"
-  cd "$HOME/team-context" &amp;&amp; git pull --ff-only 2&gt;/dev/null || true
-  # 前置 2: yq(脚本读 autopilot YAML 需要)
+<div class="label">STEP-06.2 · CONFIGURE IF MISSING/STALE（缺或落后规范则强制配置 · 幂等）</div>
+<pre><code># 已配数 &lt; CANON(缺 / 过时)→ 跑 my-autopilot.sh 强制配置。
+# 幂等:重跑只把成员配置同步到【最新规范】(= 重置过时的),不重复建。
+if [ "${HAVE:-0}" -lt "${CANON:-1}" ]; then
+  # 前置 1: yq(脚本读 autopilot YAML 需要)
   command -v yq &gt;/dev/null 2&gt;&amp;1 || brew install yq
-  # 前置 3: env(脚本读 daemon 在线 runtime + 远程 MCP token)
+  # 前置 2: env(脚本读 daemon 在线 runtime + 远程 MCP token)
   export MULTICA_WORKSPACE="$MULTICA_WORKSPACE_ID"
   export TCMCP_AGENT_TOKEN="$MULTICA_TOKEN"
   multica daemon start
@@ -459,26 +491,40 @@ if [ "${HAVE:-0}" -lt 5 ]; then
   PROVIDER=codex; [ "$CLI_TARGET" = claude-code ] &amp;&amp; PROVIDER=claude
   bash "$HOME/team-context/scripts/my-autopilot.sh" all "$PROVIDER"   # provider: codex | claude | hermes
 else
-  echo "AUTOPILOT_PRESENT 本成员 5 个 autopilot 已就绪 · skip configure"
+  echo "AUTOPILOT_PRESENT 本成员 ${HAVE}/${CANON} autopilot 已就绪且不落后规范 · skip configure"
 fi</code></pre>
 
 <div class="label">VERIFY</div>
-<pre><code># 本成员名下 ≥ 1 个 autopilot(带显示名后缀)→ VERIFY_06_OK,否则 ABORT。
+<pre><code># 成员名下已配数 == CANON(规范个数 · 动态,取自上面 ls autopilots/*.yaml,不写死)→ VERIFY_06_OK。
+# 无网/拉不到规范降级:CANON 取不到时退守「≥ 1 即放行」(关键步不空挂,但不放行 0)。
 DNAME=$(multica auth status 2&gt;&amp;1 | sed -n 's/.*User: \(.*\) (.*/\1/p')
-[ "$(multica autopilot list 2&gt;/dev/null | grep -c -- "·${DNAME}")" -ge 1 ] \
- &amp;&amp; echo VERIFY_06_OK \
- || echo VERIFY_06_FAIL</code></pre>
+HAVE=$(multica autopilot list --output json 2&gt;/dev/null \
+  | jq -r --arg d "·${DNAME}" '[.autopilots[]? | select(.title | endswith($d))] | length')
+HAVE=${HAVE:-0}
+CANON=$(ls "$HOME/team-context"/autopilots/*.yaml 2&gt;/dev/null | wc -l | tr -d ' ')
+if [ "${CANON:-0}" -gt 0 ]; then
+  [ "$HAVE" = "$CANON" ] &amp;&amp; echo "VERIFY_06_OK ($HAVE/$CANON)" || echo "VERIFY_06_FAIL ($HAVE/$CANON)"
+else
+  # 降级:规范数拉不到(无网/未 clone)→ 只要成员名下 ≥ 1 即放行
+  [ "$HAVE" -ge 1 ] &amp;&amp; echo "VERIFY_06_OK ($HAVE/?·canon-unavailable)" || echo "VERIFY_06_FAIL ($HAVE/?)"
+fi</code></pre>
 
-<p class="expect"><b>Expected:</b> stdout contains <code>VERIFY_06_OK</code>。</p>
-<p class="expect"><b>ON_FAIL:</b> 必填步骤未达成 · ABORT,不打 <code>MEMBER_ONBOARD_OK</code>。常见原因：daemon 离线（先 <code>multica daemon start</code>）· 缺 <code>yq</code>（<code>brew install yq</code>）· provider 拼错（须 codex / claude / hermes 之一且该 runtime 在线）· 缺 <code>TCMCP_AGENT_TOKEN</code> / <code>MULTICA_WORKSPACE</code> env。修后重跑 STEP-06（幂等）。</p>
+<p class="expect"><b>Expected:</b> stdout contains <code>VERIFY_06_OK</code>（<code>$CANON</code> 为规范当前 autopilot 数，<b>动态</b>，随规范增删自动跟随，不写死）。</p>
+<p class="expect"><b>ON_FAIL:</b> 必填步骤未达成 · ABORT,不打 <code>MEMBER_ONBOARD_OK</code>。常见原因：成员已配数 &lt; CANON（重跑 STEP-06 · 幂等会补齐/刷新到最新规范）· daemon 离线（先 <code>multica daemon start</code>）· 缺 <code>yq</code>（<code>brew install yq</code>）· provider 拼错（须 codex / claude / hermes 之一且该 runtime 在线）· 缺 <code>TCMCP_AGENT_TOKEN</code> / <code>MULTICA_WORKSPACE</code> env。修后重跑 STEP-06（幂等）。</p>
 
 <hr>
 
 <h2 id="step-final">STEP-FINAL · Print success marker + next-human-action</h2>
 <pre><code># 先确认 STEP-06 autopilot 已配(强制 · VERIFY_06_OK 是 MEMBER_ONBOARD_OK 前置),否则 ABORT。
+# 复用 STEP-06 的动态判据:已配数 == CANON(规范个数);CANON 拉不到时降级为 ≥ 1。
 DNAME=$(multica auth status 2&gt;&amp;1 | sed -n 's/.*User: \(.*\) (.*/\1/p')
-[ "$(multica autopilot list 2&gt;/dev/null | grep -c -- "·${DNAME}")" -ge 1 ] \
- || { echo "ABORT_NO_AUTOPILOT: STEP-06 未达成(VERIFY_06_OK 缺) · 不打 MEMBER_ONBOARD_OK · 回 STEP-06 重跑"; exit 1; }
+HAVE=$(multica autopilot list --output json 2&gt;/dev/null \
+  | jq -r --arg d "·${DNAME}" '[.autopilots[]? | select(.title | endswith($d))] | length')
+HAVE=${HAVE:-0}
+CANON=$(ls "$HOME/team-context"/autopilots/*.yaml 2&gt;/dev/null | wc -l | tr -d ' ')
+if [ "${CANON:-0}" -gt 0 ]; then ok=$([ "$HAVE" = "$CANON" ] &amp;&amp; echo 1 || echo 0); else ok=$([ "$HAVE" -ge 1 ] &amp;&amp; echo 1 || echo 0); fi
+[ "$ok" = 1 ] \
+ || { echo "ABORT_NO_AUTOPILOT: STEP-06 未达成(VERIFY_06_OK 缺 · HAVE=$HAVE CANON=${CANON:-?}) · 不打 MEMBER_ONBOARD_OK · 回 STEP-06 重跑"; exit 1; }
 
 echo "MEMBER_ONBOARD_OK $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 echo "NEXT_HUMAN_ACTION_1: open a new terminal (so shell rc reloads MULTICA_TOKEN + TCMCP_AGENT_TOKEN)"
@@ -534,7 +580,8 @@ echo "NEXT_HUMAN_EXPECT: chat_id == oc_035c15b7fb12fed8d0e022fe2f529553"</code><
   <b>2026-06-10 修订:</b> 转为 HTML 单一产物（docs/ONBOARDING-AGENT.html · 自包含方案A 样式 · 内容由 ONBOARDING-MEMBER-AGENT.md v1 完整迁移，无步骤丢失）。<br>
   <b>Tested:</b> all 5 steps' VERIFY commands ran during 2026-05-28 W5 cloud bootstrap（DRI mac · macOS）+ STEP-03 + STEP-04a（Codex branch）re-validated with throwaway <code>teammate-test@actionow.ai</code> member PAT before doc commit。<br>
   <b>2026-06-01 audit:</b> workspace migrated to UUID <code>fb23cf99-5f4c-4815-b2b3-8d5e323659f6</code>（slug <code>team-context</code>）—— updated INPUTS example + added <code>WORKSPACE_SLUG</code> constant and STEP-01 <code>multica workspace switch</code>。CLI confirmed <code>multica v0.4.6</code>；env vars / MCP URL / regexes verified current；RPI 文档流已迁至 skills + multica CLI（tc-render/publish.py · skill pull/lint · comment add --inline）；local MCP @tcmcp/local 迭代2 删除，本期作兜底；remote 10 工具保留。VERIFY commands not re-executed end-to-end this pass（values-only audit）。<br>
-  <b>2026-06-10 修订:</b> ① STEP-01 加无感更新 env（<code>MULTICA_DAEMON_AUTO_UPDATE</code> ⑨ + <code>MULTICA_DAEMON_SKILL_WRITE</code> ⑩）+ seamless update callout（daemon 每 6h sigstore 离线验签自更 CLI 二进制/skill bundle · fail-closed · dev 软链机 SkillWriteGuard 跳过）。② STEP-06 autopilots 从 OPTIONAL 转为 <b>MANDATORY</b>（先 <code>multica autopilot list --output json</code> 检测,缺则强制 <code>bash scripts/my-autopilot.sh all &lt;provider&gt;</code> · 旧 <code>apply-autopilots.sh</code> 已 DEPRECATED/TEA-93 不再使用）· <code>VERIFY_06_OK</code> 纳入 EXECUTION CONTRACT / SUCCESS CRITERIA / STEP-FINAL 成功前置 + TOC 同步。
+  <b>2026-06-10 修订:</b> ① STEP-01 加无感更新 env（<code>MULTICA_DAEMON_AUTO_UPDATE</code> ⑨ + <code>MULTICA_DAEMON_SKILL_WRITE</code> ⑩）+ seamless update callout（daemon 每 6h sigstore 离线验签自更 CLI 二进制/skill bundle · fail-closed · dev 软链机 SkillWriteGuard 跳过）。② STEP-06 autopilots 从 OPTIONAL 转为 <b>MANDATORY</b>（先 <code>multica autopilot list --output json</code> 检测,缺则强制 <code>bash scripts/my-autopilot.sh all &lt;provider&gt;</code> · 旧 <code>apply-autopilots.sh</code> 已 DEPRECATED/TEA-93 不再使用）· <code>VERIFY_06_OK</code> 纳入 EXECUTION CONTRACT / SUCCESS CRITERIA / STEP-FINAL 成功前置 + TOC 同步。<br>
+  <b>2026-06-10 修订（detect-freshness）:</b> 每步改为<b>先预检测</b>(幂等 · 处理部分已配环境)+<b>远程权威新鲜度</b>动态判断(缺→配 · 过时→重配 · 已最新→skip)，去硬编码版本/数量/清单。EXECUTION CONTRACT 顶部加 DETECT-FIRST 核心原则 callout。去硬编码：① STEP-00 multica CLI 不再只验通用版本——加 DETECT 块拉 <code>feibo-ai/tc-multica</code> 最新 release tag 与本地 <code>multica --version</code> 用 <code>sort -V</code> 比对(本地&lt;远程→<code>multica update</code>/install.sh · 无网降级只确认 fork CLI 在)；② STEP-03 删 skill 数硬阈值 <code>tot &gt;= 12</code>/<code>&lt; 12</code>→权威 = <code>multica skill list --output json</code> 当前全部 skill 名，VERIFY = 落地数 == registry 当前数(动态)；③ STEP-06 删 autopilot 硬数 <code>5</code>→权威 = <code>git pull</code> 后 <code>ls ~/team-context/autopilots/*.yaml | wc -l</code> 得 CANON，DETECT/CONFIGURE/VERIFY/STEP-FINAL 全改为对 CANON 动态比对(已配数 == CANON · CANON 拉不到降级 ≥ 1)。
 </footer>
 
 </body>
