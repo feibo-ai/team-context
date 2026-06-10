@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>design-review-gate</title>
+<style>
+:root{--ink:#1A1A1A;--ink2:#2D2D2D;--paper:#F5F2EB;--paper2:#EDE8DC;--accent:#C73E1D;--gray:#8B8680;--border:#D4CFC4;--green:#4A6B3A;--gold:#B8862E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Songti SC","Noto Serif SC",Georgia,serif;background:var(--paper);color:var(--ink);line-height:1.8;font-size:15px;padding:48px 40px;max-width:760px;margin:0 auto}
+.eyebrow{font-family:"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:14px}
+h1{font-weight:900;font-size:40px;line-height:1.15;letter-spacing:-1px;margin-bottom:18px;border-bottom:3px double var(--ink);padding-bottom:20px}
+.meta{display:flex;gap:32px;flex-wrap:wrap;font-family:"SF Mono",Menlo,monospace;font-size:12px;color:var(--gray);margin-bottom:36px}
+.meta b{color:var(--ink);font-weight:600}
+h2{font-weight:700;font-size:22px;margin:36px 0 14px;padding-left:14px;border-left:4px solid var(--accent)}
+.field{background:#fff;border:1px solid var(--border);padding:18px 22px;margin-bottom:14px}
+.field-label{font-family:"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1.5px;color:var(--gray);text-transform:uppercase;margin-bottom:6px}
+ul{list-style:none;margin:8px 0}
+li{padding:6px 0 6px 24px;position:relative}
+li::before{content:"▸";position:absolute;left:4px;color:var(--accent)}
+.crit li::before{content:"☐";color:var(--green)}
+code{font-family:"SF Mono",Menlo,monospace;background:var(--paper2);padding:1px 6px;border-radius:2px;font-size:13px}
+.callout{background:var(--paper2);border-left:4px solid var(--gold);padding:14px 18px;margin:18px 0;font-size:14px}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--gray)}
+</style></head>
+<body>
+<div class="eyebrow">CASE · 复盘</div>
+<h1>design-review-gate</h1>
+<div class="meta"><span>Phase <b>RPI Debrief</b></span></div>
+<h2>1 · 目标</h2><div class="field">在 TEA-97 状态机地基上补两个 issue 流转缺口(交接 brief 缺口 A/B):① 设计评审门收口——新增 设计-待审/设计-已审 两个 label(11→13)与 transition.py 两个子命令 design-request-review / design-approve,插在 plan-approve 与 build-start 之间、挂同一 work issue、与 计划-已批准 共存,评审走『子 agent 产 verdict → 编排 session 当场转换』;② issue_invariants.py 编入 monthly-health autopilot(report-only),让状态机漂移有 cron 兜底。缺口 C 按 brief 明示不做。(自 plan v2 摘录)</div>
+<h2>2 · 实际发生</h2><div class="field">按 brief 起 plan=TEA-99(本 case TEA-100 之父),v1 被评审子 agent 打回 4 条 blocking——全是结构级真雷:新门态与既有不变量 #4 矛盾(已批准⇒不含 in_review)、PLAN_PENDING_LABELS 双用途常量会让 plan-approve 顺手摧毁设计门、复审不摘旧批准会自产 #8 违规、registry 同步缺位会被下月 autopilot 拉旧版回写。v2 全采纳后批准。实现:transition.py 两子命令+常量拆分、invariants #4 carve-out+#7/#8、labels.md 13 label 双轨图、tc-design-review 新 skill、monthly-health.yaml 巡检步(report-only)。代码评审 approved(反例验证锚点测试真锚),采纳 2 项修正。merge 后建 label、registry 同步、TEA-99 亲走 request→approve→build-start 三连,93 issue strict 巡检 0 违规(carve-out 态在场时)。75 tests passed。</div>
+<h2>3 · 完成标准</h2><div class="field crit"><ul><li>✅ transition.py 两子命令落地:复审摘旧批准(B3)、常量拆分 PARENT_CLEAN_LABELS(B2)、两条锚点测试(经评审者反例验证真锚);75 passed 零回归</li><li>✅ labels.md 11→13 + 双轨图插设计子环节;create-labels.sh +2;merge 后跑过,线上 13/13(设计-待审 #eab308 6d7515a2 / 设计-已审 #0ea5e9 b4059c83)</li><li>✅ invariants:PROCESS_LABELS 增补、#4 carve-out、#7/#8、staleness 并入、build-start 告警;93 issue 全量 --strict 零误报(含 TEA-99 处于 carve-out 态时)</li><li>✅ tc-design-review 新 skill(评审子 agent 模板+补审两连守则+盲区如实声明)、tc-3-plan/tc-4-build 交叉引用、multica skill create 注册;本地软链初次声明为虚假完成信号(bash 短路 bug:grep 误中 frontend-design 致 ln 未执行)——case 评审 B1 抓出后已真实补建并 readlink 验证</li><li>✅ monthly-health.yaml Step 1 巡检步(report-only 无 --strict)+ Step 3 状态机违规字段;autopilot_lint 通过;docstring/labels.md 改『已编入 autopilot』</li><li>✅ 活体验证:TEA-99 走 design-request-review(已批准+设计-待审+in_review,carve-out 实测不误报)→ design-approve(已批准+设计-已审+todo)→ build-start(in_progress),后置复核全过;终态 strict exit 0</li><li>✅ PR #19 经独立代码评审子 agent + 用户既授权模式由 agent 执行 merge;registry 同步完成;autopilot YAML 重应用因 TCMCP_AGENT_TOKEN 不在本 session 留给 DRI(命令已写明),真 cron 触发待下月 1 号</li></ul></div>
+<h2>4 · 关键判断</h2><div class="field"><div class="field-label">判断:评审打回的四条 blocking 全是『新边接进旧机』的耦合雷,不是新边本身</div>
+<b>背景</b> 设计门两条转换边本身很简单;plan v1 把它们当独立增量来写,评审者却在既有系统里找到了四处会被新边引爆的旧约定:不变量 #4 的值域、双用途常量、复审路径、registry 分发链。<br>
+<b>选项</b> 按 v1 直接实现,出问题再修 / 采纳全部四条,先改 plan 再动代码<br>
+<b>选择</b> 全采纳。两条有线上同型先例佐证(B3=#6 的 TEA-79 病型、B4=registry 回写当日实证),另两条(B1 不变量矛盾、B2 常量耦合)是可当场证伪的结构矛盾——比先例更硬;且都是 plan 文本层小修,半天 appetite 不受影响。<br>
+<b>事后看</b> 对。最值钱的是 B2:若 设计-待审 进了 PLAN_PENDING_LABELS,plan-approve 的幂等补救(transition.py 明文卖点)会变成摧毁设计门的破坏性操作——这种『卖点变凶器』的耦合,作者视角几乎不可能自查出来,独立评审是唯一防线。<br>
+<b>古法不可能</b> 评审者对 transition.py 全部调用点做了穷举交叉(双用途常量的两个引用点、invariants 的门内门外),并以反例注入验证测试真锚,v1→v2 全程 10 分 27 秒(评论时间戳可锚定)——人工评审给不起这个密度。</div>
+<div class="field"><div class="field-label">判断:不变量 #4 开 carve-out,而不是给设计评审另发明一个 status</div>
+<b>背景</b> 设计评审中 = 已批准+in_review,直接违反 #4。三个出路:carve-out、设计评审不动 status(只挂 label)、或为设计态引入新 status 值。<br>
+<b>选项</b> carve-out(#4 在 设计-待审 在场时放行 in_review) / 设计评审不动 status,只用 label / 请求 multica 加新 status<br>
+<b>选择</b> carve-out。不动 status 会让『评审中』在看板/status 查询里隐身,违背双轨语义(label 精确、status 粗轨);新 status 动到 CLI/服务端,超出 out-of-scope 红线。carve-out 是最小的诚实:状态机承认『已批准的东西可以回到评审中』这一真实语义。<br>
+<b>事后看</b> 对,且 live 验证干净:TEA-99 处于 carve-out 态时全量 strict 扫描 0 违规、离开后亦 0;评审者的反例(已批准+in_review 但无 设计-待审)由代码路径直接可证仍被 #4 抓住(ok4 仅在 设计-待审 在场时含 in_review)——豁免没有变成漏洞。<br>
+<b>古法不可能</b> carve-out 的正确性靠『豁免态在场/不在场 × 93 issue 全量』的即时对照实验确认,分钟级;古法只能拍脑袋上线再等漂移。</div>
+<div class="field"><div class="field-label">判断:『从未请审就开工』的盲区选择如实声明,而不是造一个会误报的不变量</div>
+<b>背景</b> brief 建议巡检对跳过设计评审给软提示;但 issue 数据无 layer 字段,巡检无法区分『项目层违纪跳过』与『任务层合法跳过』。<br>
+<b>选项</b> 照 brief 做巡检提示(对全部任务层 build 持续误报) / 放弃机制检查,纯靠纪律 / 拆开:能测的(评审中开工/评审挂起)做进机制,不能测的(从未请审)如实声明盲区并落 pre-flight 纪律<br>
+<b>选择</b> 第三种。误报会让巡检报告失去信任(狼来了效应),比盲区更伤;盲区写明在 tc-design-review skill 里,并记 issue.metadata 为将来承载 layer 的现成落点。<br>
+<b>事后看</b> 对。诚实的盲区声明 + 两个能测的边界(build-start 告警、staleness)覆盖了大部分风险面;剩余靠 tc-4-build pre-flight checklist,与『计划评审项目层必走』同一执法等级。<br>
+<b>古法不可能</b> 判断本身不依赖 AI;但『误报面=全部任务层』这个量化依据来自对 93 个 issue 数据形状的即时核查(metadata 全空),不是猜的。</div>
+<h2>5 · 规则候选</h2><div class="field"><ul><li>[ ] needs DRI promotion decision — 给既有状态机/规则系统加新边时,评审清单必须含『新边 × 每条旧不变量 × 每个共享常量调用点』的穷举交叉——耦合雷全在旧约定里,不在新边本身。</li><li>[ ] needs DRI promotion decision — 巡检/告警宁可如实声明盲区,不造会持续误报的检查项:误报摧毁报告信任,比盲区更伤;不能测的写明落点(数据缺什么字段)留给将来。</li></ul></div>
+<footer>team-context · RPI Debrief · SOP 非妥协 #2 · multica issue 内渲染</footer>
+</body></html>
