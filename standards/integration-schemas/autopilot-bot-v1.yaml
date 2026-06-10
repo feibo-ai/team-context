@@ -1,5 +1,6 @@
 # Schema: autopilot-bot v1
-# One integration per autopilot agent (daily-summary-bot / weekly-roundup-bot / etc.)
+# One integration per autopilot identity agent (TEA-93 起 agent 为 scope 级身份助理「助理·<显示名>」;
+# 本 schema 当前无活 integration 实例,保留作 kind enum 文档)
 #
 # Field mapping (same convention as mcp-server-v1):
 #   kind          → integrations.kind (CHECK enum)

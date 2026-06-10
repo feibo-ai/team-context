@@ -11,8 +11,9 @@ trigger:
 
 mode: run_only
 
+# 身份/通用约束(语言·SCOPE 语义·notify_team-only·issue 纪律)在 agent instructions 单源:
+# autopilots/_agent-instructions.md(由 _autopilot-common.sh 注入 助理·<显示名>)
 agent:
-  name: monthly-health-bot-codex
   integration_ref: team-context-mcp  # resolved at apply time
 
 # PB-04 guardrails (ac_lint_yaml + CI enforce; 原 autopilot_lint MCP → tc-ops/autopilot_lint.py)
@@ -36,11 +37,7 @@ guardrails:
   max_runtime_minutes: 30
 
 prompt: |
-  **输出语言要求：报告 markdown + 飞书全部用简体中文。** 命令行操作可英文。
-
-  读环境变量 AUTOPILOT_SCOPE 决定范围:
-    - "team"    → 全队月度健康报告(tc-ops 脚本)
-    - "<email>" → 本人月度切片
+  这是【月度健康报告】。
 
   Step 1 · 生成报告
     team:  运行月度健康报告:`multica skill pull tc-ops` 后 `python3 ~/.claude/skills/tc-ops/monthly_health.py ~/team-context [<project-repo>...]`(输出 markdown);取代旧 monthly_health_report MCP 工具
@@ -55,10 +52,11 @@ prompt: |
     })
     Returns: { docUrl, nodeToken }。个人版跳过 wiki 归档。
 
-  Step 3 · Push link to team group
-    team:  notify_team({ text: "📊 全队 Monthly Health · {{date}} — <docUrl>" })
-    个人:  notify_team({ card: 本人月度切片摘要 })
-    绝不 dm_member。
+  Step 3 · Compose card + 推团队群(骨架/文案纪律见 agent instructions · header=carmine)
+    标题: 月度健康 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
+    概览 fields: 复盘 / debrief 候选 / 交接 / 提交(个人版为本人切片,team 版为全队)
+    内容段:「报告」 ▸ 完整报告: <docUrl>(仅 team) ▸ 本地存档: health/monthly/{{date}}.md(仅 team)
+    notify_team({ card: <card-json> })
 
   Step 4 · (仅 team) Stage local archive (NO git commit · guardrails forbid)
     mkdir -p ~/team-context/health/monthly

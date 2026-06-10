@@ -428,8 +428,8 @@ multica daemon start
 bash scripts/my-autopilot.sh all codex   # provider = registered runtime: codex | claude | hermes</code></pre>
 
 <div class="label">VERIFY（optional）</div>
-<pre><code>PREFIX=$(multica auth status 2&gt;&amp;1 | awk -F'[()]' '/User:/{print $2; exit}' | cut -d@ -f1)
-[ "$(multica autopilot list 2&gt;/dev/null | grep -c -- "-${PREFIX}")" -ge 1 ] &amp;&amp; echo VERIFY_06_OK || echo VERIFY_06_SKIP</code></pre>
+<pre><code>DNAME=$(multica auth status 2&gt;&amp;1 | sed -n 's/.*User: \(.*\) (.*/\1/p')
+[ "$(multica autopilot list 2&gt;/dev/null | grep -c -- "·${DNAME}")" -ge 1 ] &amp;&amp; echo VERIFY_06_OK || echo VERIFY_06_SKIP</code></pre>
 
 <p class="expect"><b>ON_FAIL:</b> not required for onboarding · print <code>VERIFY_06_SKIP</code> and continue to STEP-FINAL。</p>
 

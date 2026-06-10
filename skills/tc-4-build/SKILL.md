@@ -21,6 +21,16 @@ Confirm before first code action:
 
 Any No → stop. invoke tc-handoff → `/clear` → go back to Plan.
 
+## 开工广播(任务开工卡)
+Pre-flight 全过、写第一行代码**之前**,发「任务开工」卡到团队飞书群
+(骨架与纪律见 standards/feishu-card-style.md §2/§3 · header=`blue`):
+- 标题: `任务开工 · <任务短名> · MM-DD`
+- 概览 fields: DRI / 体量 / 计划(TEA-xx + 已批准) / 分支
+- 内容段:「目标」一句话
+- note 页脚: `build session 已开工 · 完成后有复盘 · 进度看 TEA-xx`
+`notify_team({ card: ... })` 发送。
+仅**该计划的首个** build session 发;handoff/`/clear` 后重启的续作 session 不重发。
+
 ## 30-second rule
 First 30s of every Claude tool-call sequence: read the chain-of-thought.
 If direction is wrong, hit ESC. Do NOT let it continue down a wrong path

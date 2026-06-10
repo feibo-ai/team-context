@@ -11,8 +11,9 @@ trigger:
 mode: create_issue
 issue_title_template: "Monday Kickoff {{date}}"
 
+# 身份/通用约束(语言·SCOPE 语义·notify_team-only·issue 纪律)在 agent instructions 单源:
+# autopilots/_agent-instructions.md(由 _autopilot-common.sh 注入 助理·<显示名>)
 agent:
-  name: weekly-roundup-bot-codex
   integration_ref: team-context-mcp  # resolved at apply time
 
 # PB-04 guardrails (ac_lint_yaml + CI enforce; 原 autopilot_lint MCP → tc-ops/autopilot_lint.py)
@@ -33,11 +34,7 @@ guardrails:
   max_runtime_minutes: 10
 
 prompt: |
-  **输出语言要求：multica issue body + 飞书 card 全部用简体中文。** 命令行操作可英文。
-
-  读环境变量 AUTOPILOT_SCOPE 决定范围:
-    - "team"    → 全队本周计划
-    - "<email>" → 只本人
+  这是【周一计划汇总】—— 讲「本周计划」(每日聚焦是 daily-kickoff 的事)。
 
   1. 列 计划-已批准 issue
        team:  multica issue list --label 计划-已批准
@@ -45,9 +42,11 @@ prompt: |
   2. 每条: title · DRI · appetite · 最近一次 Current State handoff 时间戳
   3. (仅 team) 识别跨项目边界
 
-  推团队群:
-    notify_team({ card: <kickoff-card-json> })
-    team 标题「全队 Monday Kickoff · {{date}}」· 个人「${AUTOPILOT_SCOPE%@*} · Monday Kickoff · {{date}}」
-    Card body: top 5 计划-已批准 + DRI + appetite + handoff age。
+  Compose card(骨架/文案纪律见 agent instructions · header=green):
+    标题: 周一计划 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
+    概览 fields: 本周已批准 / 跨项目边界(仅 team)
+    内容段:「本周计划」 ▸ 标题 — DRI · 体量 · 交接 N 小时前(top 5,溢出末行「…另有 N 条」)
+    note 页脚: team 版写「已建周计划 issue」;个人版写「仅推送不写库」
+    notify_team({ card: <card-json> }) 推团队群。
 
-  ⚠️ 绝不调 dm_member。team 版 mode=create_issue 会建周计划 issue · 个人版只推群不建 issue。
+  team 版 mode=create_issue 会建周计划 issue;个人版 run_only 只推群。

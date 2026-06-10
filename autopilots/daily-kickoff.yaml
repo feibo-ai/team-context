@@ -13,8 +13,9 @@ trigger:
 
 mode: run_only
 
+# 身份/通用约束(语言·SCOPE 语义·notify_team-only·issue 纪律)在 agent instructions 单源:
+# autopilots/_agent-instructions.md(由 _autopilot-common.sh 注入 助理·<显示名>)
 agent:
-  name: daily-kickoff-bot-codex
   integration_ref: team-context-mcp  # resolved at apply time
 
 # PB-04 guardrails (ac_lint_yaml + CI enforce; 原 autopilot_lint MCP → tc-ops/autopilot_lint.py)
@@ -36,16 +37,10 @@ guardrails:
   max_runtime_minutes: 10
 
 prompt: |
-  **输出语言要求：所有最终发送到飞书的内容必须用简体中文。** 命令行操作和内部思考可用英文。
-
-  读环境变量 AUTOPILOT_SCOPE 决定数据范围:
-    - "team"    → 全队
-    - "<email>" → 只本人 (assignee == $AUTOPILOT_SCOPE)
-
   这是【早晨开工】卡片 —— 前瞻「今天该推进什么」,不是回顾(回顾是傍晚的 daily-summary)。
   与周一的 monday-kickoff 互补:那条讲「本周计划」,这条讲「今日聚焦」。
 
-  Step 1 · 收集今日聚焦 (用 MCP / multica CLI · 不 shell-out 飞书)
+  Step 1 · 收集今日聚焦
     进行中:   multica issue list --status in_progress
     待启动:   multica issue list --label 计划-已批准 --status todo
     待评审:   multica issue list --label 计划-评审中
@@ -53,17 +48,13 @@ prompt: |
     卡住信号: 进行中 issue 里,最近一次 Current State handoff 时间戳 > 24h 的标出来
               (multica issue get <id> 看最新 handoff 评论时间)
 
-  Step 2 · Compose card
-    team:  标题「全队 · 今日开工 {{date}}」· sections:
-             🔵 进行中(title · DRI · handoff age)
-             🟡 待启动(已批准未开工:title · DRI · appetite)
-             🟣 待评审(等谁 review)
-             ⚠️ 卡住(handoff > 24h 的,提醒该 handoff/换 session)
-    个人:  标题「${AUTOPILOT_SCOPE%@*} · 今日开工 {{date}}」· sections: 今日聚焦 / 待启动 / 卡住
+  Step 2 · Compose card(骨架/文案纪律见 agent instructions · header=wathet)
+    标题: 每日开工 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
+    概览 fields: 进行中 / 待启动 / 待评审 / 卡住
+    内容段(空段省略):
+      「进行中」 ▸ 标题 — DRI · 交接 N 小时前
+      「待启动」 ▸ 标题 — DRI · 体量
+      「待评审」 ▸ 标题 — 等谁评审
+    告警段(有卡住才出现): ⚠「卡住」 ▸ 标题 — 交接已 N 小时,建议换 session
 
-  Step 3 · 推团队群 (唯一渠道)
-    Call MCP tool: notify_team({ card: <card-json> })
-    (feishu_team_chat_id 由 tcmcp-remote 从 integration config 解析 · zero shell-out)
-    返回 { messageId } 视为成功 · 失败记录不 crash。
-
-  ⚠️ 绝不调用 dm_member 或任何 P2P (spec §1.2 · 一律 notify_team 推群)。run_only · 不建 issue。
+  Step 3 · notify_team({ card: <card-json> }) 推团队群。
