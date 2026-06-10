@@ -1,0 +1,95 @@
+name: Skill Bundle Release
+
+# mini-ADR v4 ⑩ stage-⑩a — keyless OIDC attestation 给 skill/md bundle 签 provenance。
+# skill 信任锚 = feibo-ai/team-context(拥有 skill 源的仓);二进制锚是 feibo-ai/tc-multica。
+# daemon 用内置 sigstore trusted root 离线验本 workflow 的 OIDC subject 三元组
+# (repo==feibo-ai/team-context AND workflow==.github/workflows/skill-bundle-release.yml
+#  AND ref=~refs/tags/skills-v*),验过才 byte-for-byte 写盘。
+#
+# 触发:推 skills-v* tag(与 SOP 文档发布无关,独立 skill 分发版本)。
+
+on:
+  push:
+    tags:
+      - "skills-v*"
+
+permissions:
+  contents: write # 发 release 资产
+  id-token: write # OIDC — keyless attestation 无长期私钥
+  attestations: write # 写 provenance attestation
+  pull-requests: read # mini-ADR v4 invariant #7:查 PR 合并/评审态做 provenance 门
+
+jobs:
+  release-skills:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # mini-ADR v4 invariant #7 — provenance 合并门(镜像 tc-multica release.yml):
+      # skills-v tag 指向的 commit 必须是【合并入 main 的 PR 的 merge_commit_sha】,且该 PR
+      # 在其 head 有 ≥2 条不同【人类】APPROVED(排 author/pusher/bot)。把「skill bundle 只在
+      # 2 人评审的真合并态签名」从约定变成 CI 硬门——否则给未评审 skill 盖可信章 = B1 半安全。
+      - name: Enforce 2-review-merged-main provenance gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_SHA: ${{ github.sha }}
+          PUSHER: ${{ github.actor }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          prs="$(gh api "repos/$REPO/commits/$TAG_SHA/pulls" \
+            -H 'Accept: application/vnd.github+json' \
+            --jq '[.[] | select(.merged_at != null and .base.ref == "main" and .merge_commit_sha == "'"$TAG_SHA"'")]')"
+          if [ "$(echo "$prs" | jq 'length')" -eq 0 ]; then
+            echo "::error::skills-v tag commit $TAG_SHA 不是任何【已合并入 main 的 PR】的 merge_commit_sha — 拒绝签名/发版 skill bundle(invariant #7)。"
+            exit 1
+          fi
+          num="$(echo "$prs" | jq -r '.[0].number')"
+          author="$(echo "$prs" | jq -r '.[0].user.login')"
+          head_sha="$(echo "$prs" | jq -r '.[0].head.sha')"
+          approvers="$(gh api "repos/$REPO/pulls/$num/reviews" --paginate \
+            --jq '[.[] | select(.state=="APPROVED" and .commit_id=="'"$head_sha"'") | .user.login] | unique')"
+          clean="$(echo "$approvers" | jq -r --arg a "$author" --arg p "$PUSHER" \
+            '[.[] | select(. != $a and . != $p and (endswith("[bot]") | not))]')"
+          cnt="$(echo "$clean" | jq 'length')"
+          echo "PR #$num · author=$author · head=$head_sha · 有效 approvers($cnt): $(echo "$clean" | jq -c .)"
+          if [ "$cnt" -lt 2 ]; then
+            echo "::error::PR #$num 在 head 缺 ≥2 条不同人类 APPROVED(已排 author/pusher/bot)— 拒绝签名/发版 skill bundle(invariant #7)。"
+            exit 1
+          fi
+          echo "✓ provenance 门通过:skills-v tag commit = ≥2 人评审合并入 main 的 PR head。"
+
+      - name: Build deterministic skill bundle (git-blob bytes)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # git archive = 已 commit 的 git-blob 字节(非工作树)。.gitattributes 已 pin
+          # skills/** 与 claude_md_team_global.md 为 -text → 无 EOL 转换。core.autocrlf=false
+          # 双保险。gzip -n 去时间戳 → 可复现。这满足 invariant #1:签 git tracked-blob 原始字节。
+          git -c core.autocrlf=false archive --format=tar -o skill-bundle.tar \
+            HEAD skills/ claude_md_team_global.md
+          gzip -n skill-bundle.tar
+          echo "bundle sha256:"
+          sha256sum skill-bundle.tar.gz
+
+      - name: Attest skill bundle provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: skill-bundle.tar.gz
+
+      - name: Publish bundle as release asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          gh release create "$tag" skill-bundle.tar.gz \
+            --title "Skill bundle $tag" \
+            --notes "Signed (keyless OIDC attestation) skill/md bundle for seamless daemon distribution. Verify: gh attestation verify skill-bundle.tar.gz --repo feibo-ai/team-context" \
+            --prerelease \
+          || gh release upload "$tag" skill-bundle.tar.gz --clobber

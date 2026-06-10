@@ -1,0 +1,5 @@
+# mini-ADR v4 invariant #1 / RB-4:无感分发的 skill/md 须签 git-blob 原始字节。
+# pin -text 防 git checkout/archive 做 EOL 规范化破坏字节恒等,使 bundle 可复现、
+# daemon 落盘字节 == 评审看到的 git-blob 字节。
+skills/** -text
+claude_md_team_global.md -text
