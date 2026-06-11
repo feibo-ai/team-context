@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>cap-hardening-team-context</title>
+<style>
+:root{--ink:#1A1A1A;--ink2:#2D2D2D;--paper:#F5F2EB;--paper2:#EDE8DC;--accent:#C73E1D;--gray:#8B8680;--border:#D4CFC4;--green:#4A6B3A;--gold:#B8862E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Songti SC","Noto Serif SC",Georgia,serif;background:var(--paper);color:var(--ink);line-height:1.8;font-size:15px;padding:48px 40px;max-width:760px;margin:0 auto}
+.eyebrow{font-family:"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:14px}
+h1{font-weight:900;font-size:40px;line-height:1.15;letter-spacing:-1px;margin-bottom:18px;border-bottom:3px double var(--ink);padding-bottom:20px}
+.meta{display:flex;gap:32px;flex-wrap:wrap;font-family:"SF Mono",Menlo,monospace;font-size:12px;color:var(--gray);margin-bottom:36px}
+.meta b{color:var(--ink);font-weight:600}
+h2{font-weight:700;font-size:22px;margin:36px 0 14px;padding-left:14px;border-left:4px solid var(--accent)}
+.field{background:#fff;border:1px solid var(--border);padding:18px 22px;margin-bottom:14px}
+.field-label{font-family:"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1.5px;color:var(--gray);text-transform:uppercase;margin-bottom:6px}
+ul{list-style:none;margin:8px 0}
+li{padding:6px 0 6px 24px;position:relative}
+li::before{content:"▸";position:absolute;left:4px;color:var(--accent)}
+.crit li::before{content:"☐";color:var(--green)}
+code{font-family:"SF Mono",Menlo,monospace;background:var(--paper2);padding:1px 6px;border-radius:2px;font-size:13px}
+.callout{background:var(--paper2);border-left:4px solid var(--gold);padding:14px 18px;margin:18px 0;font-size:14px}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--gray)}
+</style></head>
+<body>
+<div class="eyebrow">PLAN · 计划 · project</div>
+<h1>cap-hardening-team-context</h1>
+<div class="meta"><span>DRI <b>待 kickoff 认领</b></span><span>Layer <b>project</b></span><span>Appetite <b>本仓最轻但 TC-W0 是全盘发令枪。波次0 口径 0.5–1 天写 + DRI 1 次会拍板（口径 + 检查点哲学 + issue_event 决策同会）→ 波次1 周报/月度各 0.5 天（依赖跨仓 delivery_metrics，YAML 先合入暂不 apply）→ 波次2 覆盖率检查点/评审检查点 0.5–1 天 + 设计检查点/tc-design 1–1.5 天。最高前置：TC-W0 口径 + 检查点哲学必须 DRI 同会先拍。</b></span></div>
+<h2>目标</h2><div class="field"><div class="field-label">Goal</div>在 team-context（三仓编成层）补齐成熟态流程的规范侧 + 交付度量编排侧：6 指标口径定义（标注数据可得性、供 DRI 波次0 拍板）、周报 autopilot + 月度 review 扩面、SOP 引入「Plan Mode 检查点」（非「闸门框架」）写入覆盖率检查点/评审检查点/设计检查点、新增 tc-design skill + 设计 label + ADR/取舍表模板。圈闭压在本仓。本仓不实现 delivery_metrics 工具本身。</div>
+<h2>完成标准</h2><div class="field crit"><ul><li>standards/delivery-metrics.md 落地，6 指标各有算法 + 数据可得性标注（任务成功率/CI/成本即时可算；复盘覆盖率 current-state 可算；cycle time 用 tc-multica first_executed/PR-merged 代理；plan 绕过率为数据缺口需 tc-multica issue_event 表）；声明为 delivery_metrics 输出契约 source of truth</li><li>autopilots/weekly-delivery-metrics.yaml 过 autopilot_lint（PB-04 五字段、integration_ref: team-context-mcp、cron 合法），调 delivery_metrics + notify_team 推中文小结；工具未就绪则先合入暂不 apply</li><li>sop/group_sop_v0.4 新增「Plan Mode 检查点」章节（不叫闸门/门），开头硬声明『不新增任何不可妥协，永远只有 2 件』；评审检查点为强烈建议非强制门——措辞与定位标【团队过目】</li><li>standards/labels.md 加 设计-草稿→设计-已选型（颜色避开紫系且与紫罗兰做对比校验），create-labels.sh + labels.md 内联脚本副本 两处数组 11→13；skills/tc-design/SKILL.md 过 skill_lint（硬门 2000 token；另自设 ≤1500 字软目标）</li><li>月度 review 指标从 CLAUDE.md 健康扩到含交付度量（monthly-health.yaml prompt 与 SOP MODULE 04 表同步、不漂移）</li></ul></div>
+<h2>分工</h2><div class="field"><div class="field-label">Roles</div>DRI <code>待 kickoff 认领</code> · EXEC <code>Claude Code（Implement 会话）</code> · COLLAB <code>(无)</code> · REVIEW <code>第二个 Claude session（staff-eng 角色）</code></div>
+<h2>投入预算</h2><div class="callout"><b>本仓最轻但 TC-W0 是全盘发令枪。波次0 口径 0.5–1 天写 + DRI 1 次会拍板（口径 + 检查点哲学 + issue_event 决策同会）→ 波次1 周报/月度各 0.5 天（依赖跨仓 delivery_metrics，YAML 先合入暂不 apply）→ 波次2 覆盖率检查点/评审检查点 0.5–1 天 + 设计检查点/tc-design 1–1.5 天。最高前置：TC-W0 口径 + 检查点哲学必须 DRI 同会先拍。</b> · 超时触发 plan_upgrade(升版强制重审)。</div>
+<h2>方案</h2><div class="field">## 仓库角色
+team-context 是三仓【编成层】——把前两仓的能力通过 SOP/autopilot/skill/labels/standards 编成『定时/强制/可复用』闭环。圈闭不闭压在本仓。本轮判据全是规范/编排/skill/label/模板侧（不实现 delivery_metrics 工具）。
+
+## v1.1 变更摘要（评审 3 blocker + 闸门哲学）
+- plan 绕过率：confirmBypass 在 plan_approve 中不存在（D-04 要求过、从未实现）；改标待实现依赖。
+- 11→13 连锁抓错落点：mcp 无 label 校验逻辑，真正改动全在本仓。
+- skill_lint 硬门=2000 token 非 1500 字。
+- 闸门→『Plan Mode 检查点』、W4 降级为强烈建议（评审独立判断）。
+
+## 工作项分解
+
+### TC-W0 六指标口径（对接数据可得性）· P0口径 · 波次0（起跑线）★改
+落点：新建 standards/delivery-metrics.md。
+做什么：写 6 指标算法，**每项标数据可得性（已对接 tc-multica 预研）**：任务成功率/CI通过率/成本→即时可算；复盘覆盖率→current-state 口径（当前挂『复盘-已审』/有 case 评论）即时可算；cycle time→精确 created→done 算不出，波次1 用 tc-multica first_executed/PR-merged 代理、精确口径依赖 tc-multica issue_event 表（历史不回填）；**plan 绕过率→⚠️数据缺口**：原口径『复用 plan_approve 的 confirmBypass 计数』，但 confirmBypass **在 plan_approve 中不存在**（D-04 要求过、从未实现），且 D-04 本就是月度常态、非『一次性→月度升级』；真口径依赖 tc-multica issue_event 表的 label 变更历史，波次1 无此数据、只能交当前快照近似或砍掉。
+依赖：口径反向定义 mcp delivery_metrics 契约，每字段须在 tc-multica 端点清单对得上号。验收：6 项可被 DRI 一句话拍；明确标 cycle time/plan 绕过率两缺口。
+
+### TC-W1 周交付度量 autopilot · P0周报 · 波次1
+落点：新建 autopilots/weekly-delivery-metrics.yaml + README（5→6）。
+做什么：照 wednesday-stats.yaml：cron 周五17:00（『0 17 * * 5』作 betting 输入）；run_only；integration_ref team-context-mcp；PB-04 五字段全；prompt 中文调 delivery_metrics + notify_team 卡片、绝不 dm_member。
+依赖：强依赖 mcp delivery_metrics + TC-W0。风险：工具未就绪 last_run 报错→YAML 先合入暂不 apply，README 标⏳。
+
+### TC-W2 月度 review 扩面 · P0月度 · 波次1
+落点：monthly-health.yaml prompt + sop MODULE 04 表（已核对 L646-650 属 MODULE 04，正确）+ 同步 .html。
+做什么：Step1 增补『拉 6 项交付度量写入报告』；SOP『月度 5 指标』表扩成『CLAUDE.md 健康（原5）+ 交付度量（新6）』两组、两处一致。
+依赖：同 TC-W1。风险：SOP md+html 双文件，验收强制 diff。
+
+### TC-W3 覆盖率检查点 + SOP 引入『Plan Mode 检查点』· P1 · 波次2 ★改（措辞降级）
+落点：新建 standards/coverage-gate.md + sop 新增章节（+.html）。
+做什么：coverage-gate.md 写基线/告警非阻塞。**SOP 章节不叫『闸门框架』『门』，改称『Plan Mode 检查点（checkpoints）』**（『闸门/Gate』携规章基因，与 v0.4 参考式 Handbook 冲突）。**章节开头硬写：本节不新增任何不可妥协；不可妥协永远只有 2 件（Plan Mode + Debrief）；以下检查点是这 2 件在具体场景的展开，全为参考/条件触发/告警级。**【团队过目：措辞与定位关乎 v0.4 文化】
+依赖：覆盖率数据来自各 repo CI。验收：三要素齐；开头声明在位。
+
+### TC-W4 评审检查点（降级·非强制门）· 波次2 ★改
+落点：sop 检查点章节内。
+做什么：**评审检查点降为『强烈建议 + ❌01 操作化提醒』，不带阻塞强制力**（评审独立判断：把『不许自审』升格强制门 = 给参考原则偷偷加铁律级强制力，恰是 v0.4 最忌讳；v0.4 明确 7 原则真正不可妥协只有 #6/#7）。不过门后果 = 月度 review 复盘，非阻塞。引用现有 代码评审 label + code_review_request 工具 + ❌01，不新造强制力。【团队过目】
+依赖：零件已全在。验收：可追溯三零件；标『强烈建议非强制门』。
+
+### TC-W5 设计检查点（第5）+ tc-design + label + 模板 · 波次2 ★改
+落点：sop 检查点章节（设计检查点：条件触发/发散-收敛/原型vs架构）；labels.md 加 设计-草稿→设计-已选型；**create-labels.sh + labels.md 内联脚本副本（双份维护，都改）** 数组 11→13；skills/tc-design/SKILL.md（**skill_lint 硬门=2000 token 机器判；另自设 ≤1500 字软目标控可读性，两者不同**）；取舍表+ADR 模板（复用 decisions/2026-05-29-* 结构）。
+做什么：见上。label 颜色**明确取值并对比校验**（避开现有紫 #A855F7/紫罗兰 #8B5CF6；注意靛蓝 #4F46E5 与紫罗兰视觉近，需另选或校验对比度）。
+依赖：MVP 纯本仓零件；依赖 TC-W3 检查点章节先存在。验收：create-labels.sh 跑后 multica label list 出 2 新 label；tc-design 过 skill_lint；ADR 样例可落 decisions/。
+
+## 开工前确认项（DRI 拍板）
+1. 【最高优先·团队文化】检查点措辞 + W4 降级：本版已按评审推荐写入（不叫闸门叫『Plan Mode 检查点』、W4 降强烈建议非强制门、章节声明不新增不可妥协）——**关乎 v0.4『只有 2 件不可妥协』文化，请团队一句话定调**（确认或调整）。
+2. 【数据缺口·跨仓】plan 绕过率口径依赖的 confirmBypass 在 plan_approve 中不存在、cycle time 精确口径依赖 tc-multica issue_event 表——『口径已拍≠数据即时可得』。波次0 须同时拍：(a) plan 绕过率波次1 交当前快照近似还是等 issue_event 表；(b) 是否推 tc-multica 建 issue_event 表（同解 cycle time）。
+3. 11→13 落点已纠正：真正改动全在本仓（labels.md 3 处 + create-labels.sh + labels.md 内联副本），mcp 的 monthly_health_report 无 label 校验逻辑（仅 labels.md L91 愿景欠账）。
+4. autopilot cron 周五17:00 vs 周一9:00（撞 monday-kickoff）。</div>
+
+<footer>team-context · RPI Plan phase · multica issue 内渲染</footer>
+</body></html>

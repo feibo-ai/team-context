@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>dropmcp-phase1-converge-seamless</title>
+<style>
+:root{--ink:#1A1A1A;--ink2:#2D2D2D;--paper:#F5F2EB;--paper2:#EDE8DC;--accent:#C73E1D;--gray:#8B8680;--border:#D4CFC4;--green:#4A6B3A;--gold:#B8862E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Songti SC","Noto Serif SC",Georgia,serif;background:var(--paper);color:var(--ink);line-height:1.8;font-size:15px;padding:48px 40px;max-width:760px;margin:0 auto}
+.eyebrow{font-family:"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:14px}
+h1{font-weight:900;font-size:40px;line-height:1.15;letter-spacing:-1px;margin-bottom:18px;border-bottom:3px double var(--ink);padding-bottom:20px}
+.meta{display:flex;gap:32px;flex-wrap:wrap;font-family:"SF Mono",Menlo,monospace;font-size:12px;color:var(--gray);margin-bottom:36px}
+.meta b{color:var(--ink);font-weight:600}
+h2{font-weight:700;font-size:22px;margin:36px 0 14px;padding-left:14px;border-left:4px solid var(--accent)}
+.field{background:#fff;border:1px solid var(--border);padding:18px 22px;margin-bottom:14px}
+.field-label{font-family:"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1.5px;color:var(--gray);text-transform:uppercase;margin-bottom:6px}
+ul{list-style:none;margin:8px 0}
+li{padding:6px 0 6px 24px;position:relative}
+li::before{content:"▸";position:absolute;left:4px;color:var(--accent)}
+.crit li::before{content:"☐";color:var(--green)}
+code{font-family:"SF Mono",Menlo,monospace;background:var(--paper2);padding:1px 6px;border-radius:2px;font-size:13px}
+.callout{background:var(--paper2);border-left:4px solid var(--gold);padding:14px 18px;margin:18px 0;font-size:14px}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--gray)}
+</style></head>
+<body>
+<div class="eyebrow">CASE · 复盘</div>
+<h1>dropmcp-phase1-converge-seamless</h1>
+<div class="meta"><span>Phase <b>RPI Debrief</b></span></div>
+<h2>1 · 目标</h2><div class="field">dropmcp Phase 1 收敛+无感化(TEA-89 v4 已批准):去本地 MCP 后,把 CLI 二进制更新 + skill/md 更新做成用户无感,同时修 7 类发布漏 + red-team 加固 + 遥测 + 一命令零配置 onboarding。北极星=极致简化,分发/更新/采集无感。DRI 拍板范围『所有』据实重定价。无感分发=安全软件分发子系统,实现门控于专项安全 mini-ADR(不 vibe code,先过独立安全评审才 code)。</div>
+<h2>2 · 实际发生</h2><div class="field">Phase-1(①-⑦⑪⑫)实现并推两仓 main:publish 命门B 收口 + schema 硬校验 + red-team + 删旁路 · sync create-or-update+files[] · Codex 索引 · doctor · daemon 遥测 · 一命令 onboarding · 文档命门A→命门B 漂移清理 + CI 漂移锁。⑨⑩ 真无感自更=安全子系统:专项安全 mini-ADR 经三轮独立对抗评审(4-lens panel+synthesizer)收敛 v1→v2→v3→v4——每轮揪 Blocker(循环信任根、长期裸私钥、签未评审工件=安全感非安全性、私有仓 attestation 被 plan 门控),v4 APPROVED + 10 implInvariants,选型敲死 keyless OIDC attestation(弃 minisign)。用 gh admin 在真实基建 E2E 实证:⑨ 二进制(信任根 LIVE + 真发版 attestation + gh verify + SAN 三元组正确)· ⑩ skill(team-context 转公开解 plan 门控 + 签名 + daemon 写路径安全循环 + 全链 live E2E:fetch→verify→write 24 文件 byte-for-byte)· stage-4 吊销。两仓配 ≥2-review rulesets + provenance 合并门。5 PR 待团队评审。测试污染全清。</div>
+<h2>3 · 完成标准</h2><div class="field crit"><ul><li>✅ 去本地 MCP,只用远程 MCP</li><li>✅ 全仓文档最新无污染</li><li>✅ multica 操作正确,issue 状态正确流转</li><li>❌ CLI 无感自更(自己+skill+md) — 两条签名分发链安全核心全部实现 + 真实基建双链 E2E 实证可用;但需团队评审合并 5 PR + 发 production 版 + consumer 开 env(MULTICA_DAEMON_AUTO_UPDATE/SKILL_WRITE)+ team-context 评审 flow 采纳后才对消费机上线生效</li><li>✅ Phase-1:7 评审漏修复 + red-team + 遥测 + 零配置 onboarding</li></ul></div>
+<h2>4 · 关键判断</h2><div class="field"><div class="field-label">判断:无感分发实现前过三轮独立对抗安全评审(评审通过前不得 code)</div>
+<b>背景</b> ⑨⑩ 是代码执行面(daemon 静默换二进制 / 写可执行 skill = RCE)。先 vibe code 实现,还是先出专项安全设计评审?<br>
+<b>选项</b> 直接 vibe code 实现(快,但安全自审=同 session 既写又审,违 SOP) / 先出专项安全 mini-ADR + 过第二 session 独立对抗安全评审才 code<br>
+<b>选择</b> ②。mini-ADR v1→v2→v3→v4 各经独立 4-lens 对抗评审 panel + synthesizer,逐条核对真实代码。<br>
+<b>事后看</b> 对,且是本项目最关键的判断。v1 揪出循环信任根(server 失陷可换公钥)、v2 揪长期裸私钥单点(外泄=离线无限伪造)、v3 揪散文缓解未落可验证 MUST。任一未挡,都会 ship 一个『已验证』章盖在未评审/未验证工件上——这比 SHA-256-only 更危险(给人安全错觉)。三轮严重度递降(5→3→0 新架构 Blocker)证明评审真在收敛而非空转。<br>
+<b>古法不可能</b> 是。每轮并行跑 4 个对抗 lens(供应链/密码学/字节确定性/运行时写路径)+ 主审 synthesizer,逐条对照真实代码核验声称,单人/传统流程做不到这个评审密度与速度。</div>
+<div class="field"><div class="field-label">判断:签名选型 keyless OIDC attestation,弃 minisign 长期私钥</div>
+<b>背景</b> 签名机制选型:长期私钥(minisign 单 keyset)vs GitHub keyless OIDC build-provenance attestation。<br>
+<b>选项</b> minisign:离线简单、单 keyset,但需长期保管私钥(单点) / keyless OIDC attestation:无长期私钥,签名身份=CI workflow 的 OIDC subject<br>
+<b>选择</b> ②keyless。长期私钥外泄=离线无限伪造的单点失陷;keyless 把签名绑死在 2-review-merged 态触发的 workflow OIDC 身份,无钥可窃。<br>
+<b>事后看</b> 对。E2E 实证:SAN 三元组(repo+workflow+ref)离线可验、daemon 内置 sigstore trusted root 验签 fail-closed、拒 upstream 同名工件。<br>
+<b>古法不可能</b> 否——机制选型本身是工程判断;但由多轮对抗评审驱动收敛到此选型(v1 minisign→v4 keyless)是 AI-native 评审密度的产物。</div>
+<div class="field"><div class="field-label">判断:team-context 转公开,解 attestation 的 org-plan 门控</div>
+<b>背景</b> 真实 E2E 测试撞到:私有仓的 GitHub artifact attestation 被 feibo-ai org 当前 plan 门控(报错明示 upgrade 或转公开)。<br>
+<b>选项</b> 升级 feibo-ai org 付费 plan(私有仓 attestation) / cosign keyless 另起 toolchain(私有可用但换栈) / skill 源仓转公开<br>
+<b>选择</b> ③转公开(先扫 119 commit 全历史确认 0 token/key/secret 才转)。一举解两约束:signing 免费可用 + 公有仓 daemon 可直接轮询 release(省掉 server 不可信传输层)。<br>
+<b>事后看</b> 对。全链 live E2E(FetchLatestSkillBundle→Verify→Extract 24 文件 byte-for-byte)跑通证明。诚实前置:转公开前扫历史防凭据泄露,是不可逆动作的必要尽调。<br>
+<b>古法不可能</b> 是。是 live E2E 真实发版测试『经验性』撞出 plan 门控这个设计前提,而非纸上推演——快速真实基建迭代暴露了纸面设计漏掉的约束。</div>
+<div class="field"><div class="field-label">判断:daemon 写 ~/.claude/skills = 净新 RCE 面,单独威胁建模写路径安全</div>
+<b>背景</b> daemon 原本只读上报、不写盘;⑩ 让它静默写可执行 skill 到用户 dotfile = 净新攻击面,比手动 pull 大。<br>
+<b>选项</b> 验签过就直接写盘(信任验签即可) / 把净新写路径当独立 RCE 面单独威胁建模 + 写路径安全 + 真攻击测试<br>
+<b>选择</b> ②。tar typeflag 白名单(拒 symlink/hardlink entry)+ 路径穿越拒 + 父链逐级 EvalSymlinks(拒父目录软链逃逸)+ O_EXCL|O_NOFOLLOW 写原语二分 + 软链目标确定性拒写(非 follow 非静默跳过)+ 互斥守卫(dev 软链机拒启)。<br>
+<b>事后看</b> 对。W2/W3/W5 用真攻击布局测试(预置软链/父链软链/../穿越),不仅断言 error,更断言『victim 文件未被改写、外部目录未被写入』——证明攻击未得逞而非仅返回错误。<br>
+<b>古法不可能</b> 否——写路径安全是经典安全工程;但用 agent 快速产出 + 主循环逐行复审安全核心 + 真攻击测试闭环,是 AI-native 的实现+验证节奏。</div>
+<h2>5 · 规则候选</h2><div class="field"><ul><li>无感分发/自更等『安全软件分发』子系统,实现前必须先出专项安全 mini-ADR 并过多轮独立对抗安全评审;评审通过前不得 code——防『安全感而非安全性』(给未验证工件盖『已验证』章比不验更危险)。</li><li>供应链签名优先 keyless OIDC attestation(无长期私钥可窃)而非长期裸私钥;消费端离线验签须绑死 OIDC subject 三元组(repo+workflow+ref)+ issuer 精确 + artifact digest 绑定 + fail-closed 无 fallback + 内置 sigstore trusted root。</li><li>进程/daemon 对用户 dotfile 的净新自动写路径 = RCE 面,须单独威胁建模 + 写路径安全(tar typeflag 白名单拒软链 entry / 父链逐级 EvalSymlinks / O_EXCL|O_NOFOLLOW 写原语二分 / 确定性拒软链非跳过)+ 真攻击测试(断言攻击未得逞,非仅返回 error)。</li></ul></div>
+<footer>team-context · RPI Debrief · SOP 非妥协 #2 · multica issue 内渲染</footer>
+</body></html>
