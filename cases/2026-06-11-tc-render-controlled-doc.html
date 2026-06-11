@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>tc-render-controlled-doc</title>
+<style>:root{--ink:#1C1C1C;--mid:#4A4D4A;--soft:#7E827E;--frame:#2B2B2B;--line:#C9CCC9;--page:#F3F3F1;--red:#A8332A;--redtint:#F8EDEB;--gold:#8A6420;--goldtint:#FBF7EA;--green:#2F5D50}
+body.t-plan{--type:#7A2018;--tint:#F7EDEB}
+body.t-research{--type:#2B4A78;--tint:#EDF1F7}
+body.t-case{--type:#2F5D50;--tint:#EEF4F1}
+body.t-handoff{--type:#8A6420;--tint:#F6F0E3}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Songti SC","Noto Serif CJK SC",serif;background:var(--page);color:var(--ink);line-height:1.85;font-size:14px;max-width:780px;margin:0 auto;padding:22px 24px 40px}
+.sheet{background:#fff;border:2px solid var(--frame);padding:0 0 26px}
+.ctrl{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid var(--line);padding:7px 22px;font-family:"PingFang SC",sans-serif;font-size:10.5px;letter-spacing:2.5px;color:var(--soft)}
+.ctrl b{color:var(--type);font-weight:700}
+.appr{display:grid;grid-template-columns:106px 1.25fr 1.1fr 1fr 1fr;border-bottom:2px solid var(--frame)}
+.ac{border-right:1px solid var(--frame);padding:7px 14px 6px}
+.ac.last{border-right:0}
+.ac .al{font-family:"PingFang SC",sans-serif;font-size:9.5px;letter-spacing:2px;color:var(--soft);margin-bottom:1px}
+.ac .av{font-family:"PingFang SC",sans-serif;font-weight:600;font-size:13px;overflow-wrap:anywhere}
+.ac .av.t{color:var(--type);font-weight:700}
+.ac .av.ok{color:var(--green);font-weight:700}
+.ac .av.warn{color:var(--red);font-weight:700}
+.ac2{border-top:1px solid var(--line)}
+.sealcell{grid-column:1;grid-row:1/span 2;border-right:1px solid var(--frame);display:grid;place-items:center;padding:8px}
+.sq{width:62px;height:62px;border:2.5px solid var(--type);box-shadow:inset 0 0 0 1.5px #fff,inset 0 0 0 3px var(--type);display:grid;place-items:center;color:var(--type);font-family:"STZhongsong","Songti SC",serif;font-size:19px;font-weight:900;letter-spacing:2px;line-height:1.5;text-align:center}
+.titlebar{padding:18px 26px 0}
+h1{font-family:"PingFang SC",sans-serif;font-size:22px;font-weight:800;letter-spacing:.5px;line-height:1.5;overflow-wrap:anywhere}
+.sub{font-size:13.5px;color:var(--mid);margin-top:4px}
+.tally{display:grid;grid-template-columns:1fr 1fr 1fr 1.7fr;border:1.5px solid var(--frame);margin:14px 26px 0}
+.tally.c3{grid-template-columns:1fr 1fr 1.7fr}
+.tc{padding:9px 14px 8px;border-right:1px solid var(--frame)}
+.tc:last-child{border-right:0}
+.tc .n{font-family:"PingFang SC",sans-serif;font-size:23px;font-weight:800;line-height:1.3;color:var(--ink)}
+.tc .n.sm{font-size:15px;line-height:1.95}
+.tc .n small{font-size:13px;color:var(--soft);font-weight:500}
+.tc .l{font-family:"PingFang SC",sans-serif;font-size:9.5px;letter-spacing:2.5px;color:var(--soft);margin-top:1px}
+.tc.warn .n{color:var(--red)}
+.tc.v{background:var(--type)}
+.tc.v .n{color:#fff;font-size:15px;line-height:1.85;font-weight:700}
+.tc.v .l{color:rgba(255,255,255,.75)}
+.keypoints{margin:12px 26px 0;border:1.5px solid var(--type);background:var(--tint);padding:11px 17px 10px}
+.keypoints .kt{font-family:"PingFang SC",sans-serif;font-weight:800;font-size:12.5px;letter-spacing:3px;color:var(--type);margin-bottom:5px}
+.keypoints ol{list-style:none}
+.keypoints li{padding:3px 0 3px 28px;position:relative;font-size:13px}
+.keypoints li .kn{position:absolute;left:0;top:5px;width:18px;height:18px;background:var(--type);color:#fff;font-family:"PingFang SC",sans-serif;font-size:10.5px;font-weight:700;display:grid;place-items:center}
+.keypoints li b{font-family:"PingFang SC",sans-serif;font-weight:700}
+.question{margin:14px 26px 0;border:1.5px solid var(--frame);background:#fff;padding:12px 17px}
+.question .qt{font-family:"PingFang SC",sans-serif;font-weight:800;font-size:12.5px;letter-spacing:3px;color:var(--type);margin-bottom:5px}
+.question p{font-family:"PingFang SC",sans-serif;font-weight:600;font-size:14.5px;line-height:1.8;text-align:justify}
+.meta{padding:9px 26px 0;font-size:12px;color:var(--soft);letter-spacing:1px}
+.body{padding:0 26px}
+h2{font-family:"PingFang SC",sans-serif;font-size:15px;font-weight:800;letter-spacing:1px;margin:26px 0 10px;padding:7px 12px;background:#F1F1EF;border-left:5px solid var(--type)}
+h2 .num{font-family:"SF Mono",Menlo,monospace;color:var(--type);margin-right:10px;font-size:13px}
+h2.danger{border-left-color:var(--red)}
+h2.danger .num{color:var(--red)}
+p{margin-bottom:.8em;text-align:justify}
+p:last-child{margin-bottom:0}
+b,strong{font-family:"PingFang SC",sans-serif;font-weight:600}
+.clause{display:grid;grid-template-columns:96px 1fr;gap:10px;padding:6px 0;font-size:13.5px}
+.clause.n{grid-template-columns:44px 1fr}
+.clause dt{font-family:"PingFang SC",sans-serif;font-size:11.5px;font-weight:700;color:var(--soft);padding-top:2px;letter-spacing:1px}
+.clause.n dt{font-family:"SF Mono",Menlo,monospace;color:var(--type);letter-spacing:0}
+.clause dd{text-align:justify;overflow-wrap:anywhere}
+.note{font-size:12px;color:var(--soft)}
+table.formal{width:100%;border-collapse:collapse;margin:8px 0 6px;font-size:13px}
+table.formal th{font-family:"PingFang SC",sans-serif;font-weight:700;font-size:11.5px;letter-spacing:1.5px;border:1px solid var(--frame);background:#F1F1EF;padding:6px 10px;text-align:center}
+table.formal th.danger{background:var(--redtint);color:var(--red)}
+table.formal td{border:1px solid var(--line);border-left:1px solid var(--frame);border-right:1px solid var(--frame);padding:7px 10px 6px;vertical-align:top;line-height:1.78;overflow-wrap:anywhere}
+table.formal tr:last-child td{border-bottom:1px solid var(--frame)}
+table.formal td.c{text-align:center;white-space:nowrap;font-family:"SF Mono",Menlo,monospace;font-size:12px}
+.mk{font-family:"PingFang SC",sans-serif;font-weight:700;white-space:nowrap}
+.mk.ok{color:var(--green)}
+.mk.bad{color:var(--red)}
+.mk.wait{color:var(--soft)}
+.vd{font-family:"PingFang SC",sans-serif;font-weight:700;white-space:nowrap}
+.vd.ok{color:var(--green)}
+.vd.bad{color:var(--red)}
+.vd.mid{color:var(--gold)}
+.vd i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.vd.ok i{background:var(--green)}
+.vd.bad i{background:var(--red)}
+.vd.mid i{background:var(--gold)}
+.judge{border:1.5px solid var(--frame);margin-bottom:13px}
+.judge-h{display:flex;gap:12px;align-items:baseline;padding:9px 16px;border-bottom:1px solid var(--frame);background:#F1F1EF}
+.judge-h .ji{font-family:"PingFang SC",sans-serif;font-size:11px;font-weight:800;color:#fff;background:var(--type);padding:2px 10px;letter-spacing:3px;white-space:nowrap}
+.judge-h .jt{font-family:"PingFang SC",sans-serif;font-weight:700;font-size:14px;line-height:1.6;overflow-wrap:anywhere}
+.judge-b{padding:8px 16px 12px}
+.jrow{display:grid;grid-template-columns:70px 1fr;gap:10px;padding:5px 0;font-size:13px}
+.jrow dt{font-family:"PingFang SC",sans-serif;font-size:11.5px;font-weight:700;color:var(--soft);padding-top:2px;letter-spacing:1.5px}
+.jrow dd{text-align:justify;color:var(--mid);overflow-wrap:anywhere}
+.hind{margin:8px 0 2px;border:1px solid var(--gold);background:var(--goldtint);padding:9px 14px}
+.hind dt{font-family:"PingFang SC",sans-serif;font-size:11px;font-weight:800;letter-spacing:2px;color:var(--gold);margin-bottom:3px}
+.hind dd{font-family:"PingFang SC",sans-serif;font-weight:600;font-size:13px;line-height:1.8}
+.aux{font-size:12.5px;color:var(--mid);padding-top:6px}
+.aux dt{display:inline;font-family:"PingFang SC",sans-serif;font-size:11px;font-weight:700;color:var(--soft);margin-right:8px;letter-spacing:1px}
+.aux dd{display:inline}
+.appetite{margin:8px 0 4px;border:1.5px solid var(--gold);background:var(--goldtint);padding:11px 16px}
+.appetite .at{font-family:"PingFang SC",sans-serif;font-size:11px;font-weight:800;letter-spacing:2px;color:var(--gold);margin-bottom:3px}
+.appetite .av2{font-family:"PingFang SC",sans-serif;font-weight:700;font-size:15px}
+.appetite .av2 small{font-weight:500;font-size:12.5px;color:var(--mid)}
+.dgrid{display:grid;grid-template-columns:46px 1fr;gap:8px;padding:5px 0;font-size:13px}
+.dgrid dt{font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--type);font-weight:700;padding-top:2px}
+.dgrid dd{text-align:justify;color:var(--mid)}
+.dgrid dd b{color:var(--ink)}
+.next{border:1.5px solid var(--type);background:var(--tint);padding:13px 17px 11px;margin-top:12px}
+.next .lead{font-family:"PingFang SC",sans-serif;font-weight:700;font-size:14.5px;line-height:1.8;margin-bottom:8px}
+.next p{font-size:13px;color:var(--mid)}
+.gate{margin-top:9px;border:1px solid var(--red);background:var(--redtint);padding:9px 13px;font-size:13px}
+.gate .gl{font-family:"PingFang SC",sans-serif;font-size:11px;font-weight:800;letter-spacing:2px;color:var(--red);margin-right:9px}
+.pend{font-family:"PingFang SC",sans-serif;font-size:10px;font-weight:700;color:var(--red);border:1px solid var(--red);padding:1px 7px;white-space:nowrap}
+code{font-family:"SF Mono",Menlo,monospace;background:#F1F1EF;padding:1px 5px;border-radius:2px;font-size:11.5px;overflow-wrap:anywhere}
+footer{margin-top:12px;text-align:center;font-family:"PingFang SC",sans-serif;font-size:10.5px;color:var(--soft);letter-spacing:2px}
+</style></head>
+<body class="t-case">
+<div class="sheet">
+<div class="ctrl"><span>受控文档 · <b>tc-render-controlled-doc</b></span><span>流程依据:SOP v0.4 非妥协 #2</span></div>
+<div class="appr"><div class="sealcell"><div class="sq">复<br>盘</div></div><div class="ac"><div class="al">文档类别</div><div class="av t">复盘报告</div></div><div class="ac"><div class="al">编号</div><div class="av">tc-render-controlled-doc</div></div><div class="ac"><div class="al">层级</div><div class="av">—</div></div><div class="ac last"><div class="al">阶段</div><div class="av">复盘收尾</div></div><div class="ac ac2"><div class="al">拟制</div><div class="av">tc-5-review session</div></div><div class="ac ac2"><div class="al">评审</div><div class="av">复盘评审子 agent</div></div><div class="ac ac2"><div class="al">批准</div><div class="av">负责人拍板</div></div><div class="ac ac2 last"><div class="al">日期</div><div class="av">2026-06-11</div></div></div>
+<div class="titlebar"><h1>tc-render-controlled-doc</h1></div>
+<div class="tally"><div class="tc"><div class="n">6<small> / 6</small></div><div class="l">完成标准</div></div><div class="tc"><div class="n">4</div><div class="l">关键判断</div></div><div class="tc"><div class="n">3</div><div class="l">规则候选</div></div><div class="tc v"><div class="n sm">已收尾 · 标准全数达成</div><div class="l">结论</div></div></div><div class="keypoints"><div class="kt">要点提示</div><ol><li><span class="kn">1</span>先把「样式不好看」翻译成约束与机制问题,再动一行 CSS</li><li><span class="kn">2</span>测试禁用集用「区段封闭减白名单」,不用采样枚举——被评审实证穿透一次就立法</li><li><span class="kn">3</span>活体验证自带 --no-transition——发布动作与状态机解耦的护栏在计划层就埋好</li><li><span class="kn">4</span>原型可以写意,渲染器每个格子必须有源可推——把评审 BL-1 当立法时刻</li></ol></div>
+<div class="body">
+<h2><span class="num">1</span>目标</h2>
+<p>把 tc-render publish.py 四类文档渲染(plan/research/case/handoff)从「衡线公文」换成已定稿的「受控文档」样式(原型 ~/feibo/tpl-prototypes/ 四件套+画廊),并配套扩展字段契约:受控文档骨架(审批栏+类别方章+统计格+要点框 · 重点前置 480px 内联首屏)、类别主色体系、正文字段 string|string[] 双形态化解 esc() 压平(含 _validate 校验引擎 anyOf 扩展),plan 新增 keyDecisions/risks、research 新增 verdict;全部新字段 optional,旧 fields.json 不破。(摘自计划 v4)</p>
+<h2><span class="num">2</span>实际发生</h2>
+<p>设计先行:两轮原型评比(初版四方向 + 按「全中文/端正无倾斜/重点突出」三条硬要求再出四方向)定稿「受控文档」;「按类型换首屏」机制以卷宗×交接对照版先行验证,四类原型(i/j/k/l)+对比画廊落于 tpl-prototypes/。</p><p>计划三轮对抗评审:v1 被打回四条结构级否决(校验引擎需动 _validate 本体/研究交接首屏格无数据源/零倾斜断言与原型图元自相矛盾/活体验证会误触发状态转换);v2 复审剩一条(D5 逐格表覆盖面与标准口径三方分叉);v3 终审 approved,v4 批准记录版钉死四条微决策成为 build 唯一输入。</p><p>实现三 commit:CSS 单源 1775B→9086B 换装、shell 骨架+四渲染器按 D5 逐格表重写、校验引擎 _Invalid 异常化+anyOf 分支+required×空数组拒收、新增 25 例结构断言;75 旧例零回归,全套 100 passed。</p><p>代码评审打回两条(emoji 禁集采样枚举被 ✔✖☑❤⚡ 实证穿透/契约缺双形态示例),修正后复核 approved;PR #23 合并(b3a7cd8)、registry 同步探针一致、活体验证以 --no-transition 发布且 TEA-103 状态零污染、服务端字节与本地全同。</p>
+<h2><span class="num">3</span>完成标准核验</h2>
+<table class="formal"><tr><th style="width:44px">序号</th><th>完成标准</th><th style="width:128px">核验结果</th></tr><tr><td class="c">3.1</td><td>四类 dry-run 用同源真实数据(TEA-99/TEA-100/r2 研究/TEA-89)渲染,产物含共同结构锚点,与定稿原型逐屏对照(豁免封闭三项);CSS 单源 9086B 四类共用</td><td><span class="mk ok">✓ 达成</span></td></tr><tr><td class="c">3.2</td><td>字段契约扩展+_validate anyOf 分支+required×空数组拒收;对抗负面三连(done:[]/goal:[&quot;&quot;]/approach:[123])拒收友好报错;旧 fields 回归,既有 75 例全绿,全套 100 passed</td><td><span class="mk ok">✓ 达成</span></td></tr><tr><td class="c">3.3</td><td>中文化与端正断言化:封闭词表 20 词零命中、emoji 区段封闭(U+2600–U+27BF/U+1F000–U+1FFFF 减白名单)、全文档零 rotate</td><td><span class="mk ok">✓ 达成</span></td></tr><tr><td class="c">3.4</td><td>PUBLISH.md ◆双形态+示例、SKILL.md 视觉与字节数同步、默认落盘路径四条逐字不变、四个消费 skill 字段清单各补一行</td><td><span class="mk ok">✓ 达成</span></td></tr><tr><td class="c">3.5</td><td>活体验证:--no-transition 发布 case 到 TEA-103(评论 5bacd04c · attachments 绑定 · issue 状态零污染 · 服务端字节 diff 全同 · 480px 首屏含结论格与要点提示)</td><td><span class="mk ok">✓ 达成</span></td></tr><tr><td class="c">3.6</td><td>diff 经独立代码评审(两条 blocking 修正后复核 approved)合并 PR #23;registry 同步 tc-render 且探针一致;本复盘即按铁律 #2 收尾</td><td><span class="mk ok">✓ 达成</span></td></tr></table>
+<h2><span class="num">4</span>关键判断</h2>
+<div class="judge"><div class="judge-h"><span class="ji">判断一</span><span class="jt">先把「样式不好看」翻译成约束与机制问题,再动一行 CSS</span></div><div class="judge-b"><div class="jrow"><dt>背景</dt><dd>最初诉求只有一句「附件模版样式风格不太好」。直接重画 CSS 是最顺手的路径;但分析发现真正根因是三个非视觉问题:esc() 把内容压平成墙文、480px 内联 iframe 首屏被页头吃掉四成、四类文档共用一种阅读模式。</dd></div><div class="jrow"><dt>选项</dt><dd>直接改配色字体出几版皮肤 ／ 先量渲染环境(multica 前端 480px sandbox iframe)与内容结构,把问题拆成「内容结构×首屏经济学×类型差分」再设计</dd></div><div class="jrow"><dt>选择</dt><dd>后者。读前端嵌入代码拿到真实视口,把「按情况用不同模版」具体化为「同一外壳、按类型换首屏」,设计与字段契约一起定。</dd></div><div class="hind"><dt>事后看 · 核心收获</dt><dd>对。最终 diff 里 CSS 只是配角——anyOf 双形态字段契约才是观感翻身的主力;当初直接调色的话,墙文和首屏浪费会原样保留。</dd></div><div class="aux"><dt>古法不可能</dt><dd>一轮内同时读完渲染管线、前端嵌入实现、全部历史文档实例并交叉出三个根因,再用同源真实数据出八版可点开的原型——人工做这轮侦察加打样要按周计。</dd></div></div></div>
+<div class="judge"><div class="judge-h"><span class="ji">判断二</span><span class="jt">测试禁用集用「区段封闭减白名单」,不用采样枚举——被评审实证穿透一次就立法</span></div><div class="judge-b"><div class="jrow"><dt>背景</dt><dd>emoji 禁集第一版测试只枚举 14 个常见码点。代码评审者构造 ✔U+2714/✖U+2716/☑U+2611/❤/⚡ 注入,全部穿过断言——而 ✔✖☑ 恰是「对勾替身」最可能的回归形态。</dd></div><div class="jrow"><dt>选项</dt><dd>往枚举里补几个漏网码点 ／ 整区段封闭(U+2600–U+27BF ∪ U+1F000–U+1FFFF)减白名单(✓/☐)</dd></div><div class="jrow"><dt>选择</dt><dd>整区段减白名单。封闭口径其实在计划评审时已立法(v4 标准 3②),实现时打了折扣,代码评审把它拉回。</dd></div><div class="hind"><dt>事后看 · 核心收获</dt><dd>对,且形成闭环证据:计划评审轮把「无 emoji」从开放列表钉成封闭码点集,代码评审才有依据打回采样实现——两道门各抓了一半。</dd></div><div class="aux"><dt>古法不可能</dt><dd>评审者对现产物做全码点扫描并构造五个替身字符实证穿透,分钟级;人工评审通常瞥见「有 emoji 断言」即放行。</dd></div></div></div>
+<div class="judge"><div class="judge-h"><span class="ji">判断三</span><span class="jt">活体验证自带 --no-transition——发布动作与状态机解耦的护栏在计划层就埋好</span></div><div class="judge-b"><div class="jrow"><dt>背景</dt><dd>验收要求向真实 issue 发布一篇 case 看内联渲染;但 publish 默认触发入口转换,会把在建的 plan issue 拍进「复盘-待审+评审中」,且按本团队不变量巡检必产生违规告警。</dd></div><div class="jrow"><dt>选项</dt><dd>找沙盒 issue ／ 直接发本 issue,接受污染后手工摘标签 ／ --no-transition 显式跳过转换 + 发本 plan issue</dd></div><div class="jrow"><dt>选择</dt><dd>第三种。这是计划 v1 评审 B4 抓出的雷,v4 把它写进完成标准 5 的命令行里。</dd></div><div class="hind"><dt>事后看 · 核心收获</dt><dd>对。发布后 TEA-103 仍是「计划-已批准 · 实现中」,全程零污染零手工补救;逃生口旗标第一次在真实验收里兑现价值。</dd></div><div class="aux"><dt>古法不可能</dt><dd>判断本身不依赖 AI,但「入口转换会引爆哪条不变量」的推演来自评审子 agent 对转换脚本与巡检脚本的穷举交叉。</dd></div></div></div>
+<div class="judge"><div class="judge-h"><span class="ji">判断四</span><span class="jt">原型可以写意,渲染器每个格子必须有源可推——把评审 BL-1 当立法时刻</span></div><div class="judge-b"><div class="jrow"><dt>背景</dt><dd>定稿原型里受控条编号、审批栏「所属项目/父项计划」、研究要点框都是编辑性文案;渲染器只有 fields.json 可用。v2 复审把这暴露为 blocking:标准、测试、原型三方口径分叉,第三方按字面验收必挂。</dd></div><div class="jrow"><dt>选项</dt><dd>实现时现场发明(查询补数据/塞 UUID/越界加字段) ／ 计划层给每格钉死「数据源|固定文案|缺省降级」三元组,无源格降级「—」或不渲染</dd></div><div class="jrow"><dt>选择</dt><dd>后者。D5 逐格表成为 build 的逐项映射,豁免清单收为封闭三项。</dd></div><div class="hind"><dt>事后看 · 核心收获</dt><dd>对。build 阶段四个渲染器一次写对零返工——每个「这格显示什么」的问题在计划文本里都有答案;代码评审逐格对照也因此可执行。</dd></div><div class="aux"><dt>古法不可能</dt><dd>三轮计划评审以格子粒度逐项对照原型与 schema 并产出可执行立法,每轮十分钟级;人工评审不会做到格子级。</dd></div></div></div>
+<h2><span class="num">5</span>规则候选</h2>
+<table class="formal"><tr><th>候选规则</th><th style="width:84px">状态</th></tr><tr><td>改「文档/消息模版」类需求时,先量出真实观看视口与渲染管线(嵌入尺寸/转义路径/明暗环境),再动样式——观感问题的根因常在内容结构与首屏经济学,不在配色。</td><td class="c"><span class="pend">待提级</span></td></tr><tr><td>测试里的「禁用集」一律区段封闭减白名单,不做采样枚举——采样断言对同义替身(✔ 替 ✓、✖ 替 ×)天然失明。</td><td class="c"><span class="pend">待提级</span></td></tr><tr><td>渲染器/模版的每个输出格子在计划层必须钉「数据源|固定文案|缺省降级」三元组——原型是写意稿,无源格子是实现期返工与验收扯皮的最大来源。</td><td class="c"><span class="pend">待提级</span></td></tr></table>
+</div>
+</div>
+<footer>AI MIQ 团队 · 受控文档 · 复盘 · multica issue 内联渲染</footer>
+</body></html>
