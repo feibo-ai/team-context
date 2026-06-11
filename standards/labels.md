@@ -58,9 +58,9 @@ research issue: [publish.py --type research] → +研究;findings 非空即 stat
 - work issue + `设计-待审` = 设计评审中(此时 `计划-已批准` 共存合法 → 不变量 #4 的 carve-out)
 - case issue + `复盘-待审` = case 待审
 
-**执行者绑定原则**:评审/测试由**子 agent**承担(全新上下文 = SOP「第二个 session」);
-verdict 返回到编排 session 的那一刻 = 转换执行点(plan-approve / case-finalize 当场跑)。
-子 agent 只产出 verdict、不碰状态;转换权始终归编排 session。
+**执行者绑定原则**:评审/测试/任务层执行由**子 agent**承担(全新上下文 = SOP「第二个 session」);
+verdict/交付返回到编排 session 的那一刻 = 动作执行点(plan-approve / case-finalize / commit 当场做)。
+子 agent 只产出 verdict 或工作产物、**不碰状态、不 commit**;转换权与 commit 权始终归编排 session。
 
 ## 不变量(issue_invariants.py 巡检 · skills/tc-ops/ · **已编入 monthly-health autopilot**,report-only 随月度健康卡推飞书;--strict 留给验收/CI)
 
