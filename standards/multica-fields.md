@@ -8,7 +8,7 @@
 ## 当前用户解析配方(每台机器解析到各自的人 · 禁止硬编码任何 UUID)
 
 ```bash
-ME_EMAIL=$(multica auth status | sed -n 's/.*(\(.*\)).*/\1/p')
+ME_EMAIL=$(multica auth status 2>&1 | sed -n 's/.*(\(.*\)).*/\1/p')   # auth status 输出走 stderr,2>&1 必带
 ME_NAME=$(multica user list --output json | jq -r --arg e "$ME_EMAIL" '.[]|select(.email==$e)|.name')
 ME_UID=$( multica user list --output json | jq -r --arg e "$ME_EMAIL" '.[]|select(.email==$e)|.id')
 ```
