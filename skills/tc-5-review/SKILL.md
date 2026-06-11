@@ -22,7 +22,7 @@ case 是 HTML,作为**评论**内联渲染(append-only),走共享地基 **tc-ren
 
 1. **选定项目** `multica project list --full-id` 取**完整 UUID**(归到被复盘的那个项目;拿不准核对或问用户)。绝不建孤儿 issue(rule #6)。
 2. **建/定位 case issue** `multica issue create --project <UUID> --title "复盘:<slug>" [--parent <plan-issue-id>]`(parent 指向被复盘的 plan,便于回溯/自动关闭)。
-3. **产出+发布(一步 · 调脚本)** 把字段写成 `fields.json`(`goal` / `whatHappened` / `criteriaResults`[{criterion,met,notMetReason}] / `keyJudgments`[{title,context,options,chose,inHindsight,ancientImpossible}] / `ruleCandidates` / `slug`),调:
+3. **产出+发布(一步 · 调脚本)** 把字段写成 `fields.json`(`goal` / `whatHappened`(均收 string 或 string[],数组逐项成段) / `criteriaResults`[{criterion,met,notMetReason}](met 全真→结论格「标准全数达成」) / `keyJudgments`[{title,context,options,chose,inHindsight,ancientImpossible}](title 进首屏「要点提示」) / `ruleCandidates` / `slug`),调:
    `python3 ~/.claude/skills/tc-render/publish.py --type case --data fields.json --issue <case-issue-UUID> --out cases/<YYYY-MM-DD>-<slug>.html`
    脚本渲染 + 硬校验 + 命门B 发布 + 自检 attachments + **入口状态转换**(自动 +`复盘-待审` · status `in_review`;exit 2 = 评论已发但转换失败,按 stderr 补救,绝不重跑 publish)。先 `--dry-run` 预览。永不改附件/改描述。
 

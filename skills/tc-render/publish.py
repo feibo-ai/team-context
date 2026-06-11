@@ -77,6 +77,17 @@ _CRITERION_RESULT = {
     },
 }
 
+
+def _dual(**string_extra):
+    """正文字段双形态(plan v4 D1):string(旧路径)或非空 string 数组(段落/条款)。
+
+    anyOf 任一子 schema 通过即通过;数组侧 minItems:1 按非空项计数,
+    [] 与 [""] 一律拒 —— required×空数组拒收由此承担。"""
+    return {"anyOf": [
+        {"type": "string", **string_extra},
+        {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    ]}
+
 SCHEMAS = {
     "plan": {
         "type": "object", "additionalProperties": False,
@@ -91,7 +102,9 @@ SCHEMAS = {
             "collab": {"type": "array", "items": {"type": "string"}},
             "reviewer": {"type": "string"},
             "appetite": {"type": "string"},
-            "approach": {"type": "string"},
+            "approach": _dual(),
+            "keyDecisions": {"type": "array", "items": {"type": "string"}},
+            "risks": {"type": "array", "items": {"type": "string"}},
         },
     },
     "research": {
@@ -100,8 +113,9 @@ SCHEMAS = {
         "properties": {
             "question": {"type": "string", "minLength": 1},
             "slug": {"type": "string"},
-            "findings": {"type": "string"},
-            "openQuestions": {"type": "string"},
+            "findings": _dual(),
+            "openQuestions": _dual(),
+            "verdict": {"type": "string"},
         },
     },
     "case": {
@@ -111,7 +125,7 @@ SCHEMAS = {
         # 阈值在此声明、由 validate_fields 读取(仍派生自 schema,非散落魔数)。
         "x-section4-min-chars": 100,
         "properties": {
-            "goal": {"type": "string"}, "whatHappened": {"type": "string"},
+            "goal": _dual(), "whatHappened": _dual(),
             "slug": {"type": "string"},
             "criteriaResults": {"type": "array", "items": _CRITERION_RESULT},
             "keyJudgments": {"type": "array", "minItems": 1, "items": _KEY_JUDGMENT},
@@ -123,8 +137,8 @@ SCHEMAS = {
         "required": ["slug", "done", "nextAction"],
         "properties": {
             "slug": {"type": "string"}, "lastCommit": {"type": "string"},
-            "branch": {"type": "string"}, "done": {"type": "string"},
-            "nextAction": {"type": "string"},
+            "branch": {"type": "string"}, "done": _dual(),
+            "nextAction": _dual(),
             "deadEnds": {"type": "array", "items": {"type": "string"}},
             "pollutionSignal": {"type": "string"}, "at": {"type": "string"},
         },
@@ -146,36 +160,60 @@ def _folded(v):
     return 0
 
 
+class _Invalid(ValueError):
+    """schema 违约(内部信号);validate_fields 统一转 fail() 友好 ERROR,绝不裸 traceback。"""
+
+
+def _invalid(msg):
+    raise _Invalid(msg)
+
+
 def _validate(value, schema, path):
-    """递归硬校验:type(类型断言)/ required / additionalProperties:false /
-    enum / minItems(非空项)/ minLength(折叠空白后)。违约 fail() exit 1。"""
+    """递归硬校验:anyOf(任一子 schema 通过即通过,全败报首条)/ type(类型断言)/
+    required(空白 string 与空/全空白 array 同拒)/ additionalProperties:false /
+    enum / minItems(非空项)/ minLength(折叠空白后)。违约抛 _Invalid。"""
+    if "anyOf" in schema:
+        first = None
+        for sub in schema["anyOf"]:
+            try:
+                _validate(value, sub, path)
+                return
+            except _Invalid as e:
+                if first is None:
+                    first = e
+        raise first if first is not None else _Invalid("%s anyOf 子 schema 为空" % (path or "顶层"))
     t = schema.get("type")
     if t:
         py = _PYT[t]
         # bool 是 int 子类:integer/number 不接受 boolean
         if t in ("integer", "number") and isinstance(value, bool):
-            fail("%s 类型应为 %s,不能是 boolean" % (path or "顶层", t))
+            _invalid("%s 类型应为 %s,不能是 boolean" % (path or "顶层", t))
         if not isinstance(value, py):
-            fail("%s 类型应为 %s(类型断言)" % (path or "顶层", t))
+            _invalid("%s 类型应为 %s(类型断言)" % (path or "顶层", t))
     if "enum" in schema and value not in schema["enum"]:
-        fail("%s 取值须属 %s" % (path or "顶层", schema["enum"]))
+        _invalid("%s 取值须属 %s" % (path or "顶层", schema["enum"]))
     if t == "object":
         props = schema.get("properties", {})
         if schema.get("additionalProperties") is False:
             extra = sorted(set(value) - set(props))
             if extra:
-                fail("%s 未知字段(拼错?additionalProperties:false 拒):%s" % (path or "顶层", ", ".join(extra)))
+                _invalid("%s 未知字段(拼错?additionalProperties:false 拒):%s" % (path or "顶层", ", ".join(extra)))
         for r in schema.get("required", []):
-            if r not in value or value.get(r) is None or (isinstance(value.get(r), str) and not value[r].strip()):
-                fail("%s 缺必填字段(或为空):%s" % (path or "顶层", r))
+            v = value.get(r)
+            blank_str = isinstance(v, str) and not v.strip()
+            # 空数组 / 全是空白字符串的数组,与空白 string 同等拒收(required×双形态)
+            blank_list = isinstance(v, list) and (not v or all(
+                isinstance(x, str) and not x.strip() for x in v))
+            if r not in value or v is None or blank_str or blank_list:
+                _invalid("%s 缺必填字段(或为空):%s" % (path or "顶层", r))
         for k, sub in props.items():
             if k in value and value[k] is not None:
                 _validate(value[k], sub, (path + "." if path else "") + k)
     elif t == "array":
         nonblank = [x for x in value if not (isinstance(x, str) and not x.strip())]
         if "minItems" in schema and len(nonblank) < schema["minItems"]:
-            fail("%s 须 ≥%d 个非空项(当前 %d · 阈值派生自 schema.minItems)"
-                 % (path or "顶层", schema["minItems"], len(nonblank)))
+            _invalid("%s 须 ≥%d 个非空项(当前 %d · 阈值派生自 schema.minItems)"
+                     % (path or "顶层", schema["minItems"], len(nonblank)))
         sub = schema.get("items")
         if sub:
             for i, x in enumerate(value):
@@ -183,15 +221,18 @@ def _validate(value, schema, path):
     elif t == "string" and "minLength" in schema:
         n = _folded(value)
         if n < schema["minLength"]:
-            fail("%s 实质内容(折叠空白后)须 ≥%d 字符,当前 %d(阈值派生自 schema.minLength)"
-                 % (path or "顶层", schema["minLength"], n))
+            _invalid("%s 实质内容(折叠空白后)须 ≥%d 字符,当前 %d(阈值派生自 schema.minLength)"
+                     % (path or "顶层", schema["minLength"], n))
 
 
 def validate_fields(doc_type, data):
     """顶层硬校验入口:schema 校验 + slug 路径安全 + case section4 实质内容下限。"""
     if not isinstance(data, dict):
         fail("fields 顶层须为 JSON object")
-    _validate(data, SCHEMAS[doc_type], "")
+    try:
+        _validate(data, SCHEMAS[doc_type], "")
+    except _Invalid as e:
+        fail(str(e))
     slug = data.get("slug")
     if slug is not None and not SLUG_RE.match(str(slug)):
         fail("slug 仅允许字母/数字/.-_(阻断路径穿越);得到:%r" % slug)
@@ -206,103 +247,293 @@ def validate_fields(doc_type, data):
 # 渲染(纯渲染 · 校验已前移到 validate_fields)
 # ======================================================================
 
-def shell(title, eyebrow, meta_items, sections_html, footer):
-    meta = "".join('<span>%s <b>%s</b></span>' % (esc(l), esc(v)) for l, v in meta_items)
+TYPE_META = {
+    "plan":     {"cls": "t-plan",     "cn": "计划", "seal": "计<br>划", "rule": "流程依据:SOP v0.4 非妥协 #1"},
+    "research": {"cls": "t-research", "cn": "研究", "seal": "研<br>究", "rule": "流程依据:SOP v0.4 · 研究阶段"},
+    "case":     {"cls": "t-case",     "cn": "复盘", "seal": "复<br>盘", "rule": "流程依据:SOP v0.4 非妥协 #2"},
+    "handoff":  {"cls": "t-handoff",  "cn": "交接", "seal": "交<br>接", "rule": "流程依据:SOP v0.4 非妥协 #1"},
+}
+
+_CN_NUM = "一二三四五六七八九十"
+
+
+def cn_idx(i):
+    """1-based 中文序号(判断一/判断二…);超出十回退阿拉伯数字。"""
+    return _CN_NUM[i - 1] if 1 <= i <= len(_CN_NUM) else str(i)
+
+
+def _items(v):
+    """双形态值 → 非空项列表(string 视为单项;None/空 → [])。"""
+    raw = [v] if isinstance(v, str) else list(v or [])
+    return [str(x) for x in raw if str(x or "").strip()]
+
+
+def paras(v, blank=""):
+    """双形态正文 → <p> 序列(D1):string=单段(旧路径),array=逐项一段;空→占位段。"""
+    items = _items(v) or ([blank] if blank else [])
+    return "".join("<p>%s</p>" % esc(x) for x in items)
+
+
+def appr_grid(doc_type, row1, row2):
+    """审批栏:左方章跨两行 + 两行各 4 格。row*: [(label, value, vcls)]。"""
+    def cell(c, extra):
+        label, value, vcls = c
+        return ('<div class="ac%s"><div class="al">%s</div><div class="av%s">%s</div></div>'
+                % (extra, esc(label), (" " + vcls) if vcls else "", esc(value)))
+    cells = [cell(c, " last" if i == 3 else "") for i, c in enumerate(row1)]
+    cells += [cell(c, " ac2 last" if i == 3 else " ac2") for i, c in enumerate(row2)]
+    return ('<div class="appr"><div class="sealcell"><div class="sq">%s</div></div>%s</div>'
+            % (TYPE_META[doc_type]["seal"], "".join(cells)))
+
+
+def tc(num_html, label, cls="", small=False):
+    """统计格单元;num_html 由调用方负责转义(允许 <small> 结构)。"""
+    return ('<div class="tc%s"><div class="n%s">%s</div><div class="l">%s</div></div>'
+            % ((" " + cls) if cls else "", " sm" if small else "", num_html, esc(label)))
+
+
+def tally(cells, c3=False):
+    return '<div class="tally%s">%s</div>' % (" c3" if c3 else "", "".join(cells))
+
+
+def keypoints(title, items):
+    """要点提示框;无非空项 → 空串(整框不渲染)。"""
+    items = _items(items)
+    if not items:
+        return ""
+    lis = "".join('<li><span class="kn">%d</span>%s</li>' % (i + 1, esc(x))
+                  for i, x in enumerate(items))
+    return '<div class="keypoints"><div class="kt">%s</div><ol>%s</ol></div>' % (esc(title), lis)
+
+
+def h2(num, title, danger=False):
+    return ('<h2%s><span class="num">%s</span>%s</h2>'
+            % (' class="danger"' if danger else "", esc(num), esc(title)))
+
+
+def shell(doc_type, slug, h1_text, sub, appr_html, mid_html, body_html):
+    """受控文档骨架(顺序齐定稿原型):sheet 框线 + 受控条 + 审批栏 + 标题区
+    + 首屏件(tally/问题框/要点)+ 正文。标签全中文;默认落盘路径不在此层。"""
+    m = TYPE_META[doc_type]
+    sub_html = ('<div class="sub">%s</div>' % esc(sub)) if sub else ""
     return (
         '<!DOCTYPE html>\n<html lang="zh-CN"><head><meta charset="UTF-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
-        '<title>%s</title>\n<style>%s</style></head>\n<body>\n'
-        '<div class="eyebrow">%s</div>\n<h1>%s</h1>\n<div class="meta">%s</div>\n'
-        '%s\n<footer>%s</footer>\n</body></html>\n'
-    ) % (esc(title), CSS, esc(eyebrow), esc(title), meta, sections_html, esc(footer))
+        '<title>%s</title>\n<style>%s</style></head>\n<body class="%s">\n'
+        '<div class="sheet">\n'
+        '<div class="ctrl"><span>受控文档 · <b>%s</b></span><span>%s</span></div>\n'
+        '%s\n'
+        '<div class="titlebar"><h1>%s</h1>%s</div>\n'
+        '%s\n'
+        '<div class="body">\n%s\n</div>\n'
+        '</div>\n'
+        '<footer>AI MIQ 团队 · 受控文档 · %s · multica issue 内联渲染</footer>\n'
+        '</body></html>\n'
+    ) % (esc(h1_text), CSS, m["cls"], esc(slug), esc(m["rule"]), appr_html,
+         esc(h1_text), sub_html, mid_html, body_html, esc(m["cn"]))
 
 
 def render_plan(d):
-    goal = (d.get("goal") or "").strip()
-    crits = [c for c in (d.get("completionCriteria") or []) if str(c).strip()]
     slug = d.get("slug") or "plan"
-    layer = d.get("layer") or "project"
-    exec_ = "、".join(d.get("exec") or []) or "(未分配)"
-    collab = "、".join(d.get("collab") or []) or "(无)"
-    reviewer = d.get("reviewer") or "(待指派)"
+    layer_cn = "任务层" if (d.get("layer") or "project") == "task" else "项目层"
+    crits = _items(d.get("completionCriteria"))
+    decisions = _items(d.get("keyDecisions"))
+    risks = _items(d.get("risks"))
     dri = d.get("dri") or "(指派)"
+    reviewer = d.get("reviewer") or "(待指派)"
     appetite = d.get("appetite") or "(设定)"
-    crit_li = "".join("<li>%s</li>" % esc(c) for c in crits)
+    exec_ = "、".join(_items(d.get("exec"))) or "(未分配)"
+    collab = "、".join(_items(d.get("collab"))) or "(无)"
+
+    appr = appr_grid("plan",
+                     [("文档类别", "实施计划", "t"), ("编号", slug, ""),
+                      ("层级", layer_cn, ""), ("阶段", "送审待批", "")],
+                     [("拟制", dri, ""), ("评审", reviewer, ""),
+                      ("批准", "待负责人拍板", ""), ("日期", today(), "")])
+    cells = tally([
+        tc("%d<small> 条</small>" % len(crits), "完成标准"),
+        tc(("%d<small> 项</small>" % len(decisions)) if decisions else "—", "已拍决策"),
+        tc(("%d<small> 项</small>" % len(risks)) if risks else "—", "风险"),
+        tc(esc(appetite), "投入预算 · 超时升版重审", cls="v", small=True),
+    ])
+    kp = keypoints("拍板要点", decisions or crits[:3])
+
+    crit_rows = "".join(
+        '<tr><td class="c">2.%d</td><td>%s</td>'
+        '<td class="c"><span class="mk wait">☐ 待验</span></td></tr>'
+        % (i + 1, esc(c)) for i, c in enumerate(crits))
+    roles_rows = "".join(
+        '<tr><td class="c">%s</td><td>%s</td></tr>' % (esc(r), esc(v))
+        for r, v in [("负责人", dri), ("执行", exec_), ("协作", collab), ("评审", reviewer)])
     secs = [
-        '<h2>目标</h2><div class="field"><div class="field-label">Goal</div>%s</div>' % esc(goal),
-        '<h2>完成标准</h2><div class="field crit"><ul>%s</ul></div>' % crit_li,
-        '<h2>分工</h2><div class="field"><div class="field-label">Roles</div>'
-        'DRI <code>%s</code> · EXEC <code>%s</code> · COLLAB <code>%s</code> · REVIEW <code>%s</code></div>'
-        % (esc(dri), esc(exec_), esc(collab), esc(reviewer)),
-        '<h2>投入预算</h2><div class="callout"><b>%s</b> · 超时触发升版强制重审。</div>' % esc(appetite),
+        h2("1", "目标"), paras(d.get("goal")),
+        h2("2", "完成标准(送审 · 待验)"),
+        '<table class="formal"><tr><th style="width:44px">序号</th><th>完成标准</th>'
+        '<th style="width:92px">核验</th></tr>%s</table>' % crit_rows,
+        h2("3", "分工"),
+        '<table class="formal"><tr><th style="width:96px">角色</th><th>承担</th></tr>%s</table>' % roles_rows,
+        h2("4", "投入预算"),
+        '<div class="appetite"><div class="at">预算上限</div><div class="av2">%s'
+        '<small>　超时即触发升版强制重审,不带病延期。</small></div></div>' % esc(appetite),
     ]
-    if (d.get("approach") or "").strip():
-        secs.append('<h2>方案</h2><div class="field">%s</div>' % esc(d["approach"]))
-    doc = shell(slug, "PLAN · 计划 · %s" % layer,
-                [("DRI", d.get("dri") or "—"), ("Layer", layer), ("Appetite", d.get("appetite") or "—")],
-                "\n".join(secs), "team-context · RPI Plan phase · multica issue 内渲染")
+    if _folded(d.get("approach")) or decisions or risks:
+        secs.append(h2("5", "方案要点"))
+        secs.append(paras(d.get("approach")))
+        secs += ['<div class="dgrid"><dt>D%d</dt><dd>%s</dd></div>' % (i + 1, esc(x))
+                 for i, x in enumerate(decisions)]
+        secs += ['<div class="dgrid"><dt>R%d</dt><dd>%s</dd></div>' % (i + 1, esc(x))
+                 for i, x in enumerate(risks)]
+    doc = shell("plan", slug, slug, None, appr, cells + kp, "\n".join(secs))
     return doc, "docs/plans/plan_%s_%s.html" % (today(), slug)
 
 
 def render_research(d):
-    q = (d.get("question") or "").strip()
     slug = d.get("slug") or "research"
-    findings = d.get("findings") or "(待 fresh session 深度调研填充)"
-    openq = d.get("openQuestions") or "(research 过程中浮现的开放问题)"
-    secs = "\n".join([
-        '<h2>问题</h2><div class="field"><div class="field-label">Question</div>%s</div>' % esc(q),
-        '<h2>发现</h2><div class="field"><div class="field-label">Findings</div>%s</div>' % esc(findings),
-        '<h2>待解问题</h2><div class="field">%s</div>' % esc(openq),
-    ])
-    doc = shell(slug, "RESEARCH · 研究", [("Phase", "RPI Research")], secs,
-                "team-context · RPI Research phase · multica issue 内渲染")
+    filled = _folded(d.get("findings")) > 0
+    has_open = _folded(d.get("openQuestions")) > 0
+    verdict = (d.get("verdict") or "").strip()
+    # 裁决格缺省两态:骨架态(发现未回填)/已回填未出裁决
+    vtext = verdict or ("已回填 · 裁决待对账" if filled else "调研中 · 待回填")
+
+    appr = appr_grid("research",
+                     [("文档类别", "研究报告", "t"), ("编号", slug, ""),
+                      ("层级", "—", ""), ("阶段", "调研完成" if filled else "调研中", "")],
+                     [("拟制", "调研子 agent", ""), ("对账", "负责人", ""),
+                      ("复核", "与前轮对照", ""), ("日期", today(), "")])
+    q = ('<div class="question"><div class="qt">研究问题</div><p>%s</p></div>'
+         % esc((d.get("question") or "").strip()))
+    cells = tally([
+        tc("已填充" if filled else "待填充", "发现", small=True),
+        tc("已记录" if has_open else "无", "待解问题", small=True),
+        tc(esc(vtext), "总体裁决", cls="v", small=True),
+    ], c3=True)
+    f = d.get("findings")
+    kp = keypoints("发现要点", _items(f)[:3] if isinstance(f, list) else [])
+
+    secs = [
+        h2("1", "发现"), paras(f, blank="(待 fresh session 深度调研填充)"),
+        h2("2", "待解问题"), paras(d.get("openQuestions"), blank="(研究过程中浮现的开放问题)"),
+    ]
+    doc = shell("research", slug, slug, None, appr, q + cells + kp, "\n".join(secs))
     return doc, "docs/research/research_%s_%s.html" % (today(), slug)
 
 
 def render_case(d):
-    kj = d.get("keyJudgments") or []
     slug = d.get("slug") or "case"
-    crit_li = ""
-    for c in (d.get("criteriaResults") or []):
-        mark = "✅" if c.get("met") else "❌"
-        reason = (" — %s" % esc(c["notMetReason"])) if (not c.get("met") and c.get("notMetReason")) else ""
-        crit_li += "<li>%s %s%s</li>" % (mark, esc(c.get("criterion")), reason)
-    j_html = "\n".join(
-        ('<div class="field"><div class="field-label">判断:%s</div>\n'
-         '<b>背景</b> %s<br>\n<b>选项</b> %s<br>\n<b>选择</b> %s<br>\n'
-         '<b>事后看</b> %s<br>\n<b>古法不可能</b> %s</div>')
-        % (esc(j.get("title")), esc(j.get("context")), esc(" / ".join(j.get("options") or [])),
-           esc(j.get("chose")), esc(j.get("inHindsight")), esc(j.get("ancientImpossible")))
-        for j in kj)
-    rules = d.get("ruleCandidates") or []
-    rules_html = ("<ul>%s</ul>" % "".join("<li>%s</li>" % esc(r) for r in rules)) if rules else "_(无)_"
-    secs = "\n".join([
-        '<h2>1 · 目标</h2><div class="field">%s</div>' % esc(d.get("goal")),
-        '<h2>2 · 实际发生</h2><div class="field">%s</div>' % esc(d.get("whatHappened")),
-        '<h2>3 · 完成标准</h2><div class="field crit"><ul>%s</ul></div>' % crit_li,
-        '<h2>4 · 关键判断</h2>%s' % j_html,
-        '<h2>5 · 规则候选</h2><div class="field">%s</div>' % rules_html,
+    kj = d.get("keyJudgments") or []
+    crs = [c for c in (d.get("criteriaResults") or []) if str(c.get("criterion") or "").strip()]
+    met = sum(1 for c in crs if c.get("met"))
+    rules = _items(d.get("ruleCandidates"))
+    # 结论格三态(v4):全数达成 / n/m 达成 / 未提供逐项核验
+    if crs and met == len(crs):
+        vtext = "已收尾 · 标准全数达成"
+    elif crs:
+        vtext = "已收尾 · %d/%d 达成" % (met, len(crs))
+    else:
+        vtext = "复盘存档"
+
+    appr = appr_grid("case",
+                     [("文档类别", "复盘报告", "t"), ("编号", slug, ""),
+                      ("层级", "—", ""), ("阶段", "复盘收尾", "")],
+                     [("拟制", "tc-5-review session", ""), ("评审", "复盘评审子 agent", ""),
+                      ("批准", "负责人拍板", ""), ("日期", today(), "")])
+    cells = tally([
+        tc(("%d<small> / %d</small>" % (met, len(crs))) if crs else "—", "完成标准"),
+        tc(str(len(kj)), "关键判断"),
+        tc(str(len(rules)) if rules else "—", "规则候选"),
+        tc(esc(vtext), "结论", cls="v", small=True),
     ])
-    doc = shell(slug, "CASE · 复盘", [("Phase", "RPI Debrief")], secs,
-                "team-context · RPI Debrief · SOP 非妥协 #2 · multica issue 内渲染")
+    kp = keypoints("要点提示", [j.get("title") for j in kj])
+
+    crit_rows = ""
+    for i, c in enumerate(crs):
+        if c.get("met"):
+            mark = '<span class="mk ok">✓ 达成</span>'
+        else:
+            reason = (c.get("notMetReason") or "").strip()
+            mark = ('<span class="mk bad">× 未达成</span>%s'
+                    % ((" — %s" % esc(reason)) if reason else ""))
+        crit_rows += ('<tr><td class="c">3.%d</td><td>%s</td><td>%s</td></tr>'
+                      % (i + 1, esc(c.get("criterion")), mark))
+    crit_html = ('<table class="formal"><tr><th style="width:44px">序号</th><th>完成标准</th>'
+                 '<th style="width:128px">核验结果</th></tr>%s</table>' % crit_rows
+                 ) if crs else '<p class="note">(未提供逐项核验)</p>'
+
+    j_blocks = []
+    for i, j in enumerate(kj):
+        rows = ""
+        for label, v in [("背景", j.get("context")),
+                         ("选项", " ／ ".join(_items(j.get("options")))),
+                         ("选择", j.get("chose"))]:
+            if str(v or "").strip():
+                rows += ('<div class="jrow"><dt>%s</dt><dd>%s</dd></div>' % (esc(label), esc(v)))
+        hind = ('<div class="hind"><dt>事后看 · 核心收获</dt><dd>%s</dd></div>'
+                % esc(j.get("inHindsight"))) if str(j.get("inHindsight") or "").strip() else ""
+        aux = ('<div class="aux"><dt>古法不可能</dt><dd>%s</dd></div>'
+               % esc(j.get("ancientImpossible"))) if str(j.get("ancientImpossible") or "").strip() else ""
+        j_blocks.append(
+            '<div class="judge"><div class="judge-h"><span class="ji">判断%s</span>'
+            '<span class="jt">%s</span></div><div class="judge-b">%s%s%s</div></div>'
+            % (cn_idx(i + 1), esc(j.get("title") or "(未命名判断)"), rows, hind, aux))
+
+    rules_html = ('<table class="formal"><tr><th>候选规则</th><th style="width:84px">状态</th></tr>%s</table>'
+                  % "".join('<tr><td>%s</td><td class="c"><span class="pend">待提级</span></td></tr>'
+                            % esc(r) for r in rules)) if rules else '<p class="note">(无)</p>'
+
+    secs = [
+        h2("1", "目标"), paras(d.get("goal")),
+        h2("2", "实际发生"), paras(d.get("whatHappened")),
+        h2("3", "完成标准核验"), crit_html,
+        h2("4", "关键判断"), "\n".join(j_blocks),
+        h2("5", "规则候选"), rules_html,
+    ]
+    doc = shell("case", slug, slug, None, appr, cells + kp, "\n".join(secs))
     return doc, "cases/%s-%s.html" % (today(), slug)
 
 
 def render_handoff(d):
     slug = d.get("slug") or "handoff"
     at = d.get("at") or now_min()
-    dead = d.get("deadEnds") or []
-    dead_html = ("<ul>%s</ul>" % "".join("<li>%s</li>" % esc(x) for x in dead)) if dead else "(无)"
-    sec = ("<h2>当前状态 · handoff @ %s</h2>\n<div class=\"callout\">\n"
-           '<div class="field-label">Last commit</div><code>%s</code> · <code>%s</code>\n'
-           '<div class="field-label">What\'s done</div>%s\n'
-           '<div class="field-label">Next action</div>%s\n'
-           '<div class="field-label">Dead ends — do NOT retry</div>%s\n'
-           '<div class="field-label">Pollution signal</div>%s\n</div>'
-           ) % (esc(at), esc(d.get("lastCommit")), esc(d.get("branch")), esc(d.get("done")),
-                esc(d.get("nextAction")), dead_html, esc(d.get("pollutionSignal")))
-    doc = shell(slug, "HANDOFF · 交接", [("Phase", "RPI Handoff")], sec,
-                "team-context · RPI handoff · multica issue 内渲染")
+    dead = _items(d.get("deadEnds"))
+    pol = (d.get("pollutionSignal") or "").strip()
+    na = d.get("nextAction")
+    na_items = _items(na)
+    n_impl = len(na_items) if isinstance(na, list) else 0
+
+    appr = appr_grid("handoff",
+                     [("文档类别", "交接单", "t"), ("编号", slug, ""),
+                      ("层级", "—", ""), ("阶段", "转下一 session", "")],
+                     [("移交", "本 session", ""), ("接收", "下一 session", ""),
+                      ("污染信号", pol or "无 · 洁净", "warn" if pol else "ok"),
+                      ("时点", at, "")])
+    cells = tally([
+        tc("下一 session", "接收", small=True),
+        tc(("%d<small> 项</small>" % n_impl) if n_impl else "—", "实现项"),
+        tc(str(len(dead)), "禁区", cls="warn" if dead else ""),
+        tc("唯一输入 · 见下一步", "开工指引", cls="v", small=True),
+    ])
+
+    if na_items:
+        next_body = ('<div class="lead">%s</div>' % esc(na_items[0])
+                     ) + "".join("<p>%s</p>" % esc(x) for x in na_items[1:])
+    else:
+        next_body = '<div class="lead">(待补充)</div>'
+    dead_html = ('<table class="formal"><tr><th class="danger" style="width:42px">标记</th>'
+                 '<th class="danger">已证伪的路线与原因</th></tr>%s</table>'
+                 % "".join('<tr><td class="c"><span class="mk bad">×</span></td><td>%s</td></tr>'
+                           % esc(x) for x in dead)) if dead else '<p class="note">(无)</p>'
+    archive = (
+        '<div class="clause"><dt>末次提交</dt><dd><code>%s</code> · 分支 <code>%s</code></dd></div>'
+        '<div class="clause"><dt>已完成</dt><dd>%s</dd></div>'
+    ) % (esc(d.get("lastCommit") or "—"), esc(d.get("branch") or "—"),
+         paras(d.get("done")))
+
+    secs = [
+        h2("1", "下一步(接收方照此开工)"), '<div class="next">%s</div>' % next_body,
+        h2("2", "禁区(已证伪路线 · 勿重试)", danger=True), dead_html,
+        h2("3", "交接时点存档"), archive,
+    ]
+    doc = shell("handoff", slug, slug, None, appr, cells, "\n".join(secs))
     return doc, "docs/plans/handoff_%s_%s.html" % (today(), slug)
 
 
@@ -445,7 +676,8 @@ def main():
 
     # 入口状态转换(发布即流转 · 语义单源 = transition.py)。失败走 exit 2 契约:
     # 评论已发成功,绝不重跑 publish(会重复发评论);补救 = 幂等的 transition.py 单独调用。
-    findings_filled = bool(a.type == "research" and str(data.get("findings") or "").strip())
+    # findings 双形态:string 非空白 或 array 含 ≥1 非空白项(_folded 两者通吃)
+    findings_filled = bool(a.type == "research" and _folded(data.get("findings")))
     try:
         tr = load_transition_module()
         tr.run_publish_init(a.issue, a.type, findings_filled=findings_filled)

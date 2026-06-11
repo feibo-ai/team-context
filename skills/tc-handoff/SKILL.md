@@ -56,7 +56,7 @@ work. If multiple plans or none, ask.
 ### 5. Persist to the multica issue(经 tc-render 命门B 收口 · 不再走 session_handoff MCP)
 If this work is tracked in a multica issue:
 - **防重复 handoff(原 session_handoff <60s 幂等门 · 净损失须复刻)**:先查当期 plan / issue 是否已有 `handoff @ YYYY-MM-DD HH:MM` 标记且在 **<60 秒**前 —— 若是,**拒绝重复 handoff**(提示 `last handoff <N>s ago — refusing duplicate within 60s`),不重发,直接进第 6 步。
-- **Current State 评论**:把上面的 Current State 块发为一条评论。**唯一发布路径 = publish.py 命门B 收口**(硬校验 · 无旁路):把 `{slug, at, lastCommit, branch, done, nextAction, deadEnds, pollutionSignal}` 写成 `fields.json`,调 `python3 ~/.claude/skills/tc-render/publish.py --type handoff --data fields.json --issue <id>`(渲染 + 硬校验 + 命门B 内联发布 + 自检 attachments)。**禁止**用裸 markdown 评论绕开 publish.py 硬校验(无快捷旁路 · 防 ③ 回归)。
+- **Current State 评论**:把上面的 Current State 块发为一条评论。**唯一发布路径 = publish.py 命门B 收口**(硬校验 · 无旁路):把 `{slug, at, lastCommit, branch, done, nextAction, deadEnds, pollutionSignal}` 写成 `fields.json`(done/nextAction 收 string 或 string[];**nextAction 用数组**=首条作下一步导语、条款数进首屏「实现项」格),调 `python3 ~/.claude/skills/tc-render/publish.py --type handoff --data fields.json --issue <id>`(渲染 + 硬校验 + 命门B 内联发布 + 自检 attachments)。**禁止**用裸 markdown 评论绕开 publish.py 硬校验(无快捷旁路 · 防 ③ 回归)。
 - **plan 同步(原 session_handoff 重生成 plan 行为 · 可选)**:把这次 handoff 快照并进当期 plan 的 `approach`/末尾,用 `publish.py --type plan` **再发一条新 plan 评论**(append-only · 旧版本留存 · 演化可追溯),让 plan doc 也带最新交接状态。`--issue` 一律完整 UUID。
 
 ### 6. Final confirmation
