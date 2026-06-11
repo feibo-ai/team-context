@@ -2,7 +2,7 @@
 name: tc-3-plan
 description: "Use when entering Plan phase of RPI framework — after Research is done. Triggers: 'write a plan', 'let us plan', '做个 plan', 'Plan session', user invokes Phase 01 step 3. Generates a plan doc (HTML) with the 4 mandatory SOP v0.4 fields (goal / completion criteria / who does what / appetite). Differs by layer: project plans get a full plan doc, task plans get a 3-sentence mini-plan. Required for SOP non-negotiable #1 (Plan Mode — never vibe code)."
 owner: 曾振华
-last_reviewed_at: 2026-06-10
+last_reviewed_at: 2026-06-11
 ---
 
 # RPI · Plan Session
@@ -93,7 +93,7 @@ docs/research/research_YYYY-MM-DD_<topic>.html
 产出是 HTML,作为 issue **评论**内联渲染(append-only),走共享地基 **tc-render**(`~/.claude/skills/tc-render/`):
 
 1. **选定项目**:`multica project list --full-id` 取**完整 UUID** 作 projectId(8 位短 ID 报 400;**拿不准就问用户**:对不对?要不要 `multica project create` 新建?)。绝不建无项目的孤儿 issue。(rule #6)
-2. **建/定位 plan issue**:`multica issue create --project <UUID> --title "计划:<slug>" [--parent <research-issue-id>]`(取回 issue id 完整 UUID)。
+2. **建/定位 plan issue**:`multica issue create --project <UUID> --title "计划:<slug>" --assignee "$ME_NAME" [--parent <research-issue-id>]`(取回 issue id 完整 UUID;assignee=当前用户运行时解析、不问,fields.json 的 `dri` 同样填 `$ME_NAME`——配方见 standards/multica-fields.md,绝不硬编码人名/UUID)。
 3. **产出+发布(一步 · 调脚本)**:把字段写成 `fields.json`(`goal` / `completionCriteria` / `dri` / `layer` / `exec` / `collab` / `reviewer` / `appetite` / `approach`(string 或 string[]) / `slug`;可选 `keyDecisions`[]=首屏「拍板要点」数据源(缺省降级为完成标准前 3 条)、`risks`[]=方案段 R 条款),调:
    `python3 ~/.claude/skills/tc-render/publish.py --type plan --data fields.json --issue <issue-UUID> --out docs/plans/plan_<YYYY-MM-DD>_<slug>.html`
    脚本**渲染 + 硬校验 + 命门B 发布 + 自检 attachments + 入口状态转换**一步到位(发布成功自动加 `计划-草稿`,仅当 issue 尚无任何 计划-* label;exit 2 = 评论已发但转换失败,按 stderr 补救,**绝不重跑 publish**)。先 `--dry-run` 预览。
