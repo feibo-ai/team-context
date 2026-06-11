@@ -20,8 +20,8 @@ multica autopilot 的 YAML 模板 + agent 通用约束单源。
 AUTOPILOT_SCOPE 是 agent 级单值 ⇒ 个人与 team **不能**共用 agent(DRI 机器上是
 `助理·曾振华` + `助理·全队` 两个)。
 
-实况分布(2026-06-10 · 迁移当日下午应 DRI 要求补齐荣灿 3 个缺口):荣灿 5 / 付雨生 5 /
-qiuhaoqi 5 / xieyu 5 / 曾振华个人 4(无个人每日开工)/ 全队 1(仅每日开工)= 25 个 autopilot。
+实况分布:6 scope × 5 kind = **30 个满编**(2026-06-10 迁移既有 22 个 → 同日应 DRI 要求
+补荣灿 3 个 → 2026-06-11 补 每日开工·曾振华 + 全队 4 个,全部经 my/team-autopilot.sh 建,模式/cron 与 YAML 一致)。
 
 **重要 1**: `multica autopilot create` 不读取 YAML 文件 —— 它接收 CLI flags。
 模板要经脚本解析成 `multica agent/autopilot` 调用(2026-05-28 spec + TEA-93):
