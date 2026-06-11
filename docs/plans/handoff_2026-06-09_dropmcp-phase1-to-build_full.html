@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>dropmcp-phase1-to-build(详版)</title>
+<style>
+:root{--ink:#1A1A1A;--ink2:#2D2D2D;--paper:#F5F2EB;--paper2:#EDE8DC;--accent:#C73E1D;--gray:#8B8680;--border:#D4CFC4;--green:#4A6B3A;--gold:#B8862E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Songti SC","Noto Serif SC",Georgia,serif;background:var(--paper);color:var(--ink);line-height:1.8;font-size:15px;padding:48px 40px;max-width:760px;margin:0 auto}
+.eyebrow{font-family:"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:14px}
+h1{font-weight:900;font-size:40px;line-height:1.15;letter-spacing:-1px;margin-bottom:18px;border-bottom:3px double var(--ink);padding-bottom:20px}
+.meta{display:flex;gap:32px;flex-wrap:wrap;font-family:"SF Mono",Menlo,monospace;font-size:12px;color:var(--gray);margin-bottom:36px}
+.meta b{color:var(--ink);font-weight:600}
+h2{font-weight:700;font-size:22px;margin:36px 0 14px;padding-left:14px;border-left:4px solid var(--accent)}
+.field{background:#fff;border:1px solid var(--border);padding:18px 22px;margin-bottom:14px}
+.field-label{font-family:"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1.5px;color:var(--gray);text-transform:uppercase;margin-bottom:6px}
+ul{list-style:none;margin:8px 0}
+li{padding:6px 0 6px 24px;position:relative}
+li::before{content:"▸";position:absolute;left:4px;color:var(--accent)}
+.crit li::before{content:"☐";color:var(--green)}
+code{font-family:"SF Mono",Menlo,monospace;background:var(--paper2);padding:1px 6px;border-radius:2px;font-size:13px}
+.callout{background:var(--paper2);border-left:4px solid var(--gold);padding:14px 18px;margin:18px 0;font-size:14px}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--gray)}
+</style></head>
+<body>
+<div class="eyebrow">HANDOFF · 交接</div>
+<h1>dropmcp-phase1-to-build(详版)</h1>
+<div class="meta"><span>Phase <b>RPI Handoff</b></span></div>
+<h2>当前状态 · handoff @ 2026-06-09 17:08</h2>
+<div class="callout">
+<div class="field-label">Last commit</div><code>b84f793 decision: RPI 发布架构再审议(Phase1/2)</code> · <code>main · plan/handoff HTML 为未提交本地副本,真相源=TEA-89 评论</code>
+<div class="field-label">What's done</div>Phase 1 收敛+无感化 Plan v4 已批准(三轮对抗评审收敛:3-agent 架构/安全/SOP panel → 闭环再评审 → 独立安全验证)。TEA-89 in_progress · 计划-已批准 · v4 方案A 评论 565fa1d9。范围 DRI『所有』据实重定价:7评审漏 + red-team + 遥测 + 启用 self-host 自更(+签名)+ 无感分发 + 零配置全本期;无感分发=安全软件分发子系统,实现门控于专项安全 mini-ADR(不 vibe code)。
+<div class="field-label">Next action</div>开新 tc-4-build session,以 v4 plan(评论 565fa1d9)为契约,按去险序实现;不重开设计/不自评(已批准)。【必读输入】v4 plan 评论 565fa1d9 + 本交接 + ADR decisions/2026-06-09-rpi-publish-architecture-redeliberation.md 与 2026-06-08-drop-local-mcp.md + 代码仓 ~/feibo/tc-multica(Go·CLI/daemon)、~/.claude/skills/tc-render/publish.py、~/feibo/team-context。【批次1·纯skill零结构成本·先ship】① 收口命门B:publish.py 内部 exec『multica issue comment add --inline』(替现 raw-HTTP 命门A publish.py:163-188);删 PUBLISH.md §2 手跑兜底;命门A 降契约灾备(publish-contract-v1.yaml 对齐前端权威正则 packages/ui/markdown/file-cards.ts:NEW_FILE_CARD_RE + CI 探针)。② fields JSON Schema(additionalProperties:false+required);阈值从 schema minLength/minItems 派生、删硬编码魔数(publish.py:58『&lt;10』/:109『&lt;100』);计数前折叠空白+类型断言。③ 删 tc-handoff/SKILL.md 的『快捷 markdown』绕过口;grep 四类文档无旁路。⑦ red-team 四项:--out/slug 路径白名单(publish.py:209 现可越权写)、坏 JSON/缺 config→友好 ERROR 非裸 traceback、token 移出 argv(publish.py:165 现 ps 可见)、--inline 非 text/html MIME 拒。【批次2·小Go+CI】④ buildSkillMd(cmd_skill.go:259)thread owner_user_id(:540 关系字段)进 frontmatter owner(last_reviewed_at 已写、只缺 owner);sync-team-config.sh(:49-59 现 create-only)改 create-or-update+推 files[];CI 加 repo→registry 对账。⑤ multica doctor preflight 收散落版本门槛(v0.4.11/12/13)成一发布前硬门。⑥ Codex 对称:两端 Bash 调同一收口入口+生成 Codex skills-index。⑨ 启用 self-host 自更:config.go:381 isOfficialCloudServer 默认关(team server api.teamctx.actionow.ai≠api.multica.ai),显式启用+防 fork-clobber(config_test.go:245,自更指向团队 fork release);补二进制签名(update.go 已 SHA-256 :178、缺签名)。【批次3·低成本无感】⑪ 结构化遥测复用 ambient_usage.go:128 Collector,心跳带 CLI 版本+skill 版本/健康+命门成功率(bare 计数、不带 error 串/路径)。⑫ 零配置 install.sh:token/workspace 自动发现。【批次4·⑩无感分发·硬门=先安全mini-ADR】daemon 新增 skill/md 同步写路径(净新:server 分发选择+daemon 写 ~/.claude/skills;local_skills.go 现只读)。实现前必出安全 mini-ADR(落 decisions/):(i) release/CI 身份签『评审合并态的逐文件内容清单』(2人门·非单一成员 commit)、daemon 验实际落盘字节(盖 buildSkillMd:259 服务端重组);(ii) 防回滚=单调版本+时效界;(iii) 公钥内置 GitHub 签名二进制 bootstrap(install.sh:116 走 GitHub·非循环)+可吊销 keyset;(iv) 写路径防 symlink 穿越(cmd_skill.go:451 团队软链工作流)+验签包裹写。mini-ADR 过独立安全评审后才 code。【约束/红线】每段 AI diff commit 前过人眼(SOP#5,你 ship);git add 永远显式路径、绝不 -A(team-context 工作树有 claude_md_team_global.md 改动【禁碰·走月度 review】+别项目文件);前端/UI 禁 emoji;命门A 真信号=返回评论 attachments 非空;改 publish.py 收口时别破坏 attachments 自检(publish.py:185)。【必须产出】各批次 diff+测试(red-team 四项失败→通过用例·净损失/校验强度用对抗测试非 grep);无感分发先 decisions/ 安全 mini-ADR+独立安全评审记录再 code;收尾走 tc-5-review 写 case(cases/YYYY-MM-DD-*.html,5 必填段)。【坐标】kickoff 先指派 EXEC 四线 owner(skill / CLI-Go / CI / 安全设计),然后跑 tc-4-build。
+<div class="field-label">Dead ends — do NOT retry</div><ul><li>别再把 daemon skill-sync 当『复用既有槽/低成本延伸』——现 local_skills.go 只读上报(无写盘),registry→静默写 skill 是净新 server 分发+净新 daemon 写路径=结构性(评审对照代码证伪 v1)。</li><li>别再把自更当『无 checksum 缺口』——SHA-256 已 fail-closed(cli/update.go:178);真缺口=签名/provenance。</li><li>别假设自更在咱们 server 已开——self-host 默认关(config.go:381 isOfficialCloudServer 只认 api.multica.ai,团队=api.teamctx.actionow.ai);须显式启用+防 fork-clobber。</li><li>skill 签名别信『任一成员 commit』——单密钥/笔记本被窃=全员 RCE;必须 release/CI 身份签『评审合并态』(2人门),签逐文件内容清单(盖 buildSkillMd:259 重组字节)、daemon 验实际落盘字节。</li><li>别立即拆 Go 单核/下沉服务端(Phase 2 条件触发);别再调研 local 改 HTTP transport / doc_publish 纯 CLI 复现;buildSkillMd 实只缺 owner(last_reviewed_at 已写 :267)。</li></ul>
+<div class="field-label">Pollution signal</div>无 · clean planned handoff:plan 批准,按 SOP 不可妥协 #1 转独立 Implement session(plan 作者 session 不实现)。详版交接,替代精简版 224e4a4e。
+</div>
+<footer>team-context · RPI handoff · multica issue 内渲染</footer>
+</body></html>
