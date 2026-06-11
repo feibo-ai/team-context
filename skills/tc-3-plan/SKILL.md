@@ -123,7 +123,9 @@ For project plans: REVIEW agent gives explicit approval recorded in the
 plan's "## Review" section.
 
 For task plans: 3-sentence plan can self-approve, but state it out loud
-before coding.
+before coding. **任务层执行默认派执行子 agent**(编排 session 不亲自动手:
+派单含精确改动说明 → 子 agent 改完报告 → 编排 session 审 diff、跑状态转换、commit——
+与评审子 agent 同一权力结构:子 agent 产出工作,裁量与状态权归编排 session)。
 
 ### 批准状态转换(脚本原子收口 · 取代散文 bash 块)
 plan 批准时(approved verdict 返回后立即执行):

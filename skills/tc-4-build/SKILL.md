@@ -2,7 +2,7 @@
 name: tc-4-build
 description: "Use during Implement phase of RPI framework — when actually writing or running code against an approved plan. Triggers: user enters execution session, '执行', 'implement', 'start coding', or you are in a Claude Code session with an approved plan doc (HTML) loaded. Enforces 30-second CoT supervision, ESC patterns, pollution signal detection, and the discipline checklist that prevents vibe code. Pairs with tc-handoff skill on context pollution."
 owner: 曾振华
-last_reviewed_at: 2026-06-10
+last_reviewed_at: 2026-06-11
 ---
 
 # RPI · Implement Session
@@ -41,10 +41,13 @@ Pre-flight 全过、写第一行代码**之前**:
    `notify_team({ card: ... })` 发送。
    仅**该计划的首个** build session 发;handoff/`/clear` 后重启的续作 session 不重发。
 
-## 子 agent 杠杆(测试/验证 = 独立 session)
-SOP 里「另开 session 验证」类工作(跑测试矩阵、独立复算、red-team 自查)默认派
-**子 agent**承担——全新上下文天然独立,不污染本 session。规则:子 agent 只产出
-结论/verdict,**状态转换与 commit 权始终归本(编排)session**;verdict 返回点即动作点。
+## 子 agent 杠杆(评审/测试/执行 = 独立 session)
+SOP 里「另开 session」类工作默认派**子 agent**承担——全新上下文天然独立,不污染本 session:
+- **评审/验证**(测试矩阵、独立复算、red-team 自查):子 agent 只产出结论/verdict;
+- **任务层执行**(实现本身):mini-plan 自批后,派执行子 agent 按精确改动说明动手,
+  编排 session 只做 pre-flight、审 diff、跑 transition.py、commit。
+规则不变:**状态转换与 commit 权始终归本(编排)session**;verdict/交付返回点即动作点。
+项目层实现仍按完整流程(plan 评审 → 设计评审门 → build session)。
 
 ## 30-second rule
 First 30s of every Claude tool-call sequence: read the chain-of-thought.
