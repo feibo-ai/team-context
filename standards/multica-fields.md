@@ -10,12 +10,13 @@
 ```bash
 ME_EMAIL=$(multica auth status 2>&1 | sed -n 's/.*(\(.*\)).*/\1/p')   # auth status 输出走 stderr,2>&1 必带
 ME_NAME=$(multica user list --output json | jq -r --arg e "$ME_EMAIL" '.[]|select(.email==$e)|.name')
-ME_UID=$( multica user list --output json | jq -r --arg e "$ME_EMAIL" '.[]|select(.email==$e)|.id')
+ME_UID=$( multica user list --output json | jq -r --arg e "$ME_EMAIL" '.[]|select(.email==$e)|.user_id')   # 取 .user_id!(.id 是 workspace-member 记录 id,喂 --dri 会 FK 500)
 ```
 
-> ⚠️ **两套人员 ID 空间**:`project --dri` 收 **user UUID**(`multica user list` 的 id);
-> issue 的 assignee 解析到 **member UUID**(另一空间)。名字类 flag(`--assignee`/`--lead`/`--to`)
-> 走模糊匹配可绕开这个坑——**优先用名字,只有 `--dri` 用 `$ME_UID`**。
+> ⚠️ **ID 字段陷阱(2026-06-11 批量补全实测修正)**:`multica user list` 每行有两个 UUID——
+> `.id` 是 workspace-member **记录** id(**别用**,喂 `project --dri` 服务端 FK 500 拒);
+> `.user_id` 才是真正的 user UUID,`project --dri` 收它,issue assignee 解析到的也是**同一个**值。
+> 名字类 flag(`--assignee`/`--lead`/`--to`)模糊匹配最稳——**优先用名字,仅 `--dri` 用 `$ME_UID`(=.user_id)**。
 
 ## 字段矩阵
 
@@ -55,5 +56,7 @@ ME_UID=$( multica user list --output json | jq -r --arg e "$ME_EMAIL" '.[]|selec
 
 - ❌ 硬编码任何人员 UUID 或人名进 skill/脚本(换机器/换人即错;解析配方是唯一路径)
 - ❌ 把 issue assign 给 agent/squad 当默认(那是「派 multica agent 执行」的显式动作)
-- ❌ 回填存量 issue 的 assignee(历史归属不明,批量填当前用户=制造假数据;只管增量)
+- ❌ **默认**回填存量 issue 的 assignee(历史归属不明;只管增量)——**DRI 明示时例外**:
+  2026-06-11 经 DRI 指示已对当时全部存量缺口(11 project 的 dri/lead + 92 issue 的 assignee)
+  一次性补全为当前用户;此后增量由 create 时 `--assignee` 兜住,不应再出现批量缺口
 - ❌ 为了「填满字段」给 priority/due-date 编值
