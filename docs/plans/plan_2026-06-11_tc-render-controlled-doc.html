@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>tc-render-controlled-doc</title>
+<style>
+:root{--ink:#1A1A1A;--ink2:#2D2D2D;--paper:#F5F2EB;--paper2:#EDE8DC;--accent:#C73E1D;--gray:#8B8680;--border:#D4CFC4;--green:#4A6B3A;--gold:#B8862E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Songti SC","Noto Serif SC",Georgia,serif;background:var(--paper);color:var(--ink);line-height:1.8;font-size:15px;padding:48px 40px;max-width:760px;margin:0 auto}
+.eyebrow{font-family:"SF Mono",Menlo,monospace;font-size:11px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:14px}
+h1{font-weight:900;font-size:40px;line-height:1.15;letter-spacing:-1px;margin-bottom:18px;border-bottom:3px double var(--ink);padding-bottom:20px}
+.meta{display:flex;gap:32px;flex-wrap:wrap;font-family:"SF Mono",Menlo,monospace;font-size:12px;color:var(--gray);margin-bottom:36px}
+.meta b{color:var(--ink);font-weight:600}
+h2{font-weight:700;font-size:22px;margin:36px 0 14px;padding-left:14px;border-left:4px solid var(--accent)}
+.field{background:#fff;border:1px solid var(--border);padding:18px 22px;margin-bottom:14px}
+.field-label{font-family:"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1.5px;color:var(--gray);text-transform:uppercase;margin-bottom:6px}
+ul{list-style:none;margin:8px 0}
+li{padding:6px 0 6px 24px;position:relative}
+li::before{content:"▸";position:absolute;left:4px;color:var(--accent)}
+.crit li::before{content:"☐";color:var(--green)}
+code{font-family:"SF Mono",Menlo,monospace;background:var(--paper2);padding:1px 6px;border-radius:2px;font-size:13px}
+.callout{background:var(--paper2);border-left:4px solid var(--gold);padding:14px 18px;margin:18px 0;font-size:14px}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--gray)}
+</style></head>
+<body>
+<div class="eyebrow">PLAN · 计划 · task</div>
+<h1>tc-render-controlled-doc</h1>
+<div class="meta"><span>DRI <b>feibo</b></span><span>Layer <b>task</b></span><span>Appetite <b>1 天（单 build session：实现+测试+四类 dry-run 对照+活体验证+case）</b></span></div>
+<h2>目标</h2><div class="field"><div class="field-label">Goal</div>把 tc-render publish.py 四类文档渲染（plan/research/case/handoff）从「衡线公文」长文样式换成已定稿的「受控文档」样式（原型 ~/feibo/tpl-prototypes/ 之 i/j/k/l 四件套+index.html 画廊），并配套扩展字段契约：①受控文档骨架——整页框线+受控条+审批栏表头+类别方章+统计/结论格+要点提示框+表格化核验，重点前置进 480px 内联首屏；②类别主色体系（计划暗朱 #7A2018/研究藏青 #2B4A78/复盘墨绿 #2F5D50/交接赭棕 #8A6420），标签全中文、无 emoji、无倾斜，零外链零 JS 不变；③正文字段支持 string|string[] 双形态化解 esc() 压平，plan 新增可选 keyDecisions[]/risks[]；全部新字段 optional，旧 fields.json 不破。</div>
+<h2>完成标准</h2><div class="field crit"><ul><li>四类 --dry-run 用同源真实数据（TEA-99 计划/TEA-100 复盘/team-iteration-sync-r2 研究/TEA-89 交接）渲染，产物含受控文档结构锚点（受控条/审批栏/方章/统计格/要点框），与定稿原型逐屏对照无结构性偏差；CSS 仍为 assets/style.css 单源、四类共用</li><li>字段契约扩展落地：plan 增可选 keyDecisions[]/risks[]；plan.approach、research.findings/openQuestions、case.goal/whatHappened、handoff.done/nextAction 支持 string|string[]（数组渲染为段落/编号条款）；validate_fields 同步硬校验；纯 string 旧字段照常通过——tests/ 既有用例全绿+新增结构断言用例通过</li><li>中文化与端正以测试断言核验（非肉眼）：渲染产物无英文界面标签残留（NEXT ACTION/VERDICT/PHASE/DEAD ENDS 等；代码、命令、issue 号、文件名除外）、无 emoji 字符、无 transform:rotate</li><li>PUBLISH.md §1 字段契约更新（新增可选字段+双形态说明+示例）；SKILL.md 视觉描述从「衡线公文」改「受控文档」</li><li>活体验证：向真实 issue 发布一篇 case（命门B 全链：评论+attachments 非空+入口转换 ok），multica UI 内联 480px 首屏肉眼确认结论格/要点提示可见</li><li>diff 经独立代码评审子 agent approved 后 merge；registry 同步 tc-render；按铁律 #2 出 case 收尾</li></ul></div>
+<h2>分工</h2><div class="field"><div class="field-label">Roles</div>DRI <code>feibo</code> · EXEC <code>Claude（build session 编排+实现）</code> · COLLAB <code>(无)</code> · REVIEW <code>子 agent（staff engineer · 独立上下文）</code></div>
+<h2>投入预算</h2><div class="callout"><b>1 天（单 build session：实现+测试+四类 dry-run 对照+活体验证+case）</b> · 超时触发升版强制重审。</div>
+<h2>方案</h2><div class="field">【设计输入（已定稿·不在本 plan 重审）】视觉方向经两轮原型评比定稿为「受控文档」：~/feibo/tpl-prototypes/ 中 i-shenpi.html（复盘）/j-shenpi-plan.html（计划）/k-shenpi-research.html（研究）/l-shenpi-handoff.html（交接）四件套+index.html 对比画廊；设计三原则=全中文、端正无倾斜、重点突出（要点/结论前置进 480px 内联首屏，视口依据=multica html-attachment-preview 的 480px 内联 iframe）。本 plan 只管把定稿落进 publish.py，不重开视觉讨论。【改动面】全部落在 team-context 仓 skills/tc-render/：①assets/style.css 1775B→约 6KB，新增受控文档类（sheet/ctrl/appr/sealcell/sq/tally/keypoints/clause/formal 表/judge/hind/next/gate/xbox），类别主色以 CSS 变量 --type 按类型注入；②publish.py shell() 重构为受控文档骨架（框线纸面+受控条+审批栏+标题区），四个 render_&lt;type&gt; 各自装配类型首屏：计划=完成标准数+拍板要点+预算反白格；研究=问题黑框+总体裁决格+裁决要点；复盘=结论格(criteriaResults met n/m)+要点提示(取 keyJudgments[].title)；交接=接收/唯一输入/禁区计数+第 1 节即下一步；③SCHEMAS 扩展，全部 optional、additionalProperties 仍 false。【字段契约决策】D1 双形态正文：正文字段收 string|string[]，数组项逐条 esc() 后渲染为段落/编号条款，string 走旧路径——化解 esc() 压平墙文的最小改动，不引入 markdown 解析（安全面不变）。D2 plan 新增 keyDecisions[]/risks[]（可选）：首屏「拍板要点」与方案段 D/R 条款的数据源；缺省时拍板要点降级为完成标准前 3 条。D3 复盘要点提示不新增字段：直接取 keyJudgments[].title。D4 审批栏：计划=拟制(dri)/评审(reviewer)/批准(固定「待负责人拍板」)/日期；复盘=拟制(固定 tc-5-review session)/评审/批准/日期；研究/交接用固定中文文案+现有字段，不为表头新增必填。【渲染安全不变量】全字段 html.escape；零外链零 JS 零 emoji 零 rotate；产物以 &lt;!DOCTYPE html 起头（MIME 守卫不动）；safe_out_path/命门B 发布链路/transition 调用一概不碰。【测试】既有套件保绿（向后兼容锚）；新增：四类结构锚点断言、双形态渲染断言（array→多段落）、负面断言三连（英文标签/emoji/rotate 零命中）、旧版纯 string fields.json 回归用例。【边界 out of scope】不改 transition.py；不改命门B/灾备契约语义（PUBLISH.md 仅更新字段段）；不动 multica 前端；暗色变体与第一/二批其他原型方向（卷宗/台账/学报/工单/红头/蓝皮书/内参）归档不实现；四个消费 skill 的 fields 凑法提示属 build 交付清单内一次性小改，不扩大流程。【风险】R1 校验扩展写错会挡现网发布——以旧 fields 回归用例为硬锚，全部新能力 optional；R2 CSS 体积约增 3 倍（仍 &lt;8KB，srcDoc 内联零外链请求，可忽略）；R3 字体栈 Songti/PingFang/STZhongsong 为 macOS 最优、非 Mac 退化系统衬线（团队全员 Mac，保留 fallback）；R4 活体验证在真实 issue 留一条评论（选本 plan issue 自身，append-only 可接受）。【评审记录】v1 送审：pending。</div>
+<footer>team-context · RPI Plan phase · multica issue 内渲染</footer>
+</body></html>

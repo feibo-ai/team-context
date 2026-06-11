@@ -31,10 +31,14 @@ python3 "$TCR/publish.py" --type {plan|research|case|handoff} \
 - 发布凭据:命门B 由 multica CLI 自动读 `~/.multica/config.json`(脚本不碰 token)。
 
 ### 各 type 的 fields.json 字段(权威 = `publish.py:SCHEMAS`)
-- **plan**:`goal`(≥10) · `completionCriteria`[](≥1) · `slug` · `layer`(project|task) · `dri` · `exec`[] · `collab`[] · `reviewer` · `appetite` · `approach`?
-- **research**:`question` · `slug` · `findings`?(空=骨架占位) · `openQuestions`?
-- **case**:`goal` · `whatHappened` · `slug` · `criteriaResults`[{`criterion`,`met`(bool),`notMetReason`?}] · `keyJudgments`[{`title`,`context`,`options`[],`chose`,`inHindsight`,`ancientImpossible`}](≥1 · section4 折叠空白后 ≥100 字) · `ruleCandidates`[]?
-- **handoff**:`slug` · `lastCommit` · `branch` · `done` · `nextAction` · `deadEnds`[] · `pollutionSignal` · `at`?(默认当前时间)
+- **plan**:`goal`(≥10) · `completionCriteria`[](≥1) · `slug` · `layer`(project|task) · `dri` · `exec`[] · `collab`[] · `reviewer` · `appetite` · `approach`?◆ · `keyDecisions`[]?(首屏「拍板要点」数据源;缺省降级为完成标准前 3 条) · `risks`[]?
+- **research**:`question` · `slug` · `findings`?◆(空=骨架占位;**数组时前 3 条进首屏「发现要点」框**) · `openQuestions`?◆ · `verdict`?(总体裁决一句话;缺省两态=骨架「调研中 · 待回填」/已回填「裁决待对账」)
+- **case**:`goal`◆ · `whatHappened`◆ · `slug` · `criteriaResults`[{`criterion`,`met`(bool),`notMetReason`?}](结论格三态:全数达成/n,m 达成/缺省「复盘存档」) · `keyJudgments`[{`title`,`context`,`options`[],`chose`,`inHindsight`,`ancientImpossible`}](≥1 · section4 折叠空白后 ≥100 字;title 非空项进首屏「要点提示」) · `ruleCandidates`[]?
+- **handoff**:`slug` · `lastCommit` · `branch` · `done`◆ · `nextAction`◆(数组时条款数进首屏「实现项」格) · `deadEnds`[](进「禁区」表) · `pollutionSignal` · `at`?(默认当前时间)
+
+> **◆ = 双形态正文(anyOf)**:收 `string`(旧路径,单段)或**非空 string 数组**(逐项渲染为段落,化解长文压平)。
+> `[]` 与 `[""]` 一律拒收(required×空数组同空白 string);数组项必须是 string(类型污染 exit 1)。
+> 渲染为「受控文档」样式(TEA-103):受控条+审批栏+类别方章+统计格+要点框,标签全中文、零 emoji、零 rotate。
 
 字段集 `additionalProperties:false` —— 多/拼错一个 key 即 exit 1(防静默吞)。
 

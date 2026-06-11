@@ -76,7 +76,7 @@ docs/research/research_YYYY-MM-DD_<topic>.html
 > **文档怎么进 issue(经 tc-render · 不再走 research_create / doc_publish MCP · append-only 评论制)**:
 > 1. **选定项目** `multica project list --full-id` 取**完整 UUID**(拿不准问用户/或 `multica project create`);绝不建孤儿 issue(rule #6)。
 > 2. **建研究 issue** `multica issue create --project <UUID> --title "研究:<topic>"`。
-> 3. **本地骨架(调脚本 · dry-run)** 把 `{question, slug}` 写成 `fields.json`(findings 留空=占位),调 `python3 ~/.claude/skills/tc-render/publish.py --type research --data fields.json --dry-run --out docs/research/research_<YYYY-MM-DD>_<topic>.html`,**此刻 dry-run 只渲染不发布**。
+> 3. **本地骨架(调脚本 · dry-run)** 把 `{question, slug}` 写成 `fields.json`(findings 留空=占位;findings 可为 string 或 string[]——**数组时前 3 条自动进首屏「发现要点」框**;可选 `verdict`=总体裁决一句话,进首屏反白格),调 `python3 ~/.claude/skills/tc-render/publish.py --type research --data fields.json --dry-run --out docs/research/research_<YYYY-MM-DD>_<topic>.html`,**此刻 dry-run 只渲染不发布**。
 > 4. **填发现后发布** 把 findings 填进 fields.json,去掉 `--dry-run`、加 `--issue <UUID>` 再调一次:脚本渲染 + 命门B 发评论(内联渲染 · 自检 attachments)+ **入口状态转换**——自动加 `研究` label;findings 非空时 status 直接 `done`(研究产物 = 发现已交付,research issue 不挂账;exit 2 = 评论已发但转换失败,按 stderr 补救,绝不重跑 publish)。
 > 之后每次更新 = 换新 `--out` 再调一次。**永不**改附件或把文档塞进 issue 描述。本地 `docs/research/*.html` 留作 git/离线副本。
 > projectId 一律**完整 UUID**(8 位短 ID 报 400 · rule #6)。
