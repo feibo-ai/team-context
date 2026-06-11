@@ -2,7 +2,7 @@
 name: tc-5-review
 description: "Use when project or task is wrapping up. Triggers: 'let us debrief', '收尾', 'wrap up', '写 case', 'project done', user marks completion criteria met. Generates a case file at cases/YYYY-MM-DD-<slug>.html with the 5 mandatory SOP v0.4 sections. Required for SOP non-negotiable #2 (every project/task ends with debrief)."
 owner: 曾振华
-last_reviewed_at: 2026-06-10
+last_reviewed_at: 2026-06-11
 ---
 
 # Debrief / Case File Template
@@ -21,7 +21,7 @@ of key judgments.
 case 是 HTML,作为**评论**内联渲染(append-only),走共享地基 **tc-render**(`~/.claude/skills/tc-render/`):
 
 1. **选定项目** `multica project list --full-id` 取**完整 UUID**(归到被复盘的那个项目;拿不准核对或问用户)。绝不建孤儿 issue(rule #6)。
-2. **建/定位 case issue** `multica issue create --project <UUID> --title "复盘:<slug>" [--parent <plan-issue-id>]`(parent 指向被复盘的 plan,便于回溯/自动关闭)。
+2. **建/定位 case issue** `multica issue create --project <UUID> --title "复盘:<slug>" --assignee "$ME_NAME" [--parent <plan-issue-id>]`(parent 指向被复盘的 plan,便于回溯/自动关闭;assignee=当前用户运行时解析、不问 · standards/multica-fields.md)。
 3. **产出+发布(一步 · 调脚本)** 把字段写成 `fields.json`(`goal` / `whatHappened`(均收 string 或 string[],数组逐项成段) / `criteriaResults`[{criterion,met,notMetReason}](met 全真→结论格「标准全数达成」) / `keyJudgments`[{title,context,options,chose,inHindsight,ancientImpossible}](title 进首屏「要点提示」) / `ruleCandidates` / `slug`),调:
    `python3 ~/.claude/skills/tc-render/publish.py --type case --data fields.json --issue <case-issue-UUID> --out cases/<YYYY-MM-DD>-<slug>.html`
    脚本渲染 + 硬校验 + 命门B 发布 + 自检 attachments + **入口状态转换**(自动 +`复盘-待审` · status `in_review`;exit 2 = 评论已发但转换失败,按 stderr 补救,绝不重跑 publish)。先 `--dry-run` 预览。永不改附件/改描述。
