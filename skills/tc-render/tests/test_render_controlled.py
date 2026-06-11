@@ -130,7 +130,7 @@ def test_handoff_tally_and_danger(tmp_path):
     data = {**HANDOFF, "nextAction": ["第一步", "第二步", "第三步"], "deadEnds": ["死路甲", "死路乙"]}
     out = render("handoff", data, tmp_path)
     assert "3<small> 项</small>" in out, "实现项应=nextAction 数组条款数"
-    assert ">2</div>" in out and "死路甲" in out, "禁区计数与禁区表应渲染"
+    assert '>2</div><div class="l">禁区' in out and "死路甲" in out, "禁区计数与禁区表应渲染"
 
 
 # ============ 完成标准 2 · 双形态(anyOf)渲染与拒收 ============
@@ -178,9 +178,18 @@ BANNED_LABELS = [
     "DRI", "EXEC", "COLLAB", "REVIEW", "Layer", "Appetite", "Phase",
     "PLAN", "RESEARCH", "CASE", "HANDOFF", "RPI",
 ]
-# emoji 禁集(v4 标准 3②):U+1F000–U+1FFFF 全区段 + Dingbats/杂项符号区中的 emoji 码点
-BANNED_EMOJI_EXPLICIT = {0x2705, 0x274C, 0x274E, 0x2728, 0x270A, 0x270B, 0x26A0,
-                         0x2B50, 0x2B55, 0x2757, 0x2753, 0x267B, 0x2614, 0x26BD}
+# emoji 禁集(v4 标准 3②·区段封闭):U+1F000–U+1FFFF 全区段 + Dingbats U+2700–U+27BF
+# 与杂项符号 U+2600–U+26FF 两整区段(减白名单 ✓U+2713/☐U+2610)+ 区段外显式补充点。
+EMOJI_WHITELIST = {0x2713, 0x2610}   # ✓ / ☐ —— v4 白名单中落在禁用区段内的字符
+BANNED_EMOJI_EXPLICIT = {0x2B50, 0x2B55}  # 区段外常见 emoji(⭐/⭕)
+
+
+def _is_banned_emoji(cp):
+    if 0x1F000 <= cp <= 0x1FFFF:
+        return True
+    if 0x2600 <= cp <= 0x27BF and cp not in EMOJI_WHITELIST:
+        return True
+    return cp in BANNED_EMOJI_EXPLICIT
 
 
 def _strip_code(html):
@@ -199,8 +208,7 @@ def test_no_english_ui_labels(doc_type, data, tmp_path):
 def test_no_emoji_codepoints(doc_type, data, tmp_path):
     """emoji 封闭码点集零命中;✓(U+2713)/×(U+00D7)等白名单字符不在禁集。"""
     out = render(doc_type, data, tmp_path)
-    hits = [hex(ord(ch)) for ch in out
-            if 0x1F000 <= ord(ch) <= 0x1FFFF or ord(ch) in BANNED_EMOJI_EXPLICIT]
+    hits = [hex(ord(ch)) for ch in out if _is_banned_emoji(ord(ch))]
     assert not hits, f"{doc_type} 含 emoji 码点:{hits}"
 
 

@@ -376,7 +376,7 @@ def render_plan(d):
         '<div class="appetite"><div class="at">预算上限</div><div class="av2">%s'
         '<small>　超时即触发升版强制重审,不带病延期。</small></div></div>' % esc(appetite),
     ]
-    if d.get("approach") is not None or decisions or risks:
+    if _folded(d.get("approach")) or decisions or risks:
         secs.append(h2("5", "方案要点"))
         secs.append(paras(d.get("approach")))
         secs += ['<div class="dgrid"><dt>D%d</dt><dd>%s</dd></div>' % (i + 1, esc(x))
