@@ -28,6 +28,7 @@ AI MIQ — 5 人 AI-Native 团队。以 SOP v0.4 参考 Handbook 为准。通才
 - 高频表的 add_column + create_index migration 应评估 CONCURRENTLY,避免大表锁写(本期量小未做,沉淀为团队迁移规范)。(来源:case TEA-62 · actionow-hardening-phase-a)
 - Tailwind v4 + next/font 接字体走 @theme inline 让 font-sans/font-mono 工具类直接内联 var(--font-xxx);在 :root 覆盖 --font-sans 不被 font-sans 工具类采纳(会静默回退默认栈)。(来源:case TEA-66 · actionow-admin-redesign)
 - 前端工程禁止使用任何 emoji(UI 文案、组件、代码、注释一律不得出现)——用图标组件或纯文字替代。(来源:团队前端规范)
+- 彩色 badge/chip 的 a11y:文字用 foreground、颜色线索靠 dot+tint;别用彩色文字打同色浅 tint(亮色挂 AA、只有暗色过),语义落文字标签不靠颜色单独表意。(来源:case TEA-70 · actionow-admin-redesign)
 
 ## 怎么叫起其他 Claude session
 
@@ -60,6 +61,7 @@ AI MIQ — 5 人 AI-Native 团队。以 SOP v0.4 参考 Handbook 为准。通才
 | 项目 cases (L2) | `<project>/cases/YYYY-MM-DD-*.html` |
 | 团队 SOP | team-context repo，`sop/group_sop_v0.4.html` |
 | 团队标准 | team-context repo，`standards/` |
+| issue 走项目层全流程 or 任务层轻量 | team-context repo，`standards/layer-tiering.md`（多触发器任一判定 + 机读 proxy） |
 | 架构决策 | `<project>/decisions/` + team-context `decisions/` |
 | Multica workspace | `team-context`（server URL：跑 `multica config show`） |
 | Multica CLI 参考 | `multica --help` 或 `~/.claude/skills/multica-cli/` |

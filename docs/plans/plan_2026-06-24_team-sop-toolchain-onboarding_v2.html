@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>team-sop-toolchain-onboarding</title>
+<style>:root{--ink:#1C1C1C;--mid:#4A4D4A;--soft:#7E827E;--frame:#2B2B2B;--line:#C9CCC9;--page:#F3F3F1;--red:#A8332A;--redtint:#F8EDEB;--gold:#8A6420;--goldtint:#FBF7EA;--green:#2F5D50}
+body.t-plan{--type:#7A2018;--tint:#F7EDEB}
+body.t-research{--type:#2B4A78;--tint:#EDF1F7}
+body.t-case{--type:#2F5D50;--tint:#EEF4F1}
+body.t-handoff{--type:#8A6420;--tint:#F6F0E3}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Songti SC","Noto Serif CJK SC",serif;background:var(--page);color:var(--ink);line-height:1.85;font-size:14px;max-width:780px;margin:0 auto;padding:22px 24px 40px}
+.sheet{background:#fff;border:2px solid var(--frame);padding:0 0 26px}
+.ctrl{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid var(--line);padding:7px 22px;font-family:"PingFang SC",sans-serif;font-size:10.5px;letter-spacing:2.5px;color:var(--soft)}
+.ctrl b{color:var(--type);font-weight:700}
+.appr{display:grid;grid-template-columns:106px 1.25fr 1.1fr 1fr 1fr;border-bottom:2px solid var(--frame)}
+.ac{border-right:1px solid var(--frame);padding:7px 14px 6px}
+.ac.last{border-right:0}
+.ac .al{font-family:"PingFang SC",sans-serif;font-size:9.5px;letter-spacing:2px;color:var(--soft);margin-bottom:1px}
+.ac .av{font-family:"PingFang SC",sans-serif;font-weight:600;font-size:13px;overflow-wrap:anywhere}
+.ac .av.t{color:var(--type);font-weight:700}
+.ac .av.ok{color:var(--green);font-weight:700}
+.ac .av.warn{color:var(--red);font-weight:700}
+.ac2{border-top:1px solid var(--line)}
+.sealcell{grid-column:1;grid-row:1/span 2;border-right:1px solid var(--frame);display:grid;place-items:center;padding:8px}
+.sq{width:62px;height:62px;border:2.5px solid var(--type);box-shadow:inset 0 0 0 1.5px #fff,inset 0 0 0 3px var(--type);display:grid;place-items:center;color:var(--type);font-family:"STZhongsong","Songti SC",serif;font-size:19px;font-weight:900;letter-spacing:2px;line-height:1.5;text-align:center}
+.titlebar{padding:18px 26px 0}
+h1{font-family:"PingFang SC",sans-serif;font-size:22px;font-weight:800;letter-spacing:.5px;line-height:1.5;overflow-wrap:anywhere}
+.sub{font-size:13.5px;color:var(--mid);margin-top:4px}
+.tally{display:grid;grid-template-columns:1fr 1fr 1fr 1.7fr;border:1.5px solid var(--frame);margin:14px 26px 0}
+.tally.c3{grid-template-columns:1fr 1fr 1.7fr}
+.tc{padding:9px 14px 8px;border-right:1px solid var(--frame)}
+.tc:last-child{border-right:0}
+.tc .n{font-family:"PingFang SC",sans-serif;font-size:23px;font-weight:800;line-height:1.3;color:var(--ink)}
+.tc .n.sm{font-size:15px;line-height:1.95}
+.tc .n small{font-size:13px;color:var(--soft);font-weight:500}
+.tc .l{font-family:"PingFang SC",sans-serif;font-size:9.5px;letter-spacing:2.5px;color:var(--soft);margin-top:1px}
+.tc.warn .n{color:var(--red)}
+.tc.v{background:var(--type)}
+.tc.v .n{color:#fff;font-size:15px;line-height:1.85;font-weight:700}
+.tc.v .l{color:rgba(255,255,255,.75)}
+.keypoints{margin:12px 26px 0;border:1.5px solid var(--type);background:var(--tint);padding:11px 17px 10px}
+.keypoints .kt{font-family:"PingFang SC",sans-serif;font-weight:800;font-size:12.5px;letter-spacing:3px;color:var(--type);margin-bottom:5px}
+.keypoints ol{list-style:none}
+.keypoints li{padding:3px 0 3px 28px;position:relative;font-size:13px}
+.keypoints li .kn{position:absolute;left:0;top:5px;width:18px;height:18px;background:var(--type);color:#fff;font-family:"PingFang SC",sans-serif;font-size:10.5px;font-weight:700;display:grid;place-items:center}
+.keypoints li b{font-family:"PingFang SC",sans-serif;font-weight:700}
+.question{margin:14px 26px 0;border:1.5px solid var(--frame);background:#fff;padding:12px 17px}
+.question .qt{font-family:"PingFang SC",sans-serif;font-weight:800;font-size:12.5px;letter-spacing:3px;color:var(--type);margin-bottom:5px}
+.question p{font-family:"PingFang SC",sans-serif;font-weight:600;font-size:14.5px;line-height:1.8;text-align:justify}
+.meta{padding:9px 26px 0;font-size:12px;color:var(--soft);letter-spacing:1px}
+.body{padding:0 26px}
+h2{font-family:"PingFang SC",sans-serif;font-size:15px;font-weight:800;letter-spacing:1px;margin:26px 0 10px;padding:7px 12px;background:#F1F1EF;border-left:5px solid var(--type)}
+h2 .num{font-family:"SF Mono",Menlo,monospace;color:var(--type);margin-right:10px;font-size:13px}
+h2.danger{border-left-color:var(--red)}
+h2.danger .num{color:var(--red)}
+p{margin-bottom:.8em;text-align:justify}
+p:last-child{margin-bottom:0}
+b,strong{font-family:"PingFang SC",sans-serif;font-weight:600}
+.clause{display:grid;grid-template-columns:96px 1fr;gap:10px;padding:6px 0;font-size:13.5px}
+.clause.n{grid-template-columns:44px 1fr}
+.clause dt{font-family:"PingFang SC",sans-serif;font-size:11.5px;font-weight:700;color:var(--soft);padding-top:2px;letter-spacing:1px}
+.clause.n dt{font-family:"SF Mono",Menlo,monospace;color:var(--type);letter-spacing:0}
+.clause dd{text-align:justify;overflow-wrap:anywhere}
+.note{font-size:12px;color:var(--soft)}
+table.formal{width:100%;border-collapse:collapse;margin:8px 0 6px;font-size:13px}
+table.formal th{font-family:"PingFang SC",sans-serif;font-weight:700;font-size:11.5px;letter-spacing:1.5px;border:1px solid var(--frame);background:#F1F1EF;padding:6px 10px;text-align:center}
+table.formal th.danger{background:var(--redtint);color:var(--red)}
+table.formal td{border:1px solid var(--line);border-left:1px solid var(--frame);border-right:1px solid var(--frame);padding:7px 10px 6px;vertical-align:top;line-height:1.78;overflow-wrap:anywhere}
+table.formal tr:last-child td{border-bottom:1px solid var(--frame)}
+table.formal td.c{text-align:center;white-space:nowrap;font-family:"SF Mono",Menlo,monospace;font-size:12px}
+.mk{font-family:"PingFang SC",sans-serif;font-weight:700;white-space:nowrap}
+.mk.ok{color:var(--green)}
+.mk.bad{color:var(--red)}
+.mk.wait{color:var(--soft)}
+.vd{font-family:"PingFang SC",sans-serif;font-weight:700;white-space:nowrap}
+.vd.ok{color:var(--green)}
+.vd.bad{color:var(--red)}
+.vd.mid{color:var(--gold)}
+.vd i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.vd.ok i{background:var(--green)}
+.vd.bad i{background:var(--red)}
+.vd.mid i{background:var(--gold)}
+.judge{border:1.5px solid var(--frame);margin-bottom:13px}
+.judge-h{display:flex;gap:12px;align-items:baseline;padding:9px 16px;border-bottom:1px solid var(--frame);background:#F1F1EF}
+.judge-h .ji{font-family:"PingFang SC",sans-serif;font-size:11px;font-weight:800;color:#fff;background:var(--type);padding:2px 10px;letter-spacing:3px;white-space:nowrap}
+.judge-h .jt{font-family:"PingFang SC",sans-serif;font-weight:700;font-size:14px;line-height:1.6;overflow-wrap:anywhere}
+.judge-b{padding:8px 16px 12px}
+.jrow{display:grid;grid-template-columns:70px 1fr;gap:10px;padding:5px 0;font-size:13px}
+.jrow dt{font-family:"PingFang SC",sans-serif;font-size:11.5px;font-weight:700;color:var(--soft);padding-top:2px;letter-spacing:1.5px}
+.jrow dd{text-align:justify;color:var(--mid);overflow-wrap:anywhere}
+.hind{margin:8px 0 2px;border:1px solid var(--gold);background:var(--goldtint);padding:9px 14px}
+.hind dt{font-family:"PingFang SC",sans-serif;font-size:11px;font-weight:800;letter-spacing:2px;color:var(--gold);margin-bottom:3px}
+.hind dd{font-family:"PingFang SC",sans-serif;font-weight:600;font-size:13px;line-height:1.8}
+.aux{font-size:12.5px;color:var(--mid);padding-top:6px}
+.aux dt{display:inline;font-family:"PingFang SC",sans-serif;font-size:11px;font-weight:700;color:var(--soft);margin-right:8px;letter-spacing:1px}
+.aux dd{display:inline}
+.appetite{margin:8px 0 4px;border:1.5px solid var(--gold);background:var(--goldtint);padding:11px 16px}
+.appetite .at{font-family:"PingFang SC",sans-serif;font-size:11px;font-weight:800;letter-spacing:2px;color:var(--gold);margin-bottom:3px}
+.appetite .av2{font-family:"PingFang SC",sans-serif;font-weight:700;font-size:15px}
+.appetite .av2 small{font-weight:500;font-size:12.5px;color:var(--mid)}
+.dgrid{display:grid;grid-template-columns:46px 1fr;gap:8px;padding:5px 0;font-size:13px}
+.dgrid dt{font-family:"SF Mono",Menlo,monospace;font-size:11px;color:var(--type);font-weight:700;padding-top:2px}
+.dgrid dd{text-align:justify;color:var(--mid)}
+.dgrid dd b{color:var(--ink)}
+.next{border:1.5px solid var(--type);background:var(--tint);padding:13px 17px 11px;margin-top:12px}
+.next .lead{font-family:"PingFang SC",sans-serif;font-weight:700;font-size:14.5px;line-height:1.8;margin-bottom:8px}
+.next p{font-size:13px;color:var(--mid)}
+.gate{margin-top:9px;border:1px solid var(--red);background:var(--redtint);padding:9px 13px;font-size:13px}
+.gate .gl{font-family:"PingFang SC",sans-serif;font-size:11px;font-weight:800;letter-spacing:2px;color:var(--red);margin-right:9px}
+.pend{font-family:"PingFang SC",sans-serif;font-size:10px;font-weight:700;color:var(--red);border:1px solid var(--red);padding:1px 7px;white-space:nowrap}
+code{font-family:"SF Mono",Menlo,monospace;background:#F1F1EF;padding:1px 5px;border-radius:2px;font-size:11.5px;overflow-wrap:anywhere}
+footer{margin-top:12px;text-align:center;font-family:"PingFang SC",sans-serif;font-size:10.5px;color:var(--soft);letter-spacing:2px}
+</style></head>
+<body class="t-plan">
+<div class="sheet">
+<div class="ctrl"><span>受控文档 · <b>team-sop-toolchain-onboarding</b></span><span>流程依据:SOP v0.4 非妥协 #1</span></div>
+<div class="appr"><div class="sealcell"><div class="sq">计<br>划</div></div><div class="ac"><div class="al">文档类别</div><div class="av t">实施计划</div></div><div class="ac"><div class="al">编号</div><div class="av">team-sop-toolchain-onboarding</div></div><div class="ac"><div class="al">层级</div><div class="av">项目层</div></div><div class="ac last"><div class="al">阶段</div><div class="av">送审待批</div></div><div class="ac ac2"><div class="al">拟制</div><div class="av">曾振华</div></div><div class="ac ac2"><div class="al">评审</div><div class="av">子 agent(staff engineer · 独立上下文)· v1 verdict=changes-requested(B1/B2/B3),v2 已逐条修订</div></div><div class="ac ac2"><div class="al">批准</div><div class="av">待负责人拍板</div></div><div class="ac ac2 last"><div class="al">日期</div><div class="av">2026-06-24</div></div></div>
+<div class="titlebar"><h1>team-sop-toolchain-onboarding</h1></div>
+<div class="tally"><div class="tc"><div class="n">5<small> 条</small></div><div class="l">完成标准</div></div><div class="tc"><div class="n">5<small> 项</small></div><div class="l">已拍决策</div></div><div class="tc"><div class="n">5<small> 项</small></div><div class="l">风险</div></div><div class="tc v"><div class="n sm">1 周(Shape Up · 布线+文档+一个 nudge,不是大建设)。注:完成标准 5 的『连续 2 周覆盖率』为后续验收指标,不计入本周 appetite</div><div class="l">投入预算 · 超时升版重审</div></div></div><div class="keypoints"><div class="kt">拍板要点</div><ol><li><span class="kn">1</span>分层判定规则(DRI 2026-06-24 拍板 · 多触发器任一):issue 满足任一即项目层——① 写/改代码或配置且会合进 main;② 需跨 session 或跨人交接;③ 对外或影响他人产出;④ 预计耗时 &gt; 半天。否则任务层(放行轻量,只需 3 句 mini-plan)</li><li><span class="kn">2</span>不换轨、不砍 label 作为本期目标:multica status 固定 7 枚举不可自定义,装不下 8 个流程子状态(in_review 三义/todo 四义),换 status 无意义;label 没人用是采用问题不是设计问题。清死 label 可作为独立小事后续做</li><li><span class="kn">3</span>路径 = 本地 + 跨工具可移植 + 分层;不碰 cloud(团队 100% 本地、零 cloud agent)</li><li><span class="kn">4</span>地基已对:publish.py/transition.py 是工具无关纯 Python,任何工具可调;本期只补『最后一公里』——下发 + 架桥 + 分层 + nudge</li><li><span class="kn">5</span>先在荣灿的 Codex/Opencode 上验证架桥(工具最杂、最不合规 = 最强样本),跑通再铺全队</li></ol></div>
+<div class="body">
+<h2><span class="num">1</span>目标</h2>
+<p>把 SOP 工具链(tc-* skill + 发 HTML 受控文档 + label 状态机)的真实采用,从『仅 owner 曾振华一人』扩到全队 5 人。办法是适配团队真实环境——100% 本地、一人一机、多工具(Claude Code + Codex + Hermes + Opencode 混用)——让每种工具都能调用工具无关的 tc-render 脚本,并按项目层/任务层分层,使高频建 issue 的成员(荣灿约 36 个/天)不被全流程拖垮。</p>
+<h2><span class="num">2</span>完成标准(送审 · 待验)</h2>
+<table class="formal"><tr><th style="width:44px">序号</th><th>完成标准</th><th style="width:92px">核验</th></tr><tr><td class="c">2.1</td><td>5 台成员机器全部完成 multica skill pull,且各机 multica --version ≥ v0.4.13(满足 --inline / skill pull / lint 阈值):本地存在 15 个 tc-* skill + publish.py/transition.py,可由各机 multica skill lint 或目录核对验证</td><td class="c"><span class="mk wait">☐ 待验</span></td></tr><tr><td class="c">2.2</td><td>跨工具架桥『触发』验收(B1):荣灿在 Codex 或 Opencode 里发起一个真实的项目层任务,在无人逐字指令下其 agent 自发走到 SOP 流程,产出 HTML plan 文档评论 + 入口 label(由该 issue 评论的 !file[..html] 内联标记 + 计划-草稿 验证)。手动照《跨工具速查》调 publish.py 只作架桥连通性的前置自检,不作为本条达成标准</td><td class="c"><span class="mk wait">☐ 待验</span></td></tr><tr><td class="c">2.3</td><td>分层判定规则落档(B3):把已由 DRI 拍板的『多触发器任一』判定草案(见 keyDecisions / approach)写进 standards/ 与团队 CLAUDE.md;规则必须可机器近似判定(供完成标准 5 的覆盖率口径用)</td><td class="c"><span class="mk wait">☐ 待验</span></td></tr><tr><td class="c">2.4</td><td>≥4/5 成员各自在『下一个判定为项目层的 issue』上独立跑通 plan→HTML 文档(由该 issue 评论的 !file[..html] 与入口 label 验证)</td><td class="c"><span class="mk wait">☐ 待验</span></td></tr><tr><td class="c">2.5</td><td>nudge 闭环上线且抓得到目标人群(B2):扩展 issue_invariants 盲区档命中条件——不再只看标题前缀,新增『description 超 600 字或含 Markdown 标题、且无入口 label、且按分层规则判定为项目层』→ push 提醒创建者本人;覆盖率口径 = 新建且判定为项目层的 issue 中发了 HTML 文档的比例(分母由分层规则机器判定)。本期达成 = nudge 上线 + 首周基线数;『连续 2 周 ≥80%』移为后续验收指标(N1)</td><td class="c"><span class="mk wait">☐ 待验</span></td></tr></table>
+<h2><span class="num">3</span>分工</h2>
+<table class="formal"><tr><th style="width:96px">角色</th><th>承担</th></tr><tr><td class="c">负责人</td><td>曾振华</td></tr><tr><td class="c">执行</td><td>曾振华(架桥样例 + skill pull 文档 + 分层标准 + nudge)</td></tr><tr><td class="c">协作</td><td>荣灿(首席验证人:Codex/Opencode 真机跑通 · 工具最杂、当前最不合规 = 最强样本)、qiuhaoqi、xieyu(各自本地环境验证 skill pull + 下一个项目层 issue 跑通)</td></tr><tr><td class="c">评审</td><td>子 agent(staff engineer · 独立上下文)· v1 verdict=changes-requested(B1/B2/B3),v2 已逐条修订</td></tr></table>
+<h2><span class="num">4</span>投入预算</h2>
+<div class="appetite"><div class="at">预算上限</div><div class="av2">1 周(Shape Up · 布线+文档+一个 nudge,不是大建设)。注:完成标准 5 的『连续 2 周覆盖率』为后续验收指标,不计入本周 appetite<small>　超时即触发升版强制重审,不带病延期。</small></div></div>
+<h2><span class="num">5</span>方案要点</h2>
+<p>【背景与定位】2026-06-24 对全工作区 998 个 issue 做了全量普查,定位:tc-render / RPI / label 状态机这整套 SOP 工具链,真实采用者只有 owner 曾振华一人。三组证据互相印证——① 走 skill 流程合规率:曾振华 92% · 荣灿 36% · qiuhaoqi ~1%;② 发 HTML 受控文档:全工作区仅 67 个 issue 发过,其中 60 个是曾振华,荣灿 3/755、qiuhaoqi 1/101;③ 挂流程 label:曾振华 51 个,其余全员合计 17 个。与此同时约 500 个 issue 把 Markdown 长文直接塞进 description(荣灿一人 444),即把 multica 当裸 issue tracker 用。</p><p>【根因·最上游】15 个 tc-* skill 已上传 multica workspace,但 6 个助理 agent 全部 0 skill、instructions 是同一份 2366 字模板且零 SOP 引用;工具链只活在曾振华本地 ~/.claude/skills/(他跑本地 Claude Code)。更关键的结构性事实:团队 100% 本地、一人一机(15 个 runtime 分布在 5 台机器),且多工具混用——Codex 6 个(最多)、Claude 5、Hermes 3、Opencode 1,每个人都同时装 Claude 和 Codex。而 SOP 是 Claude Code skill 格式,在 Codex / Hermes / Opencode 里不自动加载。结论:用非 Claude 工具干活的人(尤其荣灿用 Opencode/Codex)物理上够不到 SOP——这是结构性锁死,不是不自律。</p><p>【为何不换轨/不砍 label】有人会问能不能用 multica 内置 status 替代自定义 label。不能:status 是固定 7 枚举(backlog/todo/in_progress/in_review/done/blocked/cancelled)、不可自定义、不能按项目定义工作流,而团队 RPI 有 8 个流程子状态要表达,in_review 一格背 plan评审/设计评审/case待审三义、todo 一格背 草稿/已批准/已升级/设计已审四义,7 个格子物理装不下。所以『label vs status』是伪命题,换轨救不了一列没人坐的车。砍掉 0 使用的死 label(投注表/倦怠预警/代码评审/古法不可能/计划-已升级)是可做的瘦身,但属独立小事,不是本期目标。</p><p>【路径选择】不碰 cloud(团队没有任何 cloud agent,全是本地 runtime)。走『本地 + 跨工具可移植 + 分层』。好消息是地基已经对了:tc-render 的 publish.py 与 transition.py 是纯 Python、工具无关,任何 agent(包括 Codex)都能调;团队 CLAUDE.md 也早写了『Codex/其他 agent 直读该目录照做』。缺的只是把这个工具无关底座真正接到每个人的每种工具上——最后一公里。</p><p>【分层判定规则(DRI 已拍板)】项目层 vs 任务层是本方案承重墙,采用『多触发器任一』:issue 满足任一即项目层——① 写/改代码或配置且会合进 main;② 需跨 session 或跨人交接;③ 对外或影响他人产出;④ 预计耗时 &gt; 半天;否则任务层。项目层必走全流程(plan HTML 文档 + 评审门 + label 状态机),任务层放行轻量(3 句 mini-plan 自批即可,见任务层惯例)。该规则要求可机器近似判定,既用于落档约束,也作为 nudge 覆盖率(完成标准 5)的分母口径。</p><p>【四步动作】(1) 下发:每台机器跑 multica skill pull,把 15 个 tc-* skill + 脚本拉到本地,5 人全覆盖(并核 CLI 版本 ≥v0.4.13)。(2) 架桥(关键、最不确定):给非 Claude 工具配可用入口——Codex 用 AGENTS.md、Opencode 用其配置,指向 team-context 脚本 + 一页《发文档/流转状态怎么调 publish.py/transition.py》工具无关速查,并把它做到能让 agent 在真实任务里『自发触发』(完成标准 2 验收的是触发,不是手敲)。(3) 分层:把上面已拍板的判定规则落 standards/ 与 CLAUDE.md,含机器近似判定实现。(4) nudge:把 issue_invariants 盲区档从 report-only 升级为 push 给创建者本人,并扩命中条件到『description 反模式 + 项目层判定』(B2),让真正的漏采用人群可见。</p><p>【本期不处理 agent 侧绑定(N3)】根因里『6 个助理 agent 全 0 skill』属实,但本期不做 agent 侧 skill 绑定/instructions 改写——因为这些 agent 全是 idle 的 local agent,团队当前是直接用各自工具干活、几乎不经 multica agent 派活(全工作区仅 4 个 agent-created issue)。agent 侧绑定留作后续(若团队转向 agent 派活模式再做),本期聚焦人/工具直接可达这条已验证有效的路径。</p><p>【排序与验证】先做 1+2,并在荣灿的 Codex/Opencode 环境上验证能真『触发』跑通(他工具最杂、当前最不合规,是最强的可移植性样本);Codex 这条一旦跑通,基本证明全队可移植。再铺 3+4。1 周 appetite,边界:本期只做布线/文档/一个 nudge,不重写状态机、不动 label 设计、不碰 cloud、不做 agent 侧绑定。</p><p>【评审迭代】v1 经独立 staff engineer 子 agent 评审,verdict=changes-requested,事实核查全部通过;blocking 三条:B1(架桥验收只测手动调脚本、没测自发触发)、B2(nudge 扩的盲区档只抓标题前缀、漏掉 description 反模式人群,且覆盖率分母未定义)、B3(分层判定规则缺位、未拍板)。v2 已逐条修订(见完成标准 2/5/3 与本 approach),并吸收 N1(2 周观察窗移出 appetite)、N2(并入 CLI 版本核验)、N3(说明 agent 侧绑定为何本期不做)。</p>
+<div class="dgrid"><dt>D1</dt><dd>分层判定规则(DRI 2026-06-24 拍板 · 多触发器任一):issue 满足任一即项目层——① 写/改代码或配置且会合进 main;② 需跨 session 或跨人交接;③ 对外或影响他人产出;④ 预计耗时 &gt; 半天。否则任务层(放行轻量,只需 3 句 mini-plan)</dd></div>
+<div class="dgrid"><dt>D2</dt><dd>不换轨、不砍 label 作为本期目标:multica status 固定 7 枚举不可自定义,装不下 8 个流程子状态(in_review 三义/todo 四义),换 status 无意义;label 没人用是采用问题不是设计问题。清死 label 可作为独立小事后续做</dd></div>
+<div class="dgrid"><dt>D3</dt><dd>路径 = 本地 + 跨工具可移植 + 分层;不碰 cloud(团队 100% 本地、零 cloud agent)</dd></div>
+<div class="dgrid"><dt>D4</dt><dd>地基已对:publish.py/transition.py 是工具无关纯 Python,任何工具可调;本期只补『最后一公里』——下发 + 架桥 + 分层 + nudge</dd></div>
+<div class="dgrid"><dt>D5</dt><dd>先在荣灿的 Codex/Opencode 上验证架桥(工具最杂、最不合规 = 最强样本),跑通再铺全队</dd></div>
+<div class="dgrid"><dt>R1</dt><dd>架桥不确定性最高(R1):skill pull 把 Claude 格式 skill 拉到非 Claude 工具,文件在但工具不自动加载——真命题是『非 Claude 工具靠什么被触发去用 SOP』。故完成标准 2 已从『手动能调脚本』改为『自发触发』验收;须真机验证,不能纸面假设</dd></div>
+<div class="dgrid"><dt>R2</dt><dd>分层判定规则若执行期被随意放宽,项目层会被误放行、采用率回退;规则已拍板为可操作的多触发器,落档时须给机器近似判定实现</dd></div>
+<div class="dgrid"><dt>R3</dt><dd>纪律依赖:即便布线铺好仍需 nudge 闭环防荒废;现巡检只看带 label 的 issue、非采用者隐身,故 nudge 命中条件已扩到 description 反模式(B2)</dd></div>
+<div class="dgrid"><dt>R4</dt><dd>成员意愿:荣灿 36 个/天偏好极轻量;分层后若项目层单次摩擦仍重可能继续绕开——需把项目层全流程摩擦压到接近『写描述』</dd></div>
+<div class="dgrid"><dt>R5</dt><dd>CLI 版本一致性(N2):命门B 硬依赖 multica CLI v0.4.11+ 的 --inline(skill pull v0.4.12 / lint v0.4.13);某台旧机会静默失败,故完成标准 1 已并入版本核验</dd></div>
+</div>
+</div>
+<footer>AI MIQ 团队 · 受控文档 · 计划 · multica issue 内联渲染</footer>
+</body></html>
