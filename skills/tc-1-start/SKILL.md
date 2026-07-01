@@ -29,7 +29,13 @@ Critical: SEPARATE session from Step 3.
 INVOKE tc-3-plan skill. Read research file as input. Output: docs/plans/plan_<date>_<topic>.html with all 4 mandatory fields。建 plan issue 用 `multica issue create --project <UUID> --parent <research-issue> --assignee "$ME_NAME"`;产出 + 发布(含更新 = append-only 新评论)走 `tc-render/publish.py --type plan`(硬校验 goal≥10/criteria≥1)。
 
 > ⚠️ **每个 issue 必须挂项目**:先 `multica project list --full-id` 选定**完整 UUID** projectId(必填),拿不准问用户(对不对?要不要 `multica project create` 新建?)。绝不建孤儿 issue。(team-global rule #6)
-> 字段默认值(**不问自动填** · 单源 standards/multica-fields.md):新建 project 带 `--dri "$ME_UID" --lead "$ME_NAME"`;建 issue 带 `--assignee "$ME_NAME"`;当前用户经 `multica auth status`+`user list` 运行时解析,绝不硬编码;priority/due-date 留空。
+> 字段默认值(单源 standards/multica-fields.md):建 issue 带 `--assignee "$ME_NAME"`(不问);当前用户经 `multica auth status`+`user list` 运行时解析,绝不硬编码。
+> **新建 project = 重要字段显式确认**(勿静默留空):解析本人 `$ME_UID`/`$ME_NAME` 后,向用户逐一确认 **DRI**(默认本人)、**开始时间**(默认今天)、**预期截止**(默认按 plan appetite 推算)、**优先级**(默认 `medium`),再建:
+> ```bash
+> multica project create --title "<意图>" --dri "$ME_UID" --lead "$ME_NAME" \
+>   --start-date <YYYY-MM-DD> --due-date <YYYY-MM-DD> --priority <urgent|high|medium|low|none>
+> ```
+> (`--start-date/--due-date/--priority` 需含项目日期字段的 CLI 版本;报 `unknown flag` 先 `multica update`。已建但缺字段的 project 用 `multica project update <id> --start-date … --due-date … --priority …` 补。)
 
 ### Step 4 — Review by second session(= 评审子 agent)
 先做请审转换:`python3 ~/.claude/skills/tc-render/transition.py plan-request-review <plan-issue>`

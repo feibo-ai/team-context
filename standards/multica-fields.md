@@ -1,9 +1,10 @@
-# multica 字段填写默认值(agent 不问自动填 · 单源)
+# multica 字段填写默认值(agent 默认自动填 · 项目重要字段显式确认 · 单源)
 
 **Owner**: DRI
 **Last reviewed**: 2026-06-11
 **适用**: 所有经 CLI 建/改 project、issue 的 agent 流程(tc-1-start / tc-2-research / tc-3-plan / tc-5-review 等)。
-**原则**: 人字段默认**当前用户**、运行时解析、绝不询问;预测性字段宁空勿假;状态/label **禁止手填**(走 transition.py)。
+**原则**: 人字段默认**当前用户**、运行时解析;状态/label **禁止手填**(走 transition.py)。
+**例外(2026-07 起 · 项目层)**: 新建 project 的 **DRI / 开始时间 / 预期截止 / 优先级**属重要字段,须向用户**显式确认**(带智能默认),不再静默留空 —— 见下方 project 表。其余预测性字段仍宁空勿假。
 
 ## 当前用户解析配方(每台机器解析到各自的人 · 禁止硬编码任何 UUID)
 
@@ -30,7 +31,7 @@ ME_UID=$( multica user list --output json | jq -r --arg e "$ME_EMAIL" '.[]|selec
 | `--title` | 命名约定 | `计划:/研究:/复盘:<slug>`;工作项用动词前缀(Fix:/Feat:/Chore:) |
 | `--status` / label | **禁止手填** | 一律走 `transition.py` / publish.py 入口转换(labels.md 状态机) |
 | `--priority` | 留空 | 优先级由 betting table 决定,不落字段;伪精确不如空白 |
-| `--due-date` `--start-date` | 留空 | 预测性字段;appetite 住在 plan 文档里 |
+| `--due-date` `--start-date` | 有明确时限则**显式问**,否则留空 | 日历日 `YYYY-MM-DD`;有 deadline 的 issue 应问一句,纯探索性可空;appetite 仍住 plan 文档 |
 | `--description` | 留空或一句话指针 | 文档一律走评论内联(命门B),描述不承载内容 |
 | `--attachment` | 不用 | 内联渲染走 publish.py(PUBLISH.md Dead ends) |
 
@@ -38,11 +39,16 @@ ME_UID=$( multica user list --output json | jq -r --arg e "$ME_EMAIL" '.[]|selec
 
 | 字段 | 默认 | 说明 |
 |---|---|---|
-| `--dri` | **`"$ME_UID"`,不问** | user UUID 空间(见上方警告) |
+| `--dri` | **`"$ME_UID"`(本人)· 向用户确认** | SOP P-5 每项目恰好一个 DRI;默认本人,建项目时**明确确认一次**(不再静默填) · user UUID 空间(见上方警告) |
+| `--start-date` | **显式询问** · 默认今天 | 重要字段 · 日历日 `YYYY-MM-DD` · 项目计划开始日 |
+| `--due-date` | **显式询问** · 默认按 plan appetite 推算 | 重要字段 · 日历日 `YYYY-MM-DD` · 项目预期截止 |
+| `--priority` | **显式询问** · 默认 `medium` | 重要字段 · `urgent`/`high`/`medium`/`low`/`none`(项目层用它排优先;issue 层仍走 betting table) |
 | `--lead`(负责人) | **`"$ME_NAME"`,不问** | 名字 fuzzy 匹配 |
 | `--title` `--description` | 来自用户意图/plan goal | title 是用户意图本身(新建 project 本就走 rule #6 问答);description 由 agent 从 kickoff 意图提炼,不必追问 |
 | `--icon` `--status` | 留空 | 服务端默认 planned |
 | `--repo` | 有明确 repo 上下文时自动附 | 当前工作 repo 的 GitHub URL;无则不填 |
+
+> ⚠️ `--start-date` / `--due-date` / `--priority` 需 **multica CLI 含项目日期字段的版本**(2026-07 起)。旧版会报 `unknown flag`;先 `multica update` 再建项目。
 
 ### plan fields.json(publish.py --type plan)
 
