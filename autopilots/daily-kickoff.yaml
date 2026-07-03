@@ -51,13 +51,13 @@ prompt: |
 
   Step 2 · Compose card(行动指令式 · 骨架/纪律单源 agent instructions · header=wathet)
     标题: 每日开工 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
-    行动条目(按紧迫排序 · 全卡 ≤5 条 · 内容优先编号不上卡,格式纪律见 agent instructions):
-      待评审:   ▸ <评审人>:「<计划内容>」等你评审 — 已挂 N 小时
-      PR 待评审: ▸ <评审人>:「<PR 标题>」等你评审 — 已挂 N 小时(GitHub 源不可用则整类省略)
-      卡住:     ⚠ <DRI>:「<工作内容>」卡在 <卡点一句话> — 已 N 小时,换 session 或升级
-                (卡点取该 issue 最新 handoff 的 nextAction/deadEnds;没有卡点内容的条目不合格)
-      待启动:   仅当 DRI 已定且批准超 48h 未开工 → ▸ <DRI>:「<计划内容>」已批准 N 天 — 今天启动或说明阻塞
-    尾行锚: (推进中:「内容A」·「内容B」·「内容C」等 N 件 · 无需动作)——列未点名的 top3 内容短语
-    零行动 → 不发卡,text 一行:「每日开工·全队」今日无需动作 · N 件推进中 · 数据截至 HH:MM
+    全员点名(每成员恰好一行 · roster 纪律见 agent instructions):
+      每人一行 = 人名:「今天最重要的在办内容」+ 状态:
+        需要动作 → ⚠/▸ 「<计划/PR 标题>」等你评审 — 挂 N 天 / 「<内容>」已批准 N 天未启动 — 今天启动或归档
+        卡住     → 「<内容>」卡在 <卡点一句话(最新 handoff 的 nextAction/deadEnds;查无则归正常档)>
+        正常     → 「<内容>」推进中,今日 <下一步一句(取 handoff nextAction/计划)>
+        无在办   → 今日无在办,可领「<待启动 top 内容>」
+      数据来源:multica issue(assignee 归并)+ GitHub PR 待评审(requested_reviewers → 该评审人的行)
+    全员正常档 → 不发卡,text 一行:「每日开工·全队」全员推进中:每人一个内容短语 · 数据截至 HH:MM
 
   Step 3 · notify_team({ card: <card-json> })(或零行动日的 { text }) 推团队群。

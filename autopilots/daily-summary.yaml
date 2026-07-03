@@ -47,14 +47,13 @@ prompt: |
 
   Step 2 · Compose card(行动指令式 · 骨架/纪律单源 agent instructions · header=indigo)
     标题: 每日总结 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
-    行动条目(欠账类 · 全卡 ≤5 条):
-      ⚠ <人名>:「<工作内容>」已关闭未写复盘 — 补 case(用 tc-review skill)
-    尾行锚(两行 · 非行动 · 内容优先编号不上卡):
-      今日交付 N:人名-「要点」 · …(≤3 组,溢出「…等 N 项」;交付 = merged PR + done issue,
-      按人归并,要点用 PR/issue 标题;commit 数只作参考计入「人名(√N)」,不逐条列)
-      明日:「内容」(人) · …(未来计划 ≤3 项;取 in_progress 最新 handoff 的 nextAction,
-      次选待启动 top;没有明确来源就省略本行,不硬凑)
-    零欠账且零交付 → 不发卡,text 一行:「每日总结·全队」今日无交付无欠账 · 数据截至 HH:MM
-    零欠账有交付 → 也可只发 text 一行:今日交付 N:人名-要点 · …(交付本身不是行动,不值一张卡)
+    全员点名(每成员恰好一行 · roster 纪律见 agent instructions):
+      每人一行 = 人名:今日交付/进展 + 明日:
+        有交付 → 「<merged PR / done issue 标题>」已交付(√N commits 参考) · 明日 <一句>
+        有欠账 → ⚠ 「<内容>」已关闭未写复盘 — 补 case(用 tc-review skill)
+        有进展 → 「<内容>」推进中(√N) · 明日 <一句(取最新 handoff 的 nextAction,查无则省略明日)>
+        无活动 → 今日无提交/更新(如实写,不猜原因)
+      数据来源:multica issue 活动(权威)+ GitHub commits/PR(代码事实,按 login→显示名归并)
+    全员无交付无欠账无进展 → 不发卡,text 一行:「每日总结·全队」今日全员无活动 · 数据截至 HH:MM
 
   Step 3 · notify_team({ card: <card-json> })(或 { text }) 推团队群。
