@@ -37,9 +37,9 @@ printf '%s' "$personal" | jq -c '.[]' | while IFS= read -r a; do
   astatus=$(printf '%s' "$a" | jq -r '.status // empty')
   echo "— ${aname} (${aid})"
 
-  # 1) 暂停名下 autopilot
+  # 1) 暂停名下 autopilot(list 返回 {autopilots:[...],total};agent 绑定字段 = assignee_type/assignee_id)
   printf '%s' "$autopilots_json" | jq -r --arg aid "$aid" \
-    '.[] | select((.agent_id // .assignee_id // "") == $aid and (.status // "active") == "active") | .id + "\t" + (.title // .name // "?")' \
+    '(.autopilots // .)[] | select((.assignee_type // "") == "agent" and (.assignee_id // "") == $aid and (.status // "active") == "active") | .id + "\t" + (.title // .name // "?")' \
   | while IFS=$'\t' read -r apid aptitle; do
       [ -n "$apid" ] || continue
       if [ "$APPLY" = 1 ]; then

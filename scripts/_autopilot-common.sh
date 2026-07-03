@@ -58,11 +58,20 @@ ac_preflight() {
   [ -s "$AC_INSTRUCTIONS_FILE" ] || ac_die "缺 ${AC_INSTRUCTIONS_FILE} (agent instructions 单源) 或文件为空"
 }
 
-# $1 = provider (codex|claude|hermes) → echoes one online runtime id (or aborts)
+# $1 = provider (codex|claude|hermes) → echoes one online runtime id (or aborts)。
+# 优先绑【本机 daemon】的 runtime(常驻机语义:在哪台跑就绑哪台)——
+# 全队多台 daemon 在线时,「取第一个在线的」曾把 助理·全队 绑到别人的机器上。
 ac_select_runtime() {
-  local p="$1" out rid
+  local p="$1" out rid did
   out=$(multica runtime list --output json)
-  rid=$(printf '%s' "$out" | jq -r --arg p "$p" '[.[] | select(.provider==$p and .status=="online")][0].id // empty')
+  did=$(cat "$HOME/.multica/daemon.id" 2>/dev/null || true)
+  if [ -n "$did" ]; then
+    rid=$(printf '%s' "$out" | jq -r --arg p "$p" --arg d "$did"       '[.[] | select(.provider==$p and .status=="online" and .daemon_id==$d)][0].id // empty')
+  fi
+  if [ -z "$rid" ]; then
+    rid=$(printf '%s' "$out" | jq -r --arg p "$p" '[.[] | select(.provider==$p and .status=="online")][0].id // empty')
+    [ -n "$rid" ] && echo "  ⚠️ 本机 daemon 无在线 $p runtime · 回退绑定其他机器的 ${rid}(确认这是有意的)" >&2
+  fi
   [ -n "$rid" ] || ac_die "没有在线的 $p runtime · 先 multica daemon start (provider 拼错? codex|claude|hermes)"
   printf '%s' "$rid"
 }
