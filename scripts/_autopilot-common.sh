@@ -102,6 +102,23 @@ ac_scope_display_name() {
   [ -n "$dn" ] && printf '%s' "$dn" || printf '%s' "${scope%@*}"
 }
 
+# $1=scope $2=display → stdout = agent custom_env JSON(单源:create 与 env 重放同一构造,
+# 否则重放会把 create 时有而这里没有的键整体抹掉——env set 是替换语义)。
+# GITHUB_TOKEN 可选:apply 时从 DRI shell 的 GITHUB_TOKEN/GH_TOKEN 读,
+# 供 autopilot 拉 feibo-ai 组织活动(commits/PR;配方在 _agent-instructions.md);
+# 未设则不带该键并警告一次(相关卡片段自动降级为「GitHub 源不可用」)。
+ac_agent_env_json() {
+  local scope="$1" display="$2" ghtok="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
+  if [ -z "$ghtok" ]; then
+    echo "  ⚠️ GITHUB_TOKEN/GH_TOKEN 未设 · autopilot 的 GitHub 活动数据源将不可用(export 后重跑本脚本即可补上)" >&2
+    jq -n --arg url "$TCMCP_REMOTE_URL" --arg tok "$TCMCP_AGENT_TOKEN" --arg scope "$scope" --arg sname "$display" \
+      '{TCMCP_REMOTE_URL:$url, TCMCP_AGENT_TOKEN:$tok, AUTOPILOT_SCOPE:$scope, AUTOPILOT_SCOPE_NAME:$sname}'
+  else
+    jq -n --arg url "$TCMCP_REMOTE_URL" --arg tok "$TCMCP_AGENT_TOKEN" --arg scope "$scope" --arg sname "$display" --arg gh "$ghtok" \
+      '{TCMCP_REMOTE_URL:$url, TCMCP_AGENT_TOKEN:$tok, AUTOPILOT_SCOPE:$scope, AUTOPILOT_SCOPE_NAME:$sname, GITHUB_TOKEN:$gh}'
+  fi
+}
+
 # $1=runtime-id $2=scope $3=display(范围显示名) → stdout = agent id (progress lines go to stderr)
 # Idempotent by name=助理·<显示名>: create with instructions + 4-key env;
 # on reuse sync runtime binding + instructions drift + env 重放(见下)。
@@ -121,9 +138,7 @@ ac_ensure_agent() {
   if [ -z "$agent_id" ]; then
     local envfile created
     envfile=$(mktemp); chmod 600 "$envfile"
-    # jq -n builds the JSON safely (no shell interpolation of token into JSON)
-    jq -n --arg url "$TCMCP_REMOTE_URL" --arg tok "$TCMCP_AGENT_TOKEN" --arg scope "$scope" --arg sname "$display" \
-      '{TCMCP_REMOTE_URL:$url, TCMCP_AGENT_TOKEN:$tok, AUTOPILOT_SCOPE:$scope, AUTOPILOT_SCOPE_NAME:$sname}' > "$envfile"
+    ac_agent_env_json "$scope" "$display" > "$envfile"
     created=$(multica agent create --name "$agent_name" --runtime-id "$rid" \
       --visibility workspace --custom-env-file "$envfile" --instructions "$instr" --output json) \
       || { rm -f "$envfile"; ac_die "agent create 失败: ${agent_name}"; }
@@ -152,8 +167,7 @@ ac_ensure_agent() {
     # env 重放 (token/URL/scope 以当前 shell 值为准 · 自愈 PAT 轮换)
     local envfile2
     envfile2=$(mktemp); chmod 600 "$envfile2"
-    jq -n --arg url "$TCMCP_REMOTE_URL" --arg tok "$TCMCP_AGENT_TOKEN" --arg scope "$scope" --arg sname "$display" \
-      '{TCMCP_REMOTE_URL:$url, TCMCP_AGENT_TOKEN:$tok, AUTOPILOT_SCOPE:$scope, AUTOPILOT_SCOPE_NAME:$sname}' > "$envfile2"
+    ac_agent_env_json "$scope" "$display" > "$envfile2"
     if multica agent env set "$agent_id" --custom-env-file "$envfile2" >/dev/null 2>&1; then
       echo "  ~ agent ${agent_name} env 重放(URL/TOKEN/SCOPE 同步为当前值)" >&2
     else

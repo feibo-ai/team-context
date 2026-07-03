@@ -17,6 +17,28 @@ scripts/_autopilot-common.sh 在建/更新 agent 时注入 agent instructions。
 卡片标题里的显示名用 $AUTOPILOT_SCOPE_NAME;未设则回退 email 前缀(${AUTOPILOT_SCOPE%@*});
 team scope 显示名固定「全队」。
 
+## GitHub 活动数据源(开工/总结卡共用配方 · best-effort)
+组织 feibo-ai 的全仓活动是 multica issue 之外的第二数据源(能看到全组织,不受执行机 checkout 限制)。
+凭据:env `GITHUB_TOKEN`(由 agent custom_env 提供;未设或请求失败 → 该数据段写「GitHub 源不可用」,
+绝不让整个 run 失败,也不用本地 git 兜底猜)。
+
+```bash
+SINCE=$(date -u -v-24H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+GH() { curl -sf --max-time 20 -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com$1"; }
+GH "/orgs/feibo-ai/repos?per_page=100" | jq -r '.[].name'          # 仓库清单
+GH "/repos/feibo-ai/<repo>/commits?since=$SINCE&per_page=100"      # 窗口内提交(.author.login / .commit.message 首行)
+GH "/repos/feibo-ai/<repo>/pulls?state=all&sort=updated&direction=desc&per_page=30"
+#   窗口内: created_at≥SINCE=新开 · merged_at≥SINCE=已合并
+#   行动信号: state=open 且 requested_reviewers 非空 → 「PR 等 @<reviewer> 评审 · 挂 N 小时」(created_at 起算)
+```
+
+login → 显示名映射(未列出的 login 原样展示,不要猜):
+- `actionow-ai` → 曾振华
+- (其余成员 login 待 DRI 补充到本表)
+
+用法纪律:汇总按**人**归并(不按仓库);一条提交/PR 只在其所属条目出现一次;
+GitHub 数据与 multica issue 数据冲突时以 multica 为准(它是工作台账,GitHub 是代码事实)。
+
 ## 推送(唯一渠道)
 - 推送只走 MCP 工具 `notify_team({ card: ... })`(或 `{ text: ... }`)。
   feishu chat_id 由云端 tcmcp-remote 从 integration config 解析,**zero shell-out**(绝不本地拼飞书 API)。

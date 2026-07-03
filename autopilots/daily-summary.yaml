@@ -39,17 +39,19 @@ prompt: |
   这是【傍晚总结】卡片 —— 回顾今天 shipped 了什么(前瞻是早晨的 daily-kickoff)。
 
   Step 1 · 收集数据(日期跨平台:YEST=$(date -v-1d +%Y-%m-%d 2>/dev/null || date -d '1 day ago' +%Y-%m-%d))
-    主源(权威): multica issue 活动
+    主源(权威 · 工作台账): multica issue 活动
       multica issue list --updated-after $YEST
-    辅源(best-effort · 只能看到执行机可见的 repo,注定不全,缺失不算失败):
-      [ -d ~/projects ] && cd ~/projects && for r in */; do (cd "$r" && git log --since="midnight" --pretty=format:"- %s (%an)"); done
-      (拿不到 git 数据 → fields 里该项写「—」)
+    辅源(代码事实 · GitHub 组织活动,配方见 agent instructions §GitHub 数据源):
+      feibo-ai 全仓 24h 窗口的 commits(按 login→显示名归并计数)+ PR(新开/已合并清单)
+      (GitHub 源不可用 → 交付统计缺 PR 侧,如实注明,不用本地 git 兜底猜)
 
   Step 2 · Compose card(行动指令式 · 骨架/纪律单源 agent instructions · header=indigo)
     标题: 每日总结 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
     行动条目(欠账类 · 全卡 ≤5 条):
       ⚠ <人名>:TEA-xx 已关闭未写复盘 — 补 case(用 tc-review skill)
-    尾行锚(交付可见性,一行归并,非行动): 今日交付 N:人名-要点 · 人名-要点(≤3 组,溢出「…等 N 项」)
+    尾行锚(交付可见性,一行归并,非行动):
+      今日交付 N:人名-要点 · …(≤3 组,溢出「…等 N 项」;交付 = merged PR + done issue,
+      按人归并,要点优先用 PR 标题;commit 数只作参考计入「人名(√N)」,不逐条列)
     零欠账且零交付 → 不发卡,text 一行:「每日总结·全队」今日无交付无欠账 · 数据截至 HH:MM
     零欠账有交付 → 也可只发 text 一行:今日交付 N:人名-要点 · …(交付本身不是行动,不值一张卡)
 
