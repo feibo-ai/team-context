@@ -1,6 +1,6 @@
 ---
 name: tc-render
-description: "Renders plan/research/case/handoff 文档为受控样式 HTML,经硬校验后作为内联评论发布到 multica issue,并原子流转 issue 的流程 label 与 status(请审/批准/开工/收尾/取消)。Use when the user says '发布文档到 issue' / '流转 issue 状态' / '请审/批准/开工/收尾' or 'publish doc to multica issue' / 'issue status transition'. 通常由 tc-plan / tc-research / tc-review / tc-handoff 调用;仅当只需独立流转 issue 状态时直接使用。Not for 撰写文档内容本身 — use 对应文档 skill。"
+description: "Renders plan/research/case/handoff 文档为受控样式 HTML,经硬校验后作为内联评论发布到 multica issue,并原子流转 issue 的流程 label 与 status(请审/批准/开工/收尾/取消)。Use when the user says '发布文档到 issue' / '流转 issue 状态' / '请审/批准/开工/收尾' or 'publish doc to multica issue' / 'issue status transition'. 通常由 tc-plan / tc-research / tc-review / tc-handoff 调用;仅当只需独立流转 issue 状态时直接使用。Not for 撰写文档内容本身 — use 对应文档 skill;issue 状态乱了要诊断 — use tc-router(本 skill 只执行明确指定的流转)。"
 ---
 
 # tc-render · 渲染+硬校验+发布+状态流转

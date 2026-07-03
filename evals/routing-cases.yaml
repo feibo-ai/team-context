@@ -15,7 +15,7 @@ cases:
     expect: tc-router
     note: "无阶段信息"
   - utterance: "开工吧,issue 是 TEA-102"
-    expect: tc-router
+    expect: tc-build
     note: "有 id 无阶段;若 `设计-已审` 在场则交 tc-build"
   - utterance: "pick up where we left off"
     expect: tc-router

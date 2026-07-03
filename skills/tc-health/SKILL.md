@@ -1,6 +1,6 @@
 ---
 name: tc-health
-description: "Audits session health: scans the transcript for context-pollution signals (yes-loops, repeated rejected fixes, wrong-question answers, phantom issues) and self-checks the approach against 10 team anti-patterns + 3 red lines. Use when the user says '污染扫描', '健康检查', 'context 乱了', '自检', '反模式', 'health check', 'self check', 'going in circles', or the model seems confused or too agreeable. Not for the recovery itself — use tc-handoff."
+description: "Audits session health: scans the transcript for context-pollution signals (yes-loops, repeated rejected fixes, wrong-question answers, phantom issues) and self-checks the approach against 10 team anti-patterns + 3 red lines. Use when the user says '污染扫描', '健康检查', 'context 乱了', '走偏了', '兜圈子', '自检', '反模式', 'health check', 'self check', 'going in circles', or the model seems confused or too agreeable. Not for the recovery itself — use tc-handoff."
 ---
 
 # tc-health
