@@ -50,7 +50,7 @@ Goal: let the team know, NOT commit. No formal plan yet.
 - 建 issue 一律带 `--assignee "$ME_NAME"`(不问);当前用户经 `multica auth status` + `multica user list` 运行时解析,绝不硬编码。
 
 ### 新建 project = 重要字段显式确认协议(勿静默留空)
-解析本人 `$ME_UID` / `$ME_NAME` 后,逐字段确认 DRI/开始/截止/优先级,再执行创建;默认值单源见 tc-render skill 的 references/multica-fields.md project 表(含项目层显式确认例外)。
+解析本人 `$ME_UID` / `$ME_NAME` 后,**一条消息列出 4 个字段的预填默认值让用户一次确认**(DRI=本人 · 开始/截止/优先级按默认值单源预填),用户回「OK」或只改要改的项,再执行创建——不要逐字段追问 4 轮。默认值单源见 tc-render skill 的 references/multica-fields.md project 表(含项目层显式确认例外)。
 
 ```bash
 multica project create --title "<意图>" --dri "$ME_UID" --lead "$ME_NAME" \

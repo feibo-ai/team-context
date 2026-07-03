@@ -125,9 +125,11 @@ def main() -> int:
                 if m:
                     err(f"{d.name}: description 含禁 token '{m.group(0)}'（{why}）")
 
-        # body 预算（unicode 字符数）
+        # body 预算（unicode 字符数）；1300 起 WARN——把 1500 当红线而不是目标
         if len(body) > BODY_MAX:
             err(f"{d.name}: body {len(body)} 字符 > {BODY_MAX}（长材料移 references/）")
+        elif len(body) > 1300:
+            warn(f"{d.name}: body {len(body)} 字符已进红线预警带(>1300)——下次改动先抽 references/")
 
         # 分发文件禁 token + 引用存在性（逐行,便于放行锚定表述并给出行号）
         for f in sorted(d.rglob("*")):
