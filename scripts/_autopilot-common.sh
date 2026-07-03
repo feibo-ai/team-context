@@ -176,6 +176,19 @@ ac_ensure_agent() {
     fi
     rm -f "$envfile2"
   fi
+  # MCP 配置(tcmcp-remote)= agent 级,跟控制面走(daemon 会注入每次 run;
+  # 不再依赖执行机本地 ~/.claude.json——新常驻机上 headless run 曾因此 notify_team 缺席)。
+  # 由与 env 相同的两个值派生,幂等重放。
+  local mcpfile
+  mcpfile=$(mktemp); chmod 600 "$mcpfile"
+  jq -n --arg u "$TCMCP_REMOTE_URL" --arg t "$TCMCP_AGENT_TOKEN" \
+    '{mcpServers:{"tcmcp-remote":{type:"http",url:$u,headers:{Authorization:("Bearer "+$t)}}}}' > "$mcpfile"
+  if multica agent update "$agent_id" --mcp-config-file "$mcpfile" >/dev/null 2>&1; then
+    echo "  ~ agent ${agent_name} mcp_config 重放(tcmcp-remote)" >&2
+  else
+    echo "  ⚠️ mcp_config 设置失败 · 手动: multica agent update ${agent_id} --mcp-config-file <json>" >&2
+  fi
+  rm -f "$mcpfile"
   printf '%s' "$agent_id"
 }
 

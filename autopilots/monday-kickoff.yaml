@@ -43,7 +43,7 @@ prompt: |
   Compose card(行动指令式 · 骨架/纪律单源 agent instructions · header=green):
     标题: 周一计划 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
     行动条目(全卡 ≤5 条):
-      ▸ <DRI>:TEA-xx <标题> — 本周启动 · 体量 <appetite>
+      ▸ <DRI>:「<计划内容>」 — 本周启动 · 体量 <appetite>(内容优先,编号不上卡)
       跨项目边界冲突(若识别到) → ⚠ <双方 DRI>:<边界描述> — 周会对齐
     尾行锚: (本周共 N 件已批准 · 上周合并 PR M 个 · 未点名的按各自节奏推进)
            (M 来自 GitHub 组织 7 天窗口,配方见 agent instructions;源不可用则省略该数)

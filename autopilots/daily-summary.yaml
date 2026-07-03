@@ -48,10 +48,12 @@ prompt: |
   Step 2 · Compose card(行动指令式 · 骨架/纪律单源 agent instructions · header=indigo)
     标题: 每日总结 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
     行动条目(欠账类 · 全卡 ≤5 条):
-      ⚠ <人名>:TEA-xx 已关闭未写复盘 — 补 case(用 tc-review skill)
-    尾行锚(交付可见性,一行归并,非行动):
-      今日交付 N:人名-要点 · …(≤3 组,溢出「…等 N 项」;交付 = merged PR + done issue,
-      按人归并,要点优先用 PR 标题;commit 数只作参考计入「人名(√N)」,不逐条列)
+      ⚠ <人名>:「<工作内容>」已关闭未写复盘 — 补 case(用 tc-review skill)
+    尾行锚(两行 · 非行动 · 内容优先编号不上卡):
+      今日交付 N:人名-「要点」 · …(≤3 组,溢出「…等 N 项」;交付 = merged PR + done issue,
+      按人归并,要点用 PR/issue 标题;commit 数只作参考计入「人名(√N)」,不逐条列)
+      明日:「内容」(人) · …(未来计划 ≤3 项;取 in_progress 最新 handoff 的 nextAction,
+      次选待启动 top;没有明确来源就省略本行,不硬凑)
     零欠账且零交付 → 不发卡,text 一行:「每日总结·全队」今日无交付无欠账 · 数据截至 HH:MM
     零欠账有交付 → 也可只发 text 一行:今日交付 N:人名-要点 · …(交付本身不是行动,不值一张卡)
 
