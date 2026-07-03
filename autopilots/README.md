@@ -4,10 +4,11 @@ multica autopilot 的 YAML 模板 + agent 通用约束单源。
 
 ## 对象模型(TEA-93 · 2026-06-10 起)
 
-**每个 scope 一个身份 agent + N 个瘦 autopilot**:
+**一个 team 身份 agent + 5 个瘦 autopilot**(2026-07-03 收敛:个人 scope 下线——
+个人卡的信息 = 团队卡按人归并后的行,纯冗余;且个人机器 cron 时点离线 → run 被
+admission gate 静默 skip 丢失。团队 agent 跑 DRI 常驻机 / cloud runtime):
 
-- **agent = 身份载体**:每个 scope(5 名成员各 1 + team 1,共 6 个)一个
-  `助理·<显示名>`(显示名 = member list 的 name · team=全队),承载:
+- **agent = 身份载体**:`助理·全队` 一个,承载:
   - `instructions` ← 单源 [`_agent-instructions.md`](./_agent-instructions.md)
     (语言要求 / AUTOPILOT_SCOPE 语义 / notify_team-only / issue 纪律 / 执行纪律 ——
     改这一个文件 = 改所有 autopilot 任务的通用行为)
@@ -17,16 +18,14 @@ multica autopilot 的 YAML 模板 + agent 通用约束单源。
   差异 prompt(YAML 的 desc + prompt),`--agent` 指向本 scope 的身份助理;title=`<任务名>·<显示名>`(如 每日开工·全队)。
   cron/observability/guardrails 按任务独立保留。
 
-AUTOPILOT_SCOPE 是 agent 级单值 ⇒ 个人与 team **不能**共用 agent(DRI 机器上是
-`助理·曾振华` + `助理·全队` 两个)。
-
-实况分布:6 scope × 5 kind = **30 个满编**(2026-06-10 迁移既有 22 个 → 同日应 DRI 要求
-补荣灿 3 个 → 2026-06-11 补 每日开工·曾振华 + 全队 4 个,全部经 my/team-autopilot.sh 建,模式/cron 与 YAML 一致)。
+实况分布:1 scope(team)× 5 kind = **5 个**。历史包袱(此前 6 scope × 5 kind = 30 个满编)
+用 `scripts/decommission-personal-autopilots.sh` 下线(pause autopilot + archive 个人 agent,可逆)。
+AUTOPILOT_SCOPE 机制保留(agent 级 env),当前部署恒为 `team`。
 
 **重要 1**: `multica autopilot create` 不读取 YAML 文件 —— 它接收 CLI flags。
 模板要经脚本解析成 `multica agent/autopilot` 调用(2026-05-28 spec + TEA-93):
 - `scripts/team-autopilot.sh <kind|all> <provider>` —— 团队版(全队汇总 · DRI 跑)
-- `scripts/my-autopilot.sh <kind|all> <provider>` —— 个人版(只本人 · 成员跑)
+- `scripts/my-autopilot.sh` —— DEPRECATED(2026-07-03 收敛 · 见脚本头注释)
 - 两者共享 `scripts/_autopilot-common.sh`:ensure 身份 agent(幂等 by name · 同步
   instructions 漂移)→ ensure 各 kind 瘦 autopilot → 收尾 archive legacy `<kind>-bot-<suffix>`
 - `scripts/apply-autopilots.sh` —— ⚠️ 仅历史参考 · 已不可用(读已删除的 agent.name 字段)

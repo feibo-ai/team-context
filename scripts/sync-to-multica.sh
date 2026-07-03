@@ -1,36 +1,12 @@
 #!/usr/bin/env bash
-# sync-to-multica.sh — import skills/ to current multica workspace
-# Usage: ./scripts/sync-to-multica.sh <github-url>
+# sync-to-multica.sh — DEPRECATED 薄壳:registry 推送单源在 sync-team-config.sh。
+#
+# 旧实现走 `multica skill import --url <github-url>`,对多 skill 仓库不工作
+# (import 期望 URL 处恰好一个 SKILL.md),且尾部隐式串联 autopilot 部署——
+# skill 同步与 autopilot 部署是两件事,不该捆绑。
+# 现在:skill → registry 走 sync-team-config.sh(create-or-update + files[] + 失败即非零退出);
+# autopilot 部署显式跑 team-autopilot.sh / my-autopilot.sh。
 set -euo pipefail
-
-REPO_URL="${1:-}"
-if [[ -z "${REPO_URL}" ]]; then
-  echo "Usage: $0 <github-url>"
-  echo "Example: $0 https://github.com/multica-ai/team-context"
-  exit 2
-fi
-
-# Pre-flight
-multica auth status > /dev/null || {
-  echo "ERROR: not authenticated. Run: multica login" >&2
-  exit 1
-}
-
-multica daemon status 2>/dev/null | grep -qi "running" || {
-  echo "WARN: daemon not running. Starting..." >&2
-  multica daemon start
-}
-
-# Identify current workspace
-WS="$(multica workspace list 2>/dev/null | head -1 || echo unknown)"
-echo "Target workspace: ${WS}"
-
-# Import. multica skill import scans the repo's skills/ subdir.
-multica skill import --url "${REPO_URL}"
-
-echo ""
-echo "Now applying autopilots (requires daemon running)..."
-~/team-context/scripts/team-autopilot.sh all codex   # apply-autopilots.sh 已弃用 → team-autopilot.sh
-
-echo ""
-echo "Skills imported. Verify with: multica skill list"
+[ $# -gt 0 ] && echo "[deprecated] 忽略参数 '$*'(不再走 skill import --url)" >&2
+echo "[deprecated] sync-to-multica.sh → 转发 sync-team-config.sh(registry 推送单源)" >&2
+exec bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/sync-team-config.sh"

@@ -36,17 +36,18 @@ guardrails:
 prompt: |
   这是【周一计划汇总】—— 讲「本周计划」(每日聚焦是 daily-kickoff 的事)。
 
-  1. 列 计划-已批准 issue
-       team:  multica issue list --label 计划-已批准
-       个人:  multica issue list --label 计划-已批准 --assignee "$AUTOPILOT_SCOPE"
+  1. 列 计划-已批准 issue: multica issue list --label 计划-已批准
   2. 每条: title · DRI · appetite · 最近一次 Current State handoff 时间戳
-  3. (仅 team) 识别跨项目边界
+  3. 识别跨项目边界
 
-  Compose card(骨架/文案纪律见 agent instructions · header=green):
+  Compose card(行动指令式 · 骨架/纪律单源 agent instructions · header=green):
     标题: 周一计划 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
-    概览 fields: 本周已批准 / 跨项目边界(仅 team)
-    内容段:「本周计划」 ▸ 标题 — DRI · 体量 · 交接 N 小时前(top 5,溢出末行「…另有 N 条」)
-    note 页脚: team 版写「已建周计划 issue」;个人版写「仅推送不写库」
-    notify_team({ card: <card-json> }) 推团队群。
+    行动条目(全卡 ≤5 条):
+      ▸ <DRI>:TEA-xx <标题> — 本周启动 · 体量 <appetite>
+      跨项目边界冲突(若识别到) → ⚠ <双方 DRI>:<边界描述> — 周会对齐
+    尾行锚: (本周共 N 件已批准 · 未点名的按各自节奏推进)
+    无已批准计划 → 不发卡,text 一行:「周一计划·全队」本周无已批准计划 · 数据截至 HH:MM
+    note 页脚:「已建周计划 issue」
+    notify_team({ card: <card-json> })(或 { text }) 推团队群。
 
-  team 版 mode=create_issue 会建周计划 issue;个人版 run_only 只推群。
+  mode=create_issue:平台按 issue_title_template 建周计划 issue,agent 只填内容。

@@ -3,7 +3,7 @@ description: |
   Weekday-morning kickoff. Reads today's focus (in_progress + 计划-已批准 待启动
   + 待评审 + 卡住的 handoff) and pushes a 今日开工 card to the feishu team group
   via notify_team. Forward-looking morning counterpart to daily-summary (evening
-  recap). Data scope (个人/全队) is read from AUTOPILOT_SCOPE at runtime.
+  recap). Team-scope only(2026-07-03 收敛:个人卡并入团队卡,按人归并展示)。
   SOP coverage: P-6 Daily D-01 (morning kickoff · notify_team only · 透明文化)
 
 trigger:
@@ -44,17 +44,16 @@ prompt: |
     进行中:   multica issue list --status in_progress
     待启动:   multica issue list --label 计划-已批准 --status todo
     待评审:   multica issue list --label 计划-评审中
-    (个人版每条加 --assignee "$AUTOPILOT_SCOPE")
     卡住信号: 进行中 issue 里,最近一次 Current State handoff 时间戳 > 24h 的标出来
               (multica issue get <id> 看最新 handoff 评论时间)
 
-  Step 2 · Compose card(骨架/文案纪律见 agent instructions · header=wathet)
+  Step 2 · Compose card(行动指令式 · 骨架/纪律单源 agent instructions · header=wathet)
     标题: 每日开工 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
-    概览 fields: 进行中 / 待启动 / 待评审 / 卡住
-    内容段(空段省略):
-      「进行中」 ▸ 标题 — DRI · 交接 N 小时前
-      「待启动」 ▸ 标题 — DRI · 体量
-      「待评审」 ▸ 标题 — 等谁评审
-    告警段(有卡住才出现): ⚠「卡住」 ▸ 标题 — 交接已 N 小时,建议换 session
+    行动条目(按紧迫排序 · 全卡 ≤5 条):
+      待评审:   ▸ <评审人>:TEA-xx 计划等你评审 — 已挂 N 小时
+      卡住:     ⚠ <DRI>:TEA-xx 卡住 N 小时 — 换 session 或升级(30 分钟规则)
+      待启动:   仅当 DRI 已定且批准超 48h 未开工 → ▸ <DRI>:TEA-xx 已批准 N 天 — 今天启动或说明阻塞
+    尾行锚: (其余 N 件正常推进 · 无需动作)——N = 进行中+待启动里未点名的
+    零行动 → 不发卡,text 一行:「每日开工·全队」今日无需动作 · N 件推进中 · 数据截至 HH:MM
 
-  Step 3 · notify_team({ card: <card-json> }) 推团队群。
+  Step 3 · notify_team({ card: <card-json> })(或零行动日的 { text }) 推团队群。

@@ -42,7 +42,7 @@ bash scripts/sync-to-multica.sh https://github.com/<your-org>/team-context
 bash scripts/multica-secrets-bootstrap.sh team-context-mcp
 
 # 部署 5 个全队 autopilot (含 PB-04 guardrails 预检 + integration_ref 解析)
-bash scripts/team-autopilot.sh all codex   # 个人版: bash scripts/my-autopilot.sh all codex
+bash scripts/team-autopilot.sh all codex   # team-only(个人版已随 2026-07-03 收敛下线)
 ```
 
 team-autopilot.sh / my-autopilot.sh **不再注入 secret 到 agent env** —— 只注入 `TCMCP_REMOTE_URL` + `TCMCP_AGENT_TOKEN`,agent 调远程 MCP 工具时由 tcmcp-remote 内部用 multica 拉到的 secret 完成飞书连接。(`apply-autopilots.sh` 已 deprecated。)详见 `autopilots/README.md`。
