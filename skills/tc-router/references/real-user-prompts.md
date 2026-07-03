@@ -8,7 +8,7 @@
 | 2 | 继续昨天那个任务 | tc-router | 先定位是哪个 issue |
 | 3 | 下一步干嘛? | tc-router | 按当前 issue 阶段判定 |
 | 4 | 开始干活吧 | tc-router | 无阶段信息 |
-| 5 | 开工吧,issue 是 TEA-102 | tc-router | 有 id 无阶段;若 `设计-已审` 在场则交 tc-build |
+| 5 | 开工吧,issue 是 TEA-102 | tc-build | 含明确动词「开工」→ 直达;阶段是否就绪由 tc-build preflight 门兜底(2026-07-03 复评:发现层不可知运行时状态,两路收敛) |
 | 6 | pick up where we left off | tc-router | 定位最近 in_progress issue |
 | 7 | what should I do next on this project? | tc-router | 项目内多 issue 时列证据 |
 | 8 | take over the actionow issue | tc-router | 读 labels 再交棒 |

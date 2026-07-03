@@ -1,6 +1,6 @@
 ---
 name: tc-build
-description: "Enforces implement-session (build) discipline against an approved plan: pre-flight gate, build-start status transition, kickoff card broadcast, scope lock, commit rhythm, pollution-signal and stuck-30 handoff rules. Use when the user says '执行', '开工', '开始写代码', '实现', 'implement', 'start coding', or when a session is about to write or run code against an approved plan. Not for planning or debrief — use tc-plan / tc-review."
+description: "Enforces implement-session (build) discipline against an approved plan: pre-flight gate, build-start status transition, kickoff card broadcast, scope lock, commit rhythm, pollution-signal and stuck-30 handoff rules. Use when the user says '执行', '开工', '开始写代码', '实现', 'implement', 'start coding', or when a session is about to write or run code against an approved plan. Not for planning/debrief — tc-plan/tc-review;只给 issue id 阶段不明 — tc-router first."
 ---
 
 # Build Session — 按批准的 plan 执行
