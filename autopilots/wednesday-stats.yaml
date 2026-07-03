@@ -39,10 +39,13 @@ prompt: |
   2. 运行 `multica skill lint`(找 stale + 缺 owner;取代旧 skill_lint MCP 工具)
   3. Heuristic regex for duplicate rules
 
-  Compose card(骨架/文案纪律见 agent instructions · header=orange):
+  Compose card(行动指令式 · 骨架/纪律单源 agent instructions · header=orange):
     标题: 周三体检 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
-    概览 fields: claude_md 本周改动 / skill 数 / 缺 owner / 最老 skill
-    内容段(≤3 条):「风险」 ▸ 发现(缺 owner / stale / 疑似重复规则),给下一步动作
-    零风险 → 按 agent instructions 静默日降级为一行 text。
+    行动条目(全卡 ≤5 条 · 每条给到人+动作):
+      ▸ <owner 或 DRI>:skill <名> 90 天未 review — 过一遍后 multica skill touch-reviewed
+      ▸ DRI:skill <名> 缺 owner — skill-pack.yaml 登记 + registry 补 owner
+      ▸ DRI:claude_md 疑似重复规则「…」 — 合并或删
+    尾行锚: (skill 共 N 个 · 其余健康)
+    零风险 → 不发卡,text 一行:「周三体检·全队」全部健康 · skill N 个 · 数据截至 HH:MM
 
-  notify_team({ card: <card-json> }) 推团队群。
+  notify_team({ card: <card-json> })(或 { text }) 推团队群。

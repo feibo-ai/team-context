@@ -40,12 +40,14 @@ prompt: |
   2. 每条: title · DRI · appetite · 最近一次 Current State handoff 时间戳
   3. 识别跨项目边界
 
-  Compose card(骨架/文案纪律见 agent instructions · header=green):
+  Compose card(行动指令式 · 骨架/纪律单源 agent instructions · header=green):
     标题: 周一计划 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
-    概览 fields: 本周已批准 / 跨项目边界
-    内容段:「本周计划」 ▸ 标题 — DRI · 体量 · 交接 N 小时前(≤3 条,溢出末行「…另有 N 条」)
-    本周无已批准计划 → 按 agent instructions 静默日降级为一行 text。
+    行动条目(全卡 ≤5 条):
+      ▸ <DRI>:TEA-xx <标题> — 本周启动 · 体量 <appetite>
+      跨项目边界冲突(若识别到) → ⚠ <双方 DRI>:<边界描述> — 周会对齐
+    尾行锚: (本周共 N 件已批准 · 未点名的按各自节奏推进)
+    无已批准计划 → 不发卡,text 一行:「周一计划·全队」本周无已批准计划 · 数据截至 HH:MM
     note 页脚:「已建周计划 issue」
-    notify_team({ card: <card-json> }) 推团队群。
+    notify_team({ card: <card-json> })(或 { text }) 推团队群。
 
   mode=create_issue:平台按 issue_title_template 建周计划 issue,agent 只填内容。

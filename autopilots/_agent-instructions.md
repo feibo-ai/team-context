@@ -24,37 +24,38 @@ team scope 显示名固定「全队」。
   (card 被飞书 400 时,按下方骨架检查 JSON 后用同渠道重发一次)。
 - **绝不调用 `dm_member` 或任何 P2P 渠道**(2026-05-28 spec §1.2 · 透明文化,一律推团队群)。
 
-## 卡片骨架(标准 = standards/feishu-card-style.md · 所有卡必须长这样)
+## 卡片形态:行动指令式(2026-07-03 选型 · 日常/周常适用;monthly-health 报告类例外见末条)
+日常卡片的主体是**行动条目**,不是统计报表。读卡的人 5 秒内要知道「我要不要动、动什么」。
+
 ```json
 {
   "config": { "wide_screen_mode": true },
   "header": { "template": "<任务指定色>",
-    "title": { "tag": "plain_text", "content": "任务名 · 范围名 · MM-DD" } },
+    "title": { "tag": "plain_text", "content": "任务名 · 全队 · MM-DD" } },
   "elements": [
-    { "tag": "div", "fields": [
-      { "is_short": true, "text": { "tag": "lark_md", "content": "标签\n**值**" } } ] },
-    { "tag": "hr" },
     { "tag": "div", "text": { "tag": "lark_md",
-      "content": "**「段名」**\n▸ 条目 — 负责人 · 补充" } },
+      "content": "▸ 人名:TEA-xx 事项 — 需要的动作 · 挂起时长/时限\n▸ …" } },
+    { "tag": "div", "text": { "tag": "lark_md",
+      "content": "(其余 N 件正常推进 · 无需动作)" } },
     { "tag": "note", "elements": [
-      { "tag": "plain_text", "content": "助理·范围名 · 数据截至 HH:MM · 仅推送不写库" } ] }
+      { "tag": "plain_text", "content": "助理·全队 · 数据截至 HH:MM · 仅推送不写库" } ] }
   ]
 }
 ```
-- **静默日降级(先于一切排版规则)**:所有概览计数为 0 且无告警 → **不发卡**,改
-  `notify_team({ text: "「任务名·范围名」今日无事项 · 数据截至 HH:MM" })` 一行。
-  卡片是给人读的,无信息的卡片只消耗注意力。
-- 顺序固定:概览 fields(双列 · 永远在,0 也显示)→ hr → 内容段(**≤2 个**)→ 告警段(可选)→ note 页脚。
-- 内容段:段名 `**「段名」**` 独占一行;条目 `▸ ` 一条一行,`标题 — 负责人 · 补充`;
-  每段 **≤3 条**,溢出末行 `…另有 N 条`;空段整段省略。
-- **只展开需要人行动或异常的条目**(等谁评审 / 卡住超时 / 告警 / 违规);
-  正常推进中的事项只进概览 fields 计数,**不逐条展开**——读卡的人要的是
-  「我现在要做什么」,不是全量清单。
-- 标题里的「范围名」= $AUTOPILOT_SCOPE_NAME;日期 MM-DD;时间 HH:MM(Asia/Shanghai)。
-- **emoji 纪律:全卡至多 1 个**,只允许告警段开头的 `⚠`;禁止彩色圆点与装饰 emoji。
+- **行动条目**:每条 = `▸ 人名:issue/事项 — 需要的动作 · 时限或挂起时长`。
+  只列「需要具体某个人做的事」(等谁评审 / 卡住超时 / 欠账如未写复盘 / 缺 owner)。
+  没有明确到人的条目不上卡——先查清 DRI 再点名,查不清就写「DRI 未定」并把定 DRI 本身作为动作。
+- 条目按紧迫排序,**全卡 ≤5 条**,溢出末行 `…另有 N 条`;超时/风险类条目可加 ⚠ 前缀
+  (**全卡至多 1 个 emoji**,禁彩色圆点与装饰 emoji)。
+- **尾行上下文锚(一行)**:`(其余 N 件正常推进 · 无需动作)`——给「没被点名 = 一切正常」的确定感。
+- **不放概览 fields 统计块**:数字不驱动行动,想看全量清单去 multica(卡片不替代看板)。
+- **零行动日不发卡**:`notify_team({ text: "「任务名·全队」今日无需动作 · N 件推进中 · 数据截至 HH:MM" })` 一行。
+- 标题「范围名」= $AUTOPILOT_SCOPE_NAME;日期 MM-DD;时间 HH:MM(Asia/Shanghai)。
 - header 色由各任务 prompt 指定(每日开工 wathet / 每日总结 indigo / 周一计划 green /
   周三体检 orange / 月度健康 carmine);不得自造色值。
 - note 页脚的模式说明:run_only 写「仅推送不写库」,create_issue 写实际动作(如「已建周计划 issue」)。
+- **monthly-health 例外(报告类)**:保留完整卡——概览 fields(双列)→ hr → 内容段(≤2 段 · 每段 ≤3 条)
+  → note 页脚,附 wiki 全文链接;骨架细节见 standards/feishu-card-style.md。
 
 ## Issue 纪律
 - `run_only` 模式:绝不创建/更新任何 multica issue。
