@@ -40,26 +40,24 @@ prompt: |
   这是【月度健康报告】。
 
   Step 1 · 生成报告
-    team:  运行月度健康报告:`multica skill pull tc-ops` 后 `python3 ~/.claude/skills/tc-ops/scripts/monthly_health.py ~/team-context [<project-repo>...]`(输出 markdown);取代旧 monthly_health_report MCP 工具
+    运行月度健康报告:`multica skill pull tc-ops` 后 `python3 ~/.claude/skills/tc-ops/scripts/monthly_health.py ~/team-context [<project-repo>...]`(输出 markdown);取代旧 monthly_health_report MCP 工具
            Tool writes markdown to /tmp/monthly-health-{{date}}.md.
            再跑状态机不变量巡检(**report-only,绝不带 --strict**——autopilot 只报告不硬 fail,
            --strict 留给 backfill 验收/CI):`python3 ~/.claude/skills/tc-ops/scripts/issue_invariants.py`
            把输出(8 条硬性不变量违规清单 + 警告)追加进同一份 /tmp/monthly-health-{{date}}.md。
-    个人:  汇总本人本月 issue / case / commit + SOP 信号 (handoff 次数 · 未写 debrief 等)
-           写到 /tmp/monthly-personal-${AUTOPILOT_SCOPE%@*}-{{date}}.md
 
-  Step 2 · (仅 team) Upload + archive (ONE MCP call, no shell-out)
+  Step 2 · Upload + archive (ONE MCP call, no shell-out)
     Call MCP tool archive_to_wiki({
       markdownContent: <读取 /tmp/monthly-health-{{date}}.md 后把完整内容作为字符串传入
                         —— agent 本地文件路径对远程 server 不可见,必须传内容不传路径>,
       title: "Monthly Health {{date}}"
     })
-    Returns: { docUrl, nodeToken }。个人版跳过 wiki 归档。
+    Returns: { docUrl, nodeToken }。
 
   Step 3 · Compose card + 推团队群(骨架/文案纪律见 agent instructions · header=carmine)
     标题: 月度健康 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
     概览 fields: 复盘 / debrief 候选 / 交接 / 提交 / 状态机违规 N(取 Step 1 巡检
-    「硬性违规」计数;N>0 时内容段列前 3 条并注「全文见报告」)(个人版为本人切片,team 版为全队)
+    「硬性违规」计数;N>0 时内容段列前 3 条并注「全文见报告」)
     内容段:「报告」 ▸ 完整报告: <docUrl>(仅 team) ▸ 本地存档: health/monthly/{{date}}.md(仅 team)
     notify_team({ card: <card-json> })
 

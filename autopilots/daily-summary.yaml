@@ -1,8 +1,8 @@
 name: daily-summary
 description: |
   Reads today's commits + multica issue updates, composes a digest,
-  pushes to the feishu team group via notify_team. Data scope (个人/全队)
-  is read from the AUTOPILOT_SCOPE env at runtime.
+  pushes to the feishu team group via notify_team. Team-scope only
+  (2026-07-03 收敛:个人卡并入团队卡,「已交付」按人归并)。
   SOP coverage: P-6 Daily D-05 (notify_team only · P2P removed per 2026-05-28 spec §1.2)
 
 trigger:
@@ -40,11 +40,10 @@ prompt: |
 
   Step 1 · 收集数据(日期跨平台:YEST=$(date -v-1d +%Y-%m-%d 2>/dev/null || date -d '1 day ago' +%Y-%m-%d))
     主源(权威): multica issue 活动
-      team:  multica issue list --updated-after $YEST
-      个人:  multica issue list --assignee "$AUTOPILOT_SCOPE" --updated-after $YEST
+      multica issue list --updated-after $YEST
     辅源(best-effort · 只能看到执行机可见的 repo,注定不全,缺失不算失败):
       [ -d ~/projects ] && cd ~/projects && for r in */; do (cd "$r" && git log --since="midnight" --pretty=format:"- %s (%an)"); done
-      (个人 commits 只统计 author 是本人的;拿不到 git 数据 → fields 里该项写「—」)
+      (拿不到 git 数据 → fields 里该项写「—」)
 
   Step 2 · Compose card(骨架/文案/静默日纪律见 agent instructions · header=indigo)
     标题: 每日总结 · ${AUTOPILOT_SCOPE_NAME} · MM-DD

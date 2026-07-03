@@ -3,7 +3,7 @@ description: |
   Weekday-morning kickoff. Reads today's focus (in_progress + 计划-已批准 待启动
   + 待评审 + 卡住的 handoff) and pushes a 今日开工 card to the feishu team group
   via notify_team. Forward-looking morning counterpart to daily-summary (evening
-  recap). Data scope (个人/全队) is read from AUTOPILOT_SCOPE at runtime.
+  recap). Team-scope only(2026-07-03 收敛:个人卡并入团队卡,按人归并展示)。
   SOP coverage: P-6 Daily D-01 (morning kickoff · notify_team only · 透明文化)
 
 trigger:
@@ -44,7 +44,6 @@ prompt: |
     进行中:   multica issue list --status in_progress
     待启动:   multica issue list --label 计划-已批准 --status todo
     待评审:   multica issue list --label 计划-评审中
-    (个人版每条加 --assignee "$AUTOPILOT_SCOPE")
     卡住信号: 进行中 issue 里,最近一次 Current State handoff 时间戳 > 24h 的标出来
               (multica issue get <id> 看最新 handoff 评论时间)
 

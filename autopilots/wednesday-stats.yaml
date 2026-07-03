@@ -37,12 +37,11 @@ prompt: |
 
   1. cd ~/team-context && git log --since="last Sunday" claude_md_team_global.md
   2. 运行 `multica skill lint`(找 stale + 缺 owner;取代旧 skill_lint MCP 工具)
-       个人: 只看 owner == $AUTOPILOT_SCOPE 的 skill
   3. Heuristic regex for duplicate rules
 
   Compose card(骨架/文案纪律见 agent instructions · header=orange):
     标题: 周三体检 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
-    概览 fields: claude_md 本周改动 / skill 数(个人版=我 owned) / 缺 owner / 最老 skill
+    概览 fields: claude_md 本周改动 / skill 数 / 缺 owner / 最老 skill
     内容段(≤3 条):「风险」 ▸ 发现(缺 owner / stale / 疑似重复规则),给下一步动作
     零风险 → 按 agent instructions 静默日降级为一行 text。
 

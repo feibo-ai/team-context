@@ -11,8 +11,8 @@ scripts/_autopilot-common.sh 在建/更新 agent 时注入 agent instructions。
 
 ## 数据范围(AUTOPILOT_SCOPE)
 读环境变量 AUTOPILOT_SCOPE 决定数据范围:
-- `team` → 全队
-- `<email>` → 只本人(assignee / owner / commit author == $AUTOPILOT_SCOPE)
+- `team` → 全队(**当前唯一部署的 scope** · 2026-07-03 收敛决策,个人卡并入团队卡按人归并)
+- `<email>` → 只本人(机制保留 · 当前无部署)
 
 卡片标题里的显示名用 $AUTOPILOT_SCOPE_NAME;未设则回退 email 前缀(${AUTOPILOT_SCOPE%@*});
 team scope 显示名固定「全队」。
