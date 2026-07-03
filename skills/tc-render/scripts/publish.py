@@ -11,12 +11,13 @@ agent **调用本脚本**(确定性 + 硬校验),调用契约见 references/publ
 file-cards.ts:NEW_FILE_CARD_RE + CI 探针)。
 
 用法:
-  publish.py --type {plan|research|case|handoff} --data FIELDS.json --issue <UUID> \
+  publish.py --type {plan|research|case|handoff} --data FIELDS.json --issue <UUID|issue-key> \
              [--caption STR] [--out PATH] [--dry-run] [--no-transition]
 
   --data    JSON 文件,字段按 SCHEMAS[type] 硬校验(additionalProperties:false +
             required + 阈值派生自 schema minLength/minItems,无硬编码魔数)
-  --issue   目标 issue 完整 UUID(--dry-run 时可省)
+  --issue   目标 issue:完整 UUID 或 issue key(如 TEA-88;--dry-run 时可省)。
+            非 UUID 输入经 `multica issue show` 运行时解析为完整 UUID 再进 API(命门不变)
   --out     本地 html 落盘路径(须 .html 且在 CWD 允许根内 · 路径白名单);省略则按 type+date+slug 默认
   --dry-run 只渲染+校验+落盘,不发布也不转换(评审用)
   --no-transition 发布后跳过入口状态转换(逃生口;默认开启转换)
@@ -600,6 +601,30 @@ def record_gate(ok, path=GATE_COUNTS_PATH):
         pass  # 遥测 best-effort,绝不打断发布
 
 
+def resolve_issue_ref(ref):
+    """非 UUID 的 issue 引用(key 如 TEA-88 / UUID 前缀)→ 完整 UUID。
+
+    经 `multica issue show <ref> --output json` 解析(CLI 端 resolveIssueRef 认
+    key/前缀/UUID 三形态);进 API 的一律完整 UUID 这一命门不变,只把解析负担
+    从人/agent 挪进脚本。解析失败 → 硬失败,绝不带着可疑引用继续发布。
+    """
+    try:
+        proc = subprocess.run(["multica", "issue", "show", str(ref), "--output", "json"],
+                              capture_output=True, text=True)
+    except FileNotFoundError:
+        fail("找不到 multica CLI,无法解析 issue 引用 %r;先安装/更新 multica" % ref)
+    if proc.returncode != 0:
+        fail("issue 引用 %r 解析失败(multica exit %d):%s"
+             % (ref, proc.returncode, (proc.stderr or proc.stdout or "").strip()[:300]))
+    try:
+        issue_id = str(json.loads(proc.stdout).get("id", ""))
+    except Exception:
+        fail("issue 引用解析输出非 JSON: %s" % (proc.stdout or proc.stderr or "")[:200])
+    if not UUID_RE.fullmatch(issue_id):
+        fail("issue 引用 %r 解析结果不是完整 UUID(%r);请直接传完整 UUID" % (ref, issue_id))
+    return issue_id
+
+
 def publish(issue, doc_path, caption):
     """命门B 收口:exec `multica issue comment add --inline`,解析 JSON,自检 attachments。"""
     argv = build_publish_argv(issue, doc_path, caption)
@@ -631,7 +656,7 @@ def main():
     ap = argparse.ArgumentParser(description="tc-render 渲染+硬校验+命门B 发布")
     ap.add_argument("--type", required=True, choices=list(RENDERERS))
     ap.add_argument("--data", required=True, help="JSON 字段文件")
-    ap.add_argument("--issue", default="", help="目标 issue 完整 UUID")
+    ap.add_argument("--issue", default="", help="目标 issue:完整 UUID 或 issue key(如 TEA-88;非 UUID 运行时解析)")
     ap.add_argument("--caption", default="文档(方案A · 下方渲染)")
     ap.add_argument("--out", default="", help="本地 html 落盘路径(.html · CWD 允许根内)")
     ap.add_argument("--dry-run", action="store_true")
@@ -641,9 +666,12 @@ def main():
 
     if not a.dry_run:
         if not a.issue:
-            fail("--issue 必填(非 --dry-run);projectId/issueId 一律完整 UUID")
+            fail("--issue 必填(非 --dry-run);接受完整 UUID 或 issue key(如 TEA-88)")
         if not UUID_RE.fullmatch(a.issue):   # fullmatch:拒尾随换行等(`$` 会放过 uuid+\n)
-            fail("--issue 须为完整 UUID,不能用 8 位短 ID(rule #6)")
+            # 非 UUID → 运行时解析成完整 UUID(命门不变:进 API 的一律完整 UUID)
+            resolved = resolve_issue_ref(a.issue)
+            print("issue 引用已解析:%s → %s" % (a.issue, resolved), file=sys.stderr)
+            a.issue = resolved
 
     # 友好读取 --data:坏 JSON / 缺文件 → 友好 ERROR,不泄露裸 traceback(red-team)
     try:
