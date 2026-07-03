@@ -80,8 +80,7 @@ def test_transition_subcommands_match_contract():
     m = re.search(r"\{([a-z0-9,\-]+)\}", help_text)
     assert m, f"transition.py --help 未列出子命令: {out.stderr[:200]}"
     actual = set(m.group(1).split(","))
+    assert len(actual) >= 9, f"子命令解析异常(只有 {len(actual)} 个): {actual}"
     contract = (REPO / "skills/tc-render/references/publish-contract.md").read_text()
-    documented = set(re.findall(r"`((?:publish-init|plan|design|build|case|cancel)[a-z0-9\-]*)`", contract))
-    documented = {d for d in documented if d in actual or "-" in d}
-    missing = actual - documented
+    missing = {s for s in actual if not re.search(rf"`{re.escape(s)}\b", contract)}
     assert not missing, f"transition.py 有子命令未在 publish-contract.md 记录语义: {missing}"
