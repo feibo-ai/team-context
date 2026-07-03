@@ -13,13 +13,21 @@
 ## 一键同步
 **Skills 走 registry**(脚本/正文一起拉),全局规则走软链:
 ```bash
-# 1) 从 registry 把全部 tc-* skill(含脚本如 tc-render/publish.py)同步到 ~/.claude/skills
+# 1) 从 registry 把全部 tc-* skill(含脚本)拉到双目录:
+#    ~/.claude/skills(Claude Code/Desktop)+ ~/.agents/skills(Codex 原生扫描)
 multica skill pull --all
+multica skill pull --all --dir ~/.agents/skills
 
 # 2) 全局规则软链到各界面(改源各界面自动最新)
 bash scripts/sync-team-config.sh
+
+# 3) (推荐 · 一次性)装每小时自动同步,之后 registry 更新至多 1h 全机就位
+bash scripts/install-skill-pull-cron.sh
 ```
-`multica skill pull --all` 做 1 件:从 multica registry 拉**全部团队 skill**(含每个 skill 携带的脚本)落地到 `~/.claude/skills/`,覆盖旧版。Claude Code / Desktop 复用同一目录,自动发现。
+`multica skill pull` 原子换入(不会留半写 skill)、frontmatter spec-clean(只 name+description)。
+过期检测:`multica skill pull --all --check`(有漂移非零退出)或直接 `multica doctor`
+(内置 skills-sync 软检查)。DRI 开发机走 git 软链(sync-team-config.sh),pull 会拒绝
+覆盖软链(--force 才会)——两种布局互斥,别混。
 
 `scripts/sync-team-config.sh` 做 2 件:
 1. **全局规则 → ** `~/.claude/CLAUDE.md`(Claude Code 全局)+ `~/.codex/AGENTS.md`(Codex 全局),均软链到 `claude_md_team_global.md`。
@@ -31,12 +39,12 @@ bash scripts/sync-team-config.sh
 ## 同步矩阵
 | 产物 | Claude Code | Claude Desktop | Codex CLI | Codex app |
 |---|---|---|---|---|
-| **Skills (tc-*)** | `multica skill pull --all` → `~/.claude/skills/`(含脚本)| 本地 agent 模式 skills-plugin,复用 `~/.claude/skills/`(`pull` 即覆盖) | **无原生 skill** → 流程靠 AGENTS.md;skill 正文/脚本经 `multica skill pull`(落地 `~/.claude/skills/` 供读)或直接读 repo | 同 Codex CLI(共用 `~/.codex/`) |
+| **Skills (tc-*)** | `multica skill pull --all` → `~/.claude/skills/`(含脚本)| 本地 agent 模式 skills-plugin,复用 `~/.claude/skills/`(`pull` 即覆盖) | **原生**(agentskills.io):扫 `~/.agents/skills/`,description 自动触发 → `multica skill pull --all --dir ~/.agents/skills` | 同 Codex CLI(共用 `~/.agents/skills`) |
 | **MCP**(tcmcp-remote)| `~/.claude.json` → `mcpServers` | `~/Library/Application Support/Claude/claude_desktop_config.json` → `mcpServers` | `~/.codex/config.toml` → `[mcp_servers.*]` | 共用 `~/.codex/config.toml` |
 | **全局规则** | `~/.claude/CLAUDE.md` 软链(脚本)+ 各产品 repo 的 `CLAUDE.md` | 设置→自定义指令 / Project(手动粘 `claude_md_team_global.md`) | `~/.codex/AGENTS.md` 软链(脚本)+ 各产品 repo 的 `AGENTS.md` | 共用 `~/.codex/AGENTS.md` |
 
 **要点**
-- **Skills**:所有界面走 `~/.claude/skills/`,内容用 `multica skill pull --all` 从 registry 拉(含 tc-render/publish.py 等脚本)= 自动最新。**Codex 没有 Claude 式 skill 机制** —— AGENTS.md 把 tc-* 当“流程描述”读,需要 skill 正文/脚本时读 `~/.claude/skills/`(`pull` 已落地)或读 repo。
+- **Skills**:Claude 系走 `~/.claude/skills/`,Codex 走 `~/.agents/skills/`(原生 agentskills.io 发现,同一份标准 skill 目录,无需 index 文件);双目录都用 `multica skill pull` 从 registry 拉 = 自动最新(装 cron 后免手动)。
 - **全局规则**:Claude Code / Codex 软链同一个源 → 改一处全更新。Claude Desktop 无 CLAUDE.md 机制 → 需手动把内容贴进“自定义指令/Project”(变更少,手动可接受)。
 - **MCP**:RPI 文档流已迁到 skill + `multica` CLI + `tc-render/publish.py`,**日常不再走本地 MCP**。MCP 配置只需接 `tcmcp-remote`(`notify_team` 等飞书工具)。`tcmcp-local` 本期作兜底仍可注册但日常不调(迭代 2 删),新成员**只配 remote**即可。token 由成员自己 `multica login` 拿(`jq -r .token ~/.multica/config.json`),不是 DRI 私信(per-user 审计)。
 
@@ -64,7 +72,7 @@ bearer_token_env_var = "TCMCP_AGENT_TOKEN"   # export TCMCP_AGENT_TOKEN=mul_… 
 > **兜底说明**:本地 MCP `@tcmcp/local` 本期**两端仍保留注册作兜底,但日常不调**(迭代 2 删)。新成员**只配上面的 `tcmcp-remote`** 即可,无需再 clone/build/注册 `tcmcp-local`。
 
 ## 改了东西怎么办
-- 改 skill 正文/脚本:编辑 repo 内 `skills/tc-*/` → `multica skill push` 推 registry(或重跑 `scripts/sync-team-config.sh`,新增的自动建)→ 各机 `multica skill pull --all` 取最新(含脚本)。
+- 改 skill 正文/脚本:编辑 repo 内 `skills/tc-*/` → PR 合并 → 跑 `scripts/sync-team-config.sh` 推 registry(create-or-update + files + **写后校验**,失败非零退出)→ 各机 cron 每小时自动 `pull`(或手动 `multica skill pull --all` 立即取)。
 - 改全局规则:编辑 repo 内的源 → 软链处自动最新。
 - 加新成员:成员自己 `multica login` 拿 token → 把 email 告诉 DRI → DRI 跑 `multica user create --email <email> --role member` 把其加进 workspace(幂等 · **不发 token**)+ 给 workspace UUID;成员再 `multica skill pull --all` 同步 skill → 接 remote MCP(`tcmcp-remote`)→ 跑 `scripts/sync-team-config.sh` 软链全局规则。**不再 clone/build 本地 MCP**。
 - 换 token / workspace:更新各界面 MCP 配置的 `MULTICA_TOKEN` / `MULTICA_WORKSPACE_ID`(只剩 `tcmcp-remote` 一处 + shell rc 的 `TCMCP_AGENT_TOKEN`;CLI 自己读 `~/.multica/config.json` 无需改)。

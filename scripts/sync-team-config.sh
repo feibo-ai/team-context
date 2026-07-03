@@ -121,9 +121,10 @@ if [ "$SKIP_MULTICA" = 0 ] && command -v multica >/dev/null 2>&1; then
     [ -f "$d/SKILL.md" ] || continue
     name="$(awk -F': *' '/^name:/{gsub(/["'"'"']/,"",$2);print $2;exit}' "$d/SKILL.md")"
     [ -n "$name" ] || name="$(basename "$d")"
-    # description:整行抽取(内部冒号安全)+ 按字符截 480(CJK 安全),见 _skill_desc。
-    # (validate-skills.py 已把 description 硬限 ≤450 → 此截断只是 CLI 上限的兜底,不再丢内容)
-    desc="$(_skill_desc "$d/SKILL.md" 480)"
+    # description:整行抽取(内部冒号安全)+ 按字符截 1024(agentskills.io spec 上限;
+    # 经核实 server/CLI 无长度限制,旧 480 是本脚本单方面的历史截断。
+    # validate-skills.py 已把 description 硬限 ≤450 → 此截断纯兜底,不丢内容)
+    desc="$(_skill_desc "$d/SKILL.md" 1024)"
     body="$(awk 'f{print} /^---[[:space:]]*$/{c++} c==2 && !f{f=1}' "$d/SKILL.md")"
     # owner 单源 skill-pack.yaml(SKILL.md frontmatter 只留标准字段 name/description)
     owner_name="$(_pack_owner "$name")"
@@ -167,6 +168,23 @@ if [ "$SKIP_MULTICA" = 0 ] && command -v multica >/dev/null 2>&1; then
         PUSH_FAILS=$((PUSH_FAILS + 1))
       fi
     done < <(_each_skill_file "$d")
+    # 写后校验:读回 registry,description+content 必须与源一致——
+    # 半推/静默截断/编码损坏在此现形,而不是等成员 pull 到坏文件才发现
+    if multica skill get "$id" --output json 2>/dev/null \
+       | REL_DESC="$desc" REL_BODY="$body" python3 -c '
+import json, os, sys
+try:
+    s = json.load(sys.stdin)
+except Exception:
+    sys.exit(1)
+ok = (s.get("description", "").strip() == os.environ["REL_DESC"].strip()
+      and (s.get("content") or "").strip() == os.environ["REL_BODY"].strip())
+sys.exit(0 if ok else 1)'; then
+      say "    ✓ 写后校验(description+content 读回一致)"
+    else
+      say "    ✗ 写后校验失败(registry 读回 ≠ 源)"
+      PUSH_FAILS=$((PUSH_FAILS + 1))
+    fi
   done
   if [ "${PUSH_FAILS:-0}" -gt 0 ]; then
     echo "ERROR: registry 推送有 ${PUSH_FAILS} 处失败(见上方 ✗)· registry 处于半推状态,修复后重跑" >&2
