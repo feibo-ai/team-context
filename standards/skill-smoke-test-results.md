@@ -1,5 +1,9 @@
 # Skill 冒烟测试结果 — 2026-05-27
 
+> **[2026-07-03 superseded]** 本文件是 v1 skill 集(旧名 tc-1-start 等)的历史验证记录。
+> 现行冒烟清单在 `evals/smoke-test.md`,触发回归用例在 `evals/routing-cases.yaml`(13 个新 skill · tc-router 入口)。
+
+
 在全新的 Claude Code 会话里手工测试：粘贴触发短语，确认对应的 skill 被调用。标 PASS 或 FAIL。
 
 | Skill | 触发短语 | 状态 |

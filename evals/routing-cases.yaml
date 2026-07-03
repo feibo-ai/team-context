@@ -1,0 +1,125 @@
+# routing-cases.yaml — 触发回归用例(单源: skills/tc-router/references/real-user-prompts.md)
+# 用法: 人工/未来自动化按 utterance 逐条对照 —— 该话语应触发(或路由到)expect 里的 skill。
+# 语料改动走 tc-router 的 references 文件,本文件由集成时同步生成。
+cases:
+  - utterance: "接手 TEA-88"
+    expect: tc-router
+    note: "读 issue labels 定阶段后交棒"
+  - utterance: "继续昨天那个任务"
+    expect: tc-router
+    note: "先定位是哪个 issue"
+  - utterance: "下一步干嘛?"
+    expect: tc-router
+    note: "按当前 issue 阶段判定"
+  - utterance: "开始干活吧"
+    expect: tc-router
+    note: "无阶段信息"
+  - utterance: "开工吧,issue 是 TEA-102"
+    expect: tc-router
+    note: "有 id 无阶段;若 `设计-已审` 在场则交 tc-build"
+  - utterance: "pick up where we left off"
+    expect: tc-router
+    note: "定位最近 in_progress issue"
+  - utterance: "what should I do next on this project?"
+    expect: tc-router
+    note: "项目内多 issue 时列证据"
+  - utterance: "take over the actionow issue"
+    expect: tc-router
+    note: "读 labels 再交棒"
+  - utterance: "帮我看看这个项目到哪一步了"
+    expect: tc-router
+    note: "只读汇报 + 建议下一个 skill"
+  - utterance: "我想做一个新项目,团队内部工具"
+    expect: tc-kickoff
+    note: "项目层启动 6 步"
+  - utterance: "启动新项目"
+    expect: tc-kickoff
+  - utterance: "kickoff a new direction for billing"
+    expect: tc-kickoff
+  - utterance: "调研一下 Stripe webhook 机制"
+    expect: tc-research
+  - utterance: "研究一下这个库能不能用"
+    expect: tc-research
+  - utterance: "let's understand the problem space first"
+    expect: tc-research
+  - utterance: "做个 plan"
+    expect: tc-plan
+  - utterance: "写个方案发给大家评审"
+    expect: tc-plan
+    note: "发布/请审由 tc-plan 经 tc-render 做"
+  - utterance: "write a plan for the DB migration"
+    expect: tc-plan
+  - utterance: "帮我修个 bug:登录接口 500"
+    expect: tc-plan
+    chain: "tc-plan → tc-build"
+    note: "任务层先 3 句话 mini-plan 再执行,先 plan 后 code"
+  - utterance: "方案批了,过一下设计再开工"
+    expect: tc-design-review
+    note: "项目层设计门必走"
+  - utterance: "design review 走起"
+    expect: tc-design-review
+  - utterance: "执行,按 plan 来"
+    expect: tc-build
+    note: "前提:plan 已批准(项目层还需 `设计-已审`)"
+  - utterance: "开始写码"
+    expect: tc-build
+    note: "无已批准 plan → 先转 tc-plan"
+  - utterance: "implement the approved plan"
+    expect: tc-build
+  - utterance: "收尾吧"
+    expect: tc-review
+  - utterance: "写 case 复盘这个项目"
+    expect: tc-review
+  - utterance: "wrap up, completion criteria are met"
+    expect: tc-review
+  - utterance: "复盘一下这周的任务"
+    expect: tc-review
+    note: "任务批量周桶 case"
+  - utterance: "卡住了,半小时没进展"
+    expect: tc-handoff
+    note: "交接 + /clear 重启"
+  - utterance: "换个 session 重开"
+    expect: tc-handoff
+  - utterance: "I'm stuck, let's start over"
+    expect: tc-handoff
+  - utterance: "context 感觉浑浊了"
+    expect: tc-handoff
+  - utterance: "感觉走偏了,一直在兜圈子"
+    expect: tc-health
+    note: "诊断污染信号;确认污染再转 tc-handoff"
+  - utterance: "you keep agreeing with me, something is off"
+    expect: tc-health
+  - utterance: "self check 一下,我们方法对吗"
+    expect: tc-health
+    note: "反模式自检也归 tc-health"
+  - utterance: "认领角色,DRI 是谁?"
+    expect: tc-plan
+    note: "角色分工是 plan 的 How to split 段"
+  - utterance: "出分歧了,谁说了算?"
+    expect: tc-conflict
+  - utterance: "we disagree on the schema design"
+    expect: tc-conflict
+  - utterance: "周一 kickoff 开始"
+    expect: tc-rhythm
+    note: "周一对齐段"
+  - utterance: "本周计划对齐一下"
+    expect: tc-rhythm
+  - utterance: "周五 demo + betting"
+    expect: tc-rhythm
+    note: "周五 demo+betting 段"
+  - utterance: "下周做什么,定一下"
+    expect: tc-rhythm
+    note: "betting table 决定下周工作"
+  - utterance: "开周会"
+    expect: tc-rhythm
+    note: "周一/周五两会同归 tc-rhythm,按今天星期几走对应段,拿不准问"
+  - utterance: "月度健康报告跑一下"
+    expect: tc-ops
+  - utterance: "校验一下 autopilot 配置"
+    expect: tc-ops
+  - utterance: "把这个 plan 发布到 issue 上"
+    expect: tc-render
+    note: "通常由文档 skill 间接调;单独发布/流转才直触"
+  - utterance: "这个 issue 状态不对,帮我理一下"
+    expect: tc-router
+    note: "判定表 + 异常段如实报告,修复交 tc-render"

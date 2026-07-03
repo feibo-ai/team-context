@@ -1,0 +1,3 @@
+interface:
+  display_name: TC Design Review Gate
+  short_description: Design review gate between plan approval and build start — request-review, independent reviewer verdict, then approve on the same work issue.

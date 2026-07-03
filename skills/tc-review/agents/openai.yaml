@@ -1,0 +1,3 @@
+interface:
+  display_name: TC Debrief / Case Review
+  short_description: End-of-project/task debrief — five-section case, publish as issue comment, sub-agent review, closeout.

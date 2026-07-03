@@ -1,0 +1,3 @@
+interface:
+  display_name: Team Router
+  short_description: 团队工作入口:定位 multica issue、判定当前阶段、路由到正确的 tc-* skill

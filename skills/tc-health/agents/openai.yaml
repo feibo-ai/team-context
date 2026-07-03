@@ -1,0 +1,3 @@
+interface:
+  display_name: Team Health Check
+  short_description: Session pollution scan plus anti-pattern self-check with per-item verdicts

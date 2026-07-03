@@ -1,38 +1,7 @@
 #!/usr/bin/env bash
-# sync-to-local.sh — symlink skills/*/ to ~/.claude/skills/*/
-# Idempotent: safe to re-run after pulling new skills.
+# sync-to-local.sh — DEPRECATED 薄壳:统一入口是 sync-team-config.sh。
+# 保留此文件只为兼容旧习惯/旧文档;软链逻辑单源在 sync-team-config.sh
+# (含 ~/.claude/skills + ~/.agents/skills 双端软链 + 失效旧名软链清理)。
 set -euo pipefail
-
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SKILLS_DIR="${REPO_DIR}/skills"
-TARGET_DIR="${HOME}/.claude/skills"
-
-if [[ ! -d "${SKILLS_DIR}" ]]; then
-  echo "ERROR: ${SKILLS_DIR} not found" >&2
-  exit 1
-fi
-
-mkdir -p "${TARGET_DIR}"
-
-linked=0
-skipped=0
-for skill in "${SKILLS_DIR}"/*/; do
-  [[ -d "${skill}" ]] || continue
-  name="$(basename "${skill}")"
-  link="${TARGET_DIR}/${name}"
-
-  if [[ -L "${link}" ]]; then
-    rm "${link}"
-  elif [[ -e "${link}" ]]; then
-    echo "WARN: ${link} exists but is not a symlink — skipping (handle manually)" >&2
-    skipped=$((skipped + 1))
-    continue
-  fi
-
-  ln -s "${skill%/}" "${link}"
-  echo "linked: ${name}"
-  linked=$((linked + 1))
-done
-
-echo ""
-echo "Done: ${linked} linked, ${skipped} skipped."
+echo "[deprecated] sync-to-local.sh → 转发 sync-team-config.sh --no-multica" >&2
+exec bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/sync-team-config.sh" --no-multica

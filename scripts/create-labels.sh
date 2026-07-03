@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # create-labels.sh — populate the 13 standard labels in multica workspace
-# (Content embedded above in standards/labels.md — synced here for executability)
+# (标签字典单源: skills/tc-render/references/issue-label-state-rules.md — 此处内嵌一份以便执行)
 #
 # Uses parallel arrays instead of `declare -A` so it runs on macOS's bash 3.2.
 set -euo pipefail

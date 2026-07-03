@@ -1,0 +1,3 @@
+interface:
+  display_name: TC Build Session
+  short_description: Implement-phase discipline — pre-flight gate, build-start transition, scope lock, commit rhythm.
