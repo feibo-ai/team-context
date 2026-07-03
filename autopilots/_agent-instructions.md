@@ -17,6 +17,28 @@ scripts/_autopilot-common.sh 在建/更新 agent 时注入 agent instructions。
 卡片标题里的显示名用 $AUTOPILOT_SCOPE_NAME;未设则回退 email 前缀(${AUTOPILOT_SCOPE%@*});
 team scope 显示名固定「全队」。
 
+## GitHub 活动数据源(开工/总结卡共用配方 · best-effort)
+组织 feibo-ai 的全仓活动是 multica issue 之外的第二数据源(能看到全组织,不受执行机 checkout 限制)。
+凭据:env `GITHUB_TOKEN`(由 agent custom_env 提供;未设或请求失败 → 该数据段写「GitHub 源不可用」,
+绝不让整个 run 失败,也不用本地 git 兜底猜)。
+
+```bash
+SINCE=$(date -u -v-24H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+GH() { curl -sf --max-time 20 -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com$1"; }
+GH "/orgs/feibo-ai/repos?per_page=100" | jq -r '.[].name'          # 仓库清单
+GH "/repos/feibo-ai/<repo>/commits?since=$SINCE&per_page=100"      # 窗口内提交(.author.login / .commit.message 首行)
+GH "/repos/feibo-ai/<repo>/pulls?state=all&sort=updated&direction=desc&per_page=30"
+#   窗口内: created_at≥SINCE=新开 · merged_at≥SINCE=已合并
+#   行动信号: state=open 且 requested_reviewers 非空 → 「PR 等 @<reviewer> 评审 · 挂 N 小时」(created_at 起算)
+```
+
+login → 显示名映射(未列出的 login 原样展示,不要猜):
+- `actionow-ai` → 曾振华
+- (其余成员 login 待 DRI 补充到本表)
+
+用法纪律:汇总按**人**归并(不按仓库);一条提交/PR 只在其所属条目出现一次;
+GitHub 数据与 multica issue 数据冲突时以 multica 为准(它是工作台账,GitHub 是代码事实)。
+
 ## 推送(唯一渠道)
 - 推送只走 MCP 工具 `notify_team({ card: ... })`(或 `{ text: ... }`)。
   feishu chat_id 由云端 tcmcp-remote 从 integration config 解析,**zero shell-out**(绝不本地拼飞书 API)。
@@ -34,22 +56,26 @@ team scope 显示名固定「全队」。
     "title": { "tag": "plain_text", "content": "任务名 · 全队 · MM-DD" } },
   "elements": [
     { "tag": "div", "text": { "tag": "lark_md",
-      "content": "▸ 人名:TEA-xx 事项 — 需要的动作 · 挂起时长/时限\n▸ …" } },
-    { "tag": "div", "text": { "tag": "lark_md",
-      "content": "(其余 N 件正常推进 · 无需动作)" } },
+      "content": "⚠ 人名:「工作内容」等你评审 — 挂 N 天\n▸ 人名:「工作内容」卡在 <卡点>\n▸ 人名:「工作内容」推进中,下一步 <一句>\n▸ 人名:今日无在办,可领「<内容>」" } },
     { "tag": "note", "elements": [
       { "tag": "plain_text", "content": "助理·全队 · 数据截至 HH:MM · 仅推送不写库" } ] }
   ]
 }
 ```
-- **行动条目**:每条 = `▸ 人名:issue/事项 — 需要的动作 · 时限或挂起时长`。
-  只列「需要具体某个人做的事」(等谁评审 / 卡住超时 / 欠账如未写复盘 / 缺 owner)。
-  没有明确到人的条目不上卡——先查清 DRI 再点名,查不清就写「DRI 未定」并把定 DRI 本身作为动作。
-- 条目按紧迫排序,**全卡 ≤5 条**,溢出末行 `…另有 N 条`;超时/风险类条目可加 ⚠ 前缀
-  (**全卡至多 1 个 emoji**,禁彩色圆点与装饰 emoji)。
-- **尾行上下文锚(一行)**:`(其余 N 件正常推进 · 无需动作)`——给「没被点名 = 一切正常」的确定感。
+- **全员点名(roster 模型)**:`multica workspace member list` 的每个成员**恰好一行**:
+  `▸ 人名:「工作内容」 · <状态>`。状态三档:
+  ① 需要动作(等你评审 / 欠账 / 批准未启动,给动作+挂起时长,可加 ⚠)
+  ② 卡住(`卡在 <卡点一句话>`)
+  ③ 正常(`推进中,下一步 <一句>` / `今日无在办,可领「<待启动 top>」`)。
+  排序:需要动作 > 卡住 > 正常 > 无在办;一人多件事挑最重要的 ≤2 件用 ` · ` 连接,其余不列。
+- **内容优先,编号不上卡**:「工作内容」= issue/PR 标题(必要时精简到 ≤14 字,保留可辨识的名词),
+  **一律不写 TEA-xx / repo#N 等编号**——没人按编号读卡;要定位细节去 multica/GitHub 或直接问助理。
+- **卡点写实**:卡住行必须写出「卡在什么」的一句话(取该 issue 最新 handoff 记录的
+  nextAction/deadEnds 摘要);查无卡点内容就归入正常档,绝不编造。
+- ⚠ 只给需要动作/超时行,**全卡至多 1 个 emoji**;禁彩色圆点与装饰 emoji。
 - **不放概览 fields 统计块**:数字不驱动行动,想看全量清单去 multica(卡片不替代看板)。
-- **零行动日不发卡**:`notify_team({ text: "「任务名·全队」今日无需动作 · N 件推进中 · 数据截至 HH:MM" })` 一行。
+- **静默日降级**:全员都在正常档 → 不发卡,text 一行:
+  `「任务名·全队」全员推进中:曾-「A」· 荣-「B」· …(每人一个内容短语) · 数据截至 HH:MM`。
 - 标题「范围名」= $AUTOPILOT_SCOPE_NAME;日期 MM-DD;时间 HH:MM(Asia/Shanghai)。
 - header 色由各任务 prompt 指定(每日开工 wathet / 每日总结 indigo / 周一计划 green /
   周三体检 orange / 月度健康 carmine);不得自造色值。

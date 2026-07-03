@@ -44,16 +44,20 @@ prompt: |
     进行中:   multica issue list --status in_progress
     待启动:   multica issue list --label 计划-已批准 --status todo
     待评审:   multica issue list --label 计划-评审中
+    PR 待评审: GitHub 组织活动(配方见 agent instructions §GitHub 数据源):
+              open PR 且 requested_reviewers 非空 → 每条记 repo#编号/标题/等谁/挂起时长
     卡住信号: 进行中 issue 里,最近一次 Current State handoff 时间戳 > 24h 的标出来
               (multica issue get <id> 看最新 handoff 评论时间)
 
   Step 2 · Compose card(行动指令式 · 骨架/纪律单源 agent instructions · header=wathet)
     标题: 每日开工 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
-    行动条目(按紧迫排序 · 全卡 ≤5 条):
-      待评审:   ▸ <评审人>:TEA-xx 计划等你评审 — 已挂 N 小时
-      卡住:     ⚠ <DRI>:TEA-xx 卡住 N 小时 — 换 session 或升级(30 分钟规则)
-      待启动:   仅当 DRI 已定且批准超 48h 未开工 → ▸ <DRI>:TEA-xx 已批准 N 天 — 今天启动或说明阻塞
-    尾行锚: (其余 N 件正常推进 · 无需动作)——N = 进行中+待启动里未点名的
-    零行动 → 不发卡,text 一行:「每日开工·全队」今日无需动作 · N 件推进中 · 数据截至 HH:MM
+    全员点名(每成员恰好一行 · roster 纪律见 agent instructions):
+      每人一行 = 人名:「今天最重要的在办内容」+ 状态:
+        需要动作 → ⚠/▸ 「<计划/PR 标题>」等你评审 — 挂 N 天 / 「<内容>」已批准 N 天未启动 — 今天启动或归档
+        卡住     → 「<内容>」卡在 <卡点一句话(最新 handoff 的 nextAction/deadEnds;查无则归正常档)>
+        正常     → 「<内容>」推进中,今日 <下一步一句(取 handoff nextAction/计划)>
+        无在办   → 今日无在办,可领「<待启动 top 内容>」
+      数据来源:multica issue(assignee 归并)+ GitHub PR 待评审(requested_reviewers → 该评审人的行)
+    全员正常档 → 不发卡,text 一行:「每日开工·全队」全员推进中:每人一个内容短语 · 数据截至 HH:MM
 
   Step 3 · notify_team({ card: <card-json> })(或零行动日的 { text }) 推团队群。
