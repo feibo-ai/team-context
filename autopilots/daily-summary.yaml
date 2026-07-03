@@ -38,20 +38,22 @@ guardrails:
 prompt: |
   这是【傍晚总结】卡片 —— 回顾今天 shipped 了什么(前瞻是早晨的 daily-kickoff)。
 
-  Step 1 · 收集数据
-    team:  multica issue list --updated-after $(date -v-1d +%Y-%m-%d)
-           cd ~/projects && for r in */; do (cd "$r" && git log --since="midnight" --pretty=format:"- %s (%an)"); done
-    个人:  multica issue list --assignee "$AUTOPILOT_SCOPE" --updated-after $(date -v-1d +%Y-%m-%d)
-           (commits 只统计 author 是本人的)
+  Step 1 · 收集数据(日期跨平台:YEST=$(date -v-1d +%Y-%m-%d 2>/dev/null || date -d '1 day ago' +%Y-%m-%d))
+    主源(权威): multica issue 活动
+      team:  multica issue list --updated-after $YEST
+      个人:  multica issue list --assignee "$AUTOPILOT_SCOPE" --updated-after $YEST
+    辅源(best-effort · 只能看到执行机可见的 repo,注定不全,缺失不算失败):
+      [ -d ~/projects ] && cd ~/projects && for r in */; do (cd "$r" && git log --since="midnight" --pretty=format:"- %s (%an)"); done
+      (个人 commits 只统计 author 是本人的;拿不到 git 数据 → fields 里该项写「—」)
 
-  Step 2 · Compose card(骨架/文案纪律见 agent instructions · header=indigo)
+  Step 2 · Compose card(骨架/文案/静默日纪律见 agent instructions · header=indigo)
     标题: 每日总结 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
-    概览 fields: 今日提交 / issue 更新 / 重启信号 / 未写复盘
-      (重启信号 = 今天 `git log | grep -c "wip:"`;未写复盘 = close 了 issue 但没写 case 的数量)
-    内容段(空段省略):
+    概览 fields: issue 更新 / 今日提交(best-effort) / 未写复盘
+      (未写复盘 = close 了 issue 但没写 case 的数量)
+    内容段(≤2 段):
       「已交付」 ▸ 交付要点(team 版条目按人归并: 人名 — 交付要点)
-      「进行中」 ▸ 标题 — DRI
-      「明日」   ▸ 计划要点
-    告警段(个人版 · 有未写复盘才出现): ⚠「待补复盘」 ▸ issue 号 — 已关闭未写 case
+      「明日」   ▸ 计划要点(只列已明确的,不硬凑)
+    告警段(有未写复盘才出现): ⚠「待补复盘」 ▸ issue 号 — 已关闭未写 case
+    无交付且无告警 → 按 agent instructions 静默日降级为一行 text。
 
   Step 3 · notify_team({ card: <card-json> }) 推团队群。

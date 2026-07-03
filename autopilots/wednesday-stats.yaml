@@ -43,6 +43,7 @@ prompt: |
   Compose card(骨架/文案纪律见 agent instructions · header=orange):
     标题: 周三体检 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
     概览 fields: claude_md 本周改动 / skill 数(个人版=我 owned) / 缺 owner / 最老 skill
-    内容段(空段省略):「风险」 ▸ 发现(缺 owner / stale / 疑似重复规则),给下一步动作
+    内容段(≤3 条):「风险」 ▸ 发现(缺 owner / stale / 疑似重复规则),给下一步动作
+    零风险 → 按 agent instructions 静默日降级为一行 text。
 
   notify_team({ card: <card-json> }) 推团队群。

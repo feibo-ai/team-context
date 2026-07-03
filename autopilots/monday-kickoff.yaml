@@ -45,7 +45,8 @@ prompt: |
   Compose card(骨架/文案纪律见 agent instructions · header=green):
     标题: 周一计划 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
     概览 fields: 本周已批准 / 跨项目边界(仅 team)
-    内容段:「本周计划」 ▸ 标题 — DRI · 体量 · 交接 N 小时前(top 5,溢出末行「…另有 N 条」)
+    内容段:「本周计划」 ▸ 标题 — DRI · 体量 · 交接 N 小时前(≤3 条,溢出末行「…另有 N 条」)
+    本周无已批准计划 → 按 agent instructions 静默日降级为一行 text。
     note 页脚: team 版写「已建周计划 issue」;个人版写「仅推送不写库」
     notify_team({ card: <card-json> }) 推团队群。
 

@@ -95,7 +95,10 @@ ac_scope_display_name() {
 
 # $1=runtime-id $2=scope $3=display(范围显示名) → stdout = agent id (progress lines go to stderr)
 # Idempotent by name=助理·<显示名>: create with instructions + 4-key env;
-# on reuse sync runtime binding + instructions drift (env 只增不改不删 · reuse 不碰 env).
+# on reuse sync runtime binding + instructions drift + env 重放(见下)。
+# env 重放:MUL-2600 后 list/get 不回传 env 值,无法 diff → 复用时直接以当前
+# shell 值整体重放(multica agent env set,审计口,幂等)。修的是「PAT 轮换后
+# agent 带旧 token,所有 autopilot 静默失败」——此前 reuse 不碰 env,轮换永不传播。
 ac_ensure_agent() {
   local rid="$1" scope="$2" display="$3"
   local agent_name="助理·${display}"
@@ -137,6 +140,18 @@ ac_ensure_agent() {
     else
       echo "  = agent ${agent_name} (${agent_id}) 复用 (runtime/instructions 未变)" >&2
     fi
+    # env 重放 (token/URL/scope 以当前 shell 值为准 · 自愈 PAT 轮换)
+    local envfile2
+    envfile2=$(mktemp); chmod 600 "$envfile2"
+    jq -n --arg url "$TCMCP_REMOTE_URL" --arg tok "$TCMCP_AGENT_TOKEN" --arg scope "$scope" --arg sname "$display" \
+      '{TCMCP_REMOTE_URL:$url, TCMCP_AGENT_TOKEN:$tok, AUTOPILOT_SCOPE:$scope, AUTOPILOT_SCOPE_NAME:$sname}' > "$envfile2"
+    if multica agent env set "$agent_id" --custom-env-file "$envfile2" >/dev/null 2>&1; then
+      echo "  ~ agent ${agent_name} env 重放(URL/TOKEN/SCOPE 同步为当前值)" >&2
+    else
+      echo "  ⚠️ env 重放失败(agent env set 需 workspace owner/admin)· PAT 轮换后请管理员执行:" >&2
+      echo "     multica agent env set ${agent_id} --custom-env-file <0600权限的json>" >&2
+    fi
+    rm -f "$envfile2"
   fi
   printf '%s' "$agent_id"
 }

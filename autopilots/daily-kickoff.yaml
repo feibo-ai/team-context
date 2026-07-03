@@ -48,13 +48,13 @@ prompt: |
     卡住信号: 进行中 issue 里,最近一次 Current State handoff 时间戳 > 24h 的标出来
               (multica issue get <id> 看最新 handoff 评论时间)
 
-  Step 2 · Compose card(骨架/文案纪律见 agent instructions · header=wathet)
+  Step 2 · Compose card(骨架/文案/静默日纪律见 agent instructions · header=wathet)
     标题: 每日开工 · ${AUTOPILOT_SCOPE_NAME} · MM-DD
-    概览 fields: 进行中 / 待启动 / 待评审 / 卡住
-    内容段(空段省略):
-      「进行中」 ▸ 标题 — DRI · 交接 N 小时前
-      「待启动」 ▸ 标题 — DRI · 体量
-      「待评审」 ▸ 标题 — 等谁评审
+    概览 fields: 进行中 / 待启动 / 待评审 / 卡住   ← 全量计数只出现在这里
+    内容段(≤2 段 · 只展开需要行动的):
+      「待评审」 ▸ 标题 — 等谁评审          ← 有人被等着,最高优先
+      「待启动」 ▸ 标题 — DRI · 体量        ← 今天可以领的活;进行中不逐条展开
     告警段(有卡住才出现): ⚠「卡住」 ▸ 标题 — 交接已 N 小时,建议换 session
+    全为 0 且无卡住 → 按 agent instructions 静默日降级为一行 text。
 
   Step 3 · notify_team({ card: <card-json> }) 推团队群。

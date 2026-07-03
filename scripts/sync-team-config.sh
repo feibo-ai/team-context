@@ -108,6 +108,7 @@ ln -sfn "$GLOBAL_MD" "$HOME/.codex/AGENTS.md";  say "✓ ~/.codex/AGENTS.md → 
 #    registry 是派生只读投影:开发机走 git 软链(步骤1),此处把规范源推上去。
 if [ "$SKIP_MULTICA" = 0 ] && command -v multica >/dev/null 2>&1; then
   echo "[3] Skills → multica registry (create-or-update + files[])"
+  PUSH_FAILS=0
   skills_json="$(multica skill list --output json 2>/dev/null || echo '[]')"
   # `multica user list` 是批次2 新增命令(owner 名字→UUID 解析源);旧二进制无此命令 → [].
   users_json="$(multica user list --output json 2>/dev/null || echo '[]')"
@@ -148,20 +149,29 @@ if [ "$SKIP_MULTICA" = 0 ] && command -v multica >/dev/null 2>&1; then
 
     if [ -n "$id" ]; then
       multica skill update "$id" --description "$desc" --content "$body" $owner_flag >/dev/null 2>&1 \
-        && say "✓ $name 已更新 (id=$id)" || { say "✗ $name 更新失败"; continue; }
+        && say "✓ $name 已更新 (id=$id)" || { say "✗ $name 更新失败"; PUSH_FAILS=$((PUSH_FAILS + 1)); continue; }
     else
       out="$(multica skill create --name "$name" --description "$desc" --content "$body" $owner_flag 2>/dev/null)" \
         && id="$(printf '%s' "$out" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("id",""))' 2>/dev/null)" \
-        && say "✓ $name 已创建 (id=$id)" || { say "✗ $name 创建失败"; continue; }
+        && say "✓ $name 已创建 (id=$id)" || { say "✗ $name 创建失败"; PUSH_FAILS=$((PUSH_FAILS + 1)); continue; }
     fi
     [ -n "$id" ] || continue
-    # 推 files[](SKILL.md 之外的 bundled 文件;upsert=幂等)
-    _each_skill_file "$d" | while IFS= read -r rel; do
+    # 推 files[](SKILL.md 之外的 bundled 文件;upsert=幂等)。
+    # 用进程替换而非管道 while:管道子 shell 里的失败计数出不来,曾导致半推静默假绿。
+    while IFS= read -r rel; do
       [ -n "$rel" ] || continue
-      multica skill files upsert "$id" --path "$rel" --content "$(cat "$d/$rel")" >/dev/null 2>&1 \
-        && say "    ✓ file $rel" || say "    ✗ file $rel"
-    done
+      if multica skill files upsert "$id" --path "$rel" --content "$(cat "$d/$rel")" >/dev/null 2>&1; then
+        say "    ✓ file $rel"
+      else
+        say "    ✗ file $rel"
+        PUSH_FAILS=$((PUSH_FAILS + 1))
+      fi
+    done < <(_each_skill_file "$d")
   done
+  if [ "${PUSH_FAILS:-0}" -gt 0 ]; then
+    echo "ERROR: registry 推送有 ${PUSH_FAILS} 处失败(见上方 ✗)· registry 处于半推状态,修复后重跑" >&2
+    exit 1
+  fi
 else
   echo "[3] 跳过 multica registry 同步"
 fi
