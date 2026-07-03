@@ -17,10 +17,10 @@
 | `古法不可能` | `#ef4444` 红 | 「在传统 5 人团队不可能」的事件 · AI Native 终极指标 | 团队成员手工加 / 月度复盘加 | 任何人 |
 | `投注表` | `#ec4899` 粉 | 周五 betting table issue | `betting_table_capture` 加 | remote MCP |
 | `倦怠预警` | `#dc2626` 深红 | burnout check 任何 yes → 自动建 issue | `burnout_check_distribute` 加 | remote MCP |
-| `代码评审` | `#6366f1` 靛 | code review 请求 issue | `code_review_request` 加 | remote MCP |
+| `代码评审` | `#6366f1` 靛 | code review 请求 issue | 手工加(原 `code_review_request` MCP 工具已退役) | 任何人 |
 | `研究` | `#3b82f6` 蓝 | RPI Research session 产物 issue | publish 发布 research 时自动加(findings 非空 → status `done`) | publish→transition |
 
-> 谁写什么:流程 label(计划-*/设计-*/复盘-*/研究)只由 transition 脚本写;remote MCP 只负责飞书侧通知与 投注表/倦怠预警/代码评审 三个 label(`plan_request_review` 的 label 写路径已废弃,请审统一走 `plan-request-review` 子命令,避免双写者打架)。
+> 谁写什么:流程 label(计划-*/设计-*/复盘-*/研究)只由 transition 脚本写;remote MCP 只负责飞书侧通知与 投注表/倦怠预警 两个 label(`plan_request_review`/`code_review_request` MCP 工具已移除,请审统一走 `plan-request-review` 子命令,避免双写者打架)。
 > 颜色以本文件为准;改色须先改本文件再重跑 create-labels.sh(见下)。
 
 ## State Machine(label 轨 + status 轨 · 双轨同图)
