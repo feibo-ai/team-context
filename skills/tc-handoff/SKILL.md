@@ -1,87 +1,37 @@
 ---
 name: tc-handoff
-description: "Use BEFORE running /clear, starting a new Claude/Codex session, or whenever user signals context restart ('I am stuck', '走偏了', '换个 session', '重开', 'start over', 'restart', '浑浊了', 'new session', '/clear'). Captures handoff state to the plan doc (HTML) + the multica issue, and commits WIP so the new session can resume without losing work or repeating dead ends. Required for AI MIQ SOP v0.4 P-2 / P-4 / Daily 02 / Daily 03 compliance."
-owner: 曾振华
-last_reviewed_at: 2026-06-09
+description: "Captures handoff state before /clear or a new Claude/Codex session — commits WIP, records last commit, next action and dead ends to the plan and multica issue, so a fresh session resumes cold without losing work or repeating dead ends. Use when the user says '重开' / '走偏了' / '换个 session' / '浑浊了' or '/clear' / 'new session' / 'start over' / 'I am stuck', or the session is looping, context-polluted, or stalled. Not for 无需重启的 plan 修订 — use tc-plan."
 ---
 
-# Pre-Clear Handoff Protocol
+# tc-handoff
 
-You are about to /clear or start a new session. SOP v0.4 makes this the most
-common operation — but only safe if state is properly handed off.
+## Mandate
+在 /clear 或开新 session 前捕获交接状态:提交 WIP、写 Current State、发布到 multica issue,让新 session 冷启动续做、避开死胡同。必须在 /clear 前执行,事后状态已丢。
 
-## When to invoke
-- User says: /clear, new session, start over, restart, 重开, 走偏了, 换 session
-- You detect context pollution: "You're absolutely right" loops, repeating
-  rejected solutions, answering the wrong question, solving the wrong layer
-- 30 minutes elapsed with no measurable progress
+## Entry gates
+- 用户示意重启(/clear、new session、重开、走偏了等),或
+- 上下文污染:"You're absolutely right" 循环、重复已否决方案、答非所问/解错层,或
+- 约 30 分钟无可度量进展。
+- 先自问:2 分钟重写 plan 能否救活?/clear ≈ 30-60s 预热 + prompt cache 丢失,并非总是最优。
 
-## Checklist — execute in order
+## Steps
+1. `git status --short` 向用户报告未提交内容;按 references/wip-git-policy.md 处置 WIP。
+2. 定位当期 plan(issue 上最新 plan 评论);多份或没有则问用户。
+3. 按 references/handoff-template.md 写 Current State 块。
+4. 幂等门:issue/plan 已有 <60 秒内的 `handoff @` 标记 → 拒绝重发(提示 `last handoff <N>s ago`),跳到第 6 步。
+5. 发布:凑 fields.json(字段契约见 tc-render skill 的 references/publish-contract.md),`python3 <skills-root>/tc-render/scripts/publish.py --type handoff --data fields.json --issue <完整 UUID>`。可选:快照并进当期 plan,`publish.py --type plan` 追加新 plan 评论(append-only)。禁止裸 markdown 评论绕开 publish 硬校验。
+6. 展示更新后的 plan + commit hash +(若已发)评论 URL,用户确认后才真正 /clear。
 
-### 1. Surface what's uncommitted
-Run `git status --short`. Report to user.
+## References
+| 文件 | 什么时候读 |
+|---|---|
+| references/handoff-template.md | 写 Current State 前 |
+| references/wip-git-policy.md | 处置 WIP 前 |
 
-### 2. Decide WIP fate
-Three options — ask user if not obvious:
-- **commit** — 显式暂存本次相关文件 `git add <具体路径>`,再 `git commit -m "wip: <one-line state>"` —
-  default for any meaningful work. **绝不 `git add -A`**:工作树常有别项目/别人未提交文件(本仓即如此),`-A` 会一并裹挟;先 `git status --short` 看清再按路径 add。
-- **stash** — `git stash push -m "wip: <one-line>" -- <具体路径>` — when not sure it's
-  worth keeping but might want it back
-- **discard** — `git checkout -- <具体路径>` — **ONLY with explicit user confirmation(confirmDiscard 门:discard 前必须用户显式点头),never default**;别用裸 `git checkout .`(会连带别项目改动一起丢)
+## Handoffs / Anti-patterns
+- 同一 issue 交接 ≥3 次 → 已非任务层问题:INVOKE tc-research skill 重做研究,再 INVOKE tc-plan skill。
+- 本周 ≥5 次 → 向用户点出(burnout 信号,`multica issue runs <id>` 可见模式)。
+- 禁:带未提交的有效改动 /clear;漏写 Dead ends(重蹈覆辙 ≈ 2× 时间);Next action 空话(必须点名文件/函数);在本流程改 CLAUDE.md(其变更走月度评审)。
 
-### 3. Locate active plan doc
-Look in `docs/plans/` for the .html file with most recent mtime matching this
-work. If multiple plans or none, ask.
-
-### 4. Capture the Current State block
-
-    ## Current State (handoff @ <YYYY-MM-DD HH:MM>)
-
-    **Last commit**: <hash> <subject>
-    **Worktree**: <branch>, <N> file(s) changed since last commit
-
-    **What's done**:
-    - <1-3 specific bullets>
-
-    **Next action** (concrete enough for a fresh session to start cold):
-    - <1-3 sentences, naming files/functions if applicable>
-
-    **Dead ends — do NOT retry**:
-    - <approach tried + why it failed>
-    - ...
-
-    **Context pollution signal** (why we are clearing):
-    - <one sentence>
-
-### 5. Persist to the multica issue(经 tc-render 命门B 收口 · 不再走 session_handoff MCP)
-If this work is tracked in a multica issue:
-- **防重复 handoff(原 session_handoff <60s 幂等门 · 净损失须复刻)**:先查当期 plan / issue 是否已有 `handoff @ YYYY-MM-DD HH:MM` 标记且在 **<60 秒**前 —— 若是,**拒绝重复 handoff**(提示 `last handoff <N>s ago — refusing duplicate within 60s`),不重发,直接进第 6 步。
-- **Current State 评论**:把上面的 Current State 块发为一条评论。**唯一发布路径 = publish.py 命门B 收口**(硬校验 · 无旁路):把 `{slug, at, lastCommit, branch, done, nextAction, deadEnds, pollutionSignal}` 写成 `fields.json`(done/nextAction 收 string 或 string[];**nextAction 用数组**=首条作下一步导语、条款数进首屏「实现项」格),调 `python3 ~/.claude/skills/tc-render/publish.py --type handoff --data fields.json --issue <id>`(渲染 + 硬校验 + 命门B 内联发布 + 自检 attachments)。**禁止**用裸 markdown 评论绕开 publish.py 硬校验(无快捷旁路 · 防 ③ 回归)。
-- **plan 同步(原 session_handoff 重生成 plan 行为 · 可选)**:把这次 handoff 快照并进当期 plan 的 `approach`/末尾,用 `publish.py --type plan` **再发一条新 plan 评论**(append-only · 旧版本留存 · 演化可追溯),让 plan doc 也带最新交接状态。`--issue` 一律完整 UUID。
-
-### 6. Final confirmation
-Show user the updated plan + commit hash + (if posted) multica comment URL.
-Only then proceed to actual /clear.
-
-## Anti-patterns
-
-- ❌ /clear with uncommitted meaningful changes (new session may rewrite)
-- ❌ Skip "Dead ends" (new session repeats same mistakes — costs 2× time)
-- ❌ Vague next action ("continue the work") — must name files/functions
-- ❌ Touch CLAUDE.md here (CLAUDE.md changes go through monthly review)
-- ❌ Run this AFTER /clear (too late — state already lost)
-
-## Escalation signals
-
-If git log shows you've handed off **3+ times on the same issue**:
-this is no longer a task-layer problem — upgrade to greenfield playbook
-(PB1), re-do Research session, re-Plan from scratch.
-
-If user has done this **5+ times this week**:
-mention it. Monthly burnout-check signal — `multica issue runs <id>` will
-show the pattern.
-
-## Cost reminder
-Each /clear ≈ 30-60s priming + lost prompt cache. Sometimes worth it.
-Often, what is needed is a 2-minute plan doc rewrite, not a restart.
-Ask: would a sharper plan section save this session?
+> multica 不在 PATH → 提示安装/更新;unknown flag → 先 `multica update`,仍失败则停下问用户;
+> 当前用户身份经 `multica auth status` + `multica user list` 运行时解析,绝不硬编码。

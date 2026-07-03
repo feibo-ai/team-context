@@ -59,40 +59,39 @@ for line in open(sys.argv[1], encoding="utf-8"):
         v = m.group(1).strip().strip("\"\x27")
         print(v[:mx] if mx else v); break' "$1" "${2:-}"
 }
-# ⑥ Codex skills-index:Codex 无原生 skill 发现 → 生成索引让它发现 tc-*,
-# 并文档化命门B 收口入口(Claude/Codex 两端经 Bash 调同一 publish.py)。
-_gen_codex_index() {  # $1=输出路径
-  {
-    echo "# AI MIQ tc-* skills 索引(Codex 用 · sync-team-config.sh 生成,勿手改)"
-    echo
-    echo "Codex 无原生 skill 机制。本索引让 Codex 发现团队 tc-* skills 并共享发布入口。"
-    echo
-    echo "## 发布收口(命门B · Claude/Codex 两端同一 Bash 入口)"
-    echo "把字段写成 JSON 调(渲染 + 硬校验 + 命门B 内联发布 + 自检 attachments;别绕开手拼 curl):"
-    echo '```'
-    echo "python3 $SKILLS_DIR/tc-render/publish.py --type {plan|research|case|handoff} \\"
-    echo "  --data fields.json --issue <完整UUID> [--dry-run]"
-    echo '```'
-    echo
-    echo "## Skills"
-    for d in "$SKILLS_DIR"/tc-*; do
-      [ -f "$d/SKILL.md" ] || continue
-      n="$(awk -F': *' '/^name:/{gsub(/["'"'"']/,"",$2);print $2;exit}' "$d/SKILL.md")"
-      [ -n "$n" ] || n="$(basename "$d")"
-      echo "- **$n** — $(_skill_desc "$d/SKILL.md")"
-      echo "  - 正文:\`$d/SKILL.md\`"
-    done
-  } > "$1.tmp" && mv "$1.tmp" "$1"   # 原子写:中途 abort 不留半截索引(保护已有文件)
+# skill-pack.yaml 里查 owner(治理字段已移出 SKILL.md frontmatter,单源在 pack manifest)
+_pack_owner() {  # $1=skill name
+  python3 -c 'import re,sys
+name=sys.argv[2]
+t=open(sys.argv[1],encoding="utf-8").read()
+m=re.search(r"- name:\s*"+re.escape(name)+r"\s*\n\s*owner:\s*(\S+)",t)
+print(m.group(1) if m else "")' "$REPO/skill-pack.yaml" "$1" 2>/dev/null || true
+}
+# 清掉指向本仓但目标已消失的 skill 软链(改名/合并后的旧名残留会遮蔽新 skill)
+_prune_stale_links() {  # $1=skills 安装根
+  [ -d "$1" ] || return 0
+  for link in "$1"/tc-*; do
+    [ -L "$link" ] || continue
+    target="$(readlink "$link")"
+    case "$target" in
+      "$SKILLS_DIR"/*) [ -d "$target" ] || { rm "$link"; say "✗ 清理失效软链 $(basename "$link")"; } ;;
+    esac
+  done
 }
 
 echo "== 规范源:$REPO =="
 
-# 1) Skills → Claude Code(软链每个 tc-* 进 ~/.claude/skills/)
-echo "[1] Skills → Claude Code (~/.claude/skills/, 软链)"
-mkdir -p "$HOME/.claude/skills"
+# 1) Skills → Claude Code(~/.claude/skills)+ Codex 原生(~/.agents/skills)
+#    Codex 原生实现 agentskills.io 标准:扫 ~/.agents/skills,靠 description 自动触发,
+#    与 Claude Code 同一份标准 skill 目录 → 旧 skills-index.md hack 已删除。
+echo "[1] Skills → Claude Code (~/.claude/skills) + Codex (~/.agents/skills),软链"
+mkdir -p "$HOME/.claude/skills" "$HOME/.agents/skills"
+_prune_stale_links "$HOME/.claude/skills"
+_prune_stale_links "$HOME/.agents/skills"
 for d in "$SKILLS_DIR"/tc-*; do
   [ -d "$d" ] || continue
   ln -sfn "$d" "$HOME/.claude/skills/$(basename "$d")"
+  ln -sfn "$d" "$HOME/.agents/skills/$(basename "$d")"
   say "✓ $(basename "$d")"
 done
 # Claude Desktop 的本地 agent 模式 skills-plugin 复用 ~/.claude/skills/(同一软链即覆盖)。
@@ -102,11 +101,8 @@ echo "[2] 全局规则 → Claude Code CLAUDE.md + Codex AGENTS.md (软链)"
 mkdir -p "$HOME/.claude" "$HOME/.codex"
 ln -sfn "$GLOBAL_MD" "$HOME/.claude/CLAUDE.md"; say "✓ ~/.claude/CLAUDE.md → claude_md_team_global.md"
 ln -sfn "$GLOBAL_MD" "$HOME/.codex/AGENTS.md";  say "✓ ~/.codex/AGENTS.md → claude_md_team_global.md"
-# 注:Codex 无原生 skill 机制 —— AGENTS.md 把 tc-* 当"流程描述"读;skill 正文经 multica registry / 直接读 repo。
-
-# ⑥ Codex skills-index:生成索引让 Codex 发现 tc-* + 共享命门B 发布入口(派生artifact,每次重生)
-_gen_codex_index "$HOME/.codex/skills-index.md"
-say "✓ ~/.codex/skills-index.md(Codex 发现 tc-* + 命门B 对称入口)"
+# 旧的 ~/.codex/skills-index.md 是派生 artifact,清掉避免与原生 skill 双份发现源
+[ -f "$HOME/.codex/skills-index.md" ] && rm "$HOME/.codex/skills-index.md" && say "✗ 清理旧 ~/.codex/skills-index.md(Codex 已原生发现 skills)"
 
 # 3) Skills → multica registry(create-or-update + 推 files[] + owner 解析)
 #    registry 是派生只读投影:开发机走 git 软链(步骤1),此处把规范源推上去。
@@ -125,9 +121,11 @@ if [ "$SKIP_MULTICA" = 0 ] && command -v multica >/dev/null 2>&1; then
     name="$(awk -F': *' '/^name:/{gsub(/["'"'"']/,"",$2);print $2;exit}' "$d/SKILL.md")"
     [ -n "$name" ] || name="$(basename "$d")"
     # description:整行抽取(内部冒号安全)+ 按字符截 480(CJK 安全),见 _skill_desc。
+    # (validate-skills.py 已把 description 硬限 ≤450 → 此截断只是 CLI 上限的兜底,不再丢内容)
     desc="$(_skill_desc "$d/SKILL.md" 480)"
     body="$(awk 'f{print} /^---[[:space:]]*$/{c++} c==2 && !f{f=1}' "$d/SKILL.md")"
-    owner_name="$(awk -F': *' '/^owner:/{gsub(/["'"'"']/,"",$2);print $2;exit}' "$d/SKILL.md")"
+    # owner 单源 skill-pack.yaml(SKILL.md frontmatter 只留标准字段 name/description)
+    owner_name="$(_pack_owner "$name")"
     id="$(printf '%s' "$skills_json" | _json_find_id "$name")"
     # owner_flag unquoted on use → 0 或 2 个 arg(UUID 无空格);避免 bash 3.2 空数组+set -u 坑
     owner_flag=""

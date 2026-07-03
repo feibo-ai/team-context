@@ -1,0 +1,3 @@
+interface:
+  display_name: Team Ops Scripts
+  short_description: 团队低频运维:健康月报、issue label↔status 不变量巡检、autopilot YAML guardrail 校验

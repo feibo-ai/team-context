@@ -1,0 +1,3 @@
+interface:
+  display_name: TC Render & Publish
+  short_description: 渲染 RPI 四类文档为受控 HTML,硬校验后内联发布到 multica issue,并原子流转 issue 状态。

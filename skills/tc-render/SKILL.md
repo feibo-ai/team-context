@@ -1,34 +1,34 @@
 ---
 name: tc-render
-description: "Shared 方案A HTML 渲染 + 硬校验 + 内联发布地基,被 RPI 四类文档 skill(tc-3-plan / tc-2-research / tc-5-review / tc-handoff)引用。Use when 生成 plan/research/case/handoff 的方案A HTML 文档并作为 multica issue 评论内联渲染发布,或需要流转 issue 状态(请审/批准/开工/收尾/取消)。核心两脚本:publish.py(渲染+硬校验 exit 1+命门B 收口发布+自检 attachments+入口状态转换;exit 2=评论已发但转换失败)与 transition.py(label+status+父链原子转换七子命令 · name→UUID 运行时解析 · 后置复核 P-7;取代手敲 multica issue label/status)。无需 MCP 服务器。提供 publish.py、transition.py、assets/style.css(约 9KB CSS 单源)、PUBLISH.md(调用契约 + 命门A 灾备契约)。通常由 4 个 tc-* 文档 skill 调用,不单独触发。"
-owner: 曾振华
-last_reviewed_at: 2026-06-10
+description: "Renders plan/research/case/handoff 文档为受控样式 HTML,经硬校验后作为内联评论发布到 multica issue,并原子流转 issue 的流程 label 与 status(请审/批准/开工/收尾/取消)。Use when the user says '发布文档到 issue' / '流转 issue 状态' / '请审/批准/开工/收尾' or 'publish doc to multica issue' / 'issue status transition'. 通常由 tc-plan / tc-research / tc-review / tc-handoff 调用;仅当只需独立流转 issue 状态时直接使用。Not for 撰写文档内容本身 — use 对应文档 skill。"
 ---
 
-# tc-render · 方案A 渲染 + 硬校验 + 内联发布地基
+# tc-render · 渲染+硬校验+发布+状态流转
 
-RPI 四类文档(plan / research / case / handoff)的**共享**渲染+校验+发布逻辑单源。
-视觉为「受控文档」样式(TEA-103 定稿:审批栏+类别方章+统计格+要点框 · 全中文 · 端正 ·
-重点前置 480px 内联首屏 · 类别主色 计划暗朱/研究藏青/复盘墨绿/交接赭棕);
-本地 MCP 的 zod 约束复刻为**脚本硬校验**(含 anyOf 双形态正文)。
+## Mandate
+RPI 四类文档(plan/research/case/handoff)的共享渲染+校验+发布单源,外加 multica issue 流程 label/status 的原子转换收口。文档内容由调用方 skill 负责。
 
-## 构成
-- `publish.py` — **核心**。`--type` + `--data fields.json` + `--issue <UUID>` → 渲染 + 硬校验(违约 exit 1)+ 命门B 收口发布(内部 exec `multica issue comment add --inline`;token 由 CLI 自管不进 argv)+ 自检 attachments 非空 + **入口状态转换**(plan→+计划-草稿 / research→+研究·findings 非空即 done / case→+复盘-待审+in_review;`--no-transition` 跳过;exit 2 = 评论已发但转换失败,按 stderr 幂等补救,**绝不重跑 publish**)。`--dry-run` 只渲染校验不发不转。
-- `transition.py` — **状态机原子转换收口**(label+status+父链)。publish-init / plan-request-review / plan-approve / plan-upgrade / build-start / case-finalize[--keep-parent] / cancel 七个子命令;label name→UUID 运行时解析(禁硬编码)、幂等预读、后置复核(P-7)。语义单源 = 本脚本 docstring + standards/labels.md 不变量表。**不再手敲 `multica issue label/status` 散文命令。**
-- `assets/style.css` — 约 9KB CSS **单源**(受控文档 · 零外链 · 系统字体 · 零 emoji 零 rotate),脚本内联进每篇。
-- `PUBLISH.md` — 调用契约(各 type 的 fields 字段)+ 命门A 灾备契约(CLI 不可用时的 HTTP 参考,**非主路径**;权威见 `publish-contract-v1.yaml`)。
+## Entry gates
+- 要发布文档 → 走 publish 脚本(渲染+校验+发布+入口转换)。
+- 只需流转 label/status → 走 transition 脚本;绝不手敲 `multica issue label/status`(label add 只收 UUID,手敲跑不通)。
+- `--issue` 须完整 UUID,短 ID 会被拒。
 
-## 用法(消费 skill 这样发布)
-1. **凑字段** → 写成 `fields.json`(字段见 PUBLISH.md §1;agent 负责内容)。
-2. **调脚本**:`python3 ~/.claude/skills/tc-render/publish.py --type <type> --data fields.json --issue <完整UUID> [--caption ...] [--out 落盘路径]`。
-3. 成功打印 `{comment_id, attachment_id, url, doc_path}`;**校验不过 exit 1 改不动就发不出**。`--dry-run` 先预览。
+## Steps
+1. 按 references/publish-contract.md §字段契约凑齐字段,写成 fields.json。
+2. `python3 <skills-root>/tc-render/scripts/publish.py --type <type> --data fields.json --issue <UUID> [--caption ...] [--out x.html]`;先加 `--dry-run` 可只渲染校验不发布。
+3. exit 0 → 打印 {comment_id, attachment_id, url, doc_path};exit 1 → 校验/发布失败,评论未发出,改字段后重跑;exit 2 → 评论已发但状态转换失败:绝不重跑 publish(会重复发评论),按 stderr 给出的幂等 transition 命令单独补转换。
+4. 后续流转(请审/批准/设计评审/开工/收尾/取消):`python3 <skills-root>/tc-render/scripts/transition.py <子命令> <issue>`,子命令清单以 `--help` 为准,语义见 references/issue-label-state-rules.md。
 
-## 硬校验(脚本内建 · 复刻原 zod · 对抗验收非 grep)
-- plan:`goal` ≥10 字符 · `completionCriteria` ≥1 条
-- case:`keyJudgments` ≥1 · 关键判断段合计 ≥100 字符
-- 通用:`--issue` 须**完整 UUID**(8 位短 ID 报 400 · rule #6)
-- handoff 的 confirmDiscard 门(discard 前用户显式确认)+ <60s 防重复:属交互/状态,由 tc-handoff skill 把关(脚本只管渲染+发布那篇)。
+## References
+| 文件 | 什么时候读 |
+|---|---|
+| references/publish-contract.md | 凑 fields.json、exit code 契约、transition 子命令语义、灾备 |
+| references/issue-label-state-rules.md | label 全集、状态机、谁写什么、不变量 |
+| references/multica-fields.md | 建/改 project 或 issue 时的字段默认值与当前用户解析 |
 
-## 边界
-- 发布**不是** `multica issue comment add --attachment`(见 PUBLISH.md Dead ends)。能力收口=命门B `--inline`(v0.4.11+);迭代2 A→B 切换后 publish.py 可改为内部调 `multica ... --inline`。
-- 新增/改文档类型:加 `render_<type>` + 校验到 publish.py,改 PUBLISH.md 字段契约。CSS 改只动 `assets/style.css`(单源)。
+## Handoffs / Anti-patterns
+- handoff 的 confirmDiscard 确认门(discard 前用户显式确认 + <60s 防重复)由 tc-handoff skill 把关。
+- 禁:exit 2 后重跑 publish;绕开 publish 脚本手拼 HTTP 发布;改样式不改 assets/style.css 单源;硬编码 label UUID。
+
+> multica 不在 PATH → 提示安装/更新;unknown flag → 先 `multica update`,仍失败则停下问用户;
+> 当前用户身份经 `multica auth status` + `multica user list` 运行时解析,绝不硬编码。

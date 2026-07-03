@@ -1,0 +1,3 @@
+interface:
+  display_name: Conflict Adjudication
+  short_description: Adjudicates team disagreements over a project decision via four principles and records the outcome as a dated decision record.

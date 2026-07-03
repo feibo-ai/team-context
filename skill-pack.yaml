@@ -1,0 +1,55 @@
+# 团队 skill pack manifest —— 包级元数据，不随 skill 下发给 agent。
+# 治理字段（owner / last_reviewed_at）的仓库侧单源；registry 侧对应
+# skill.owner_user_id / skill.last_reviewed_at（经 sync-team-config.sh 推送时解析）。
+# SKILL.md frontmatter 只保留标准字段 name + description（agentskills.io 规范）。
+version: 1.0.0
+name: team-context-skills
+description: AI MIQ 团队 SOP skill 包（RPI 工作流 + 仪式 + 运维）
+compatibility:
+  - claude-code
+  - codex
+distribution:
+  authoring: git (this repo, PR-reviewed, CI-linted)
+  registry: multica skill registry (成员机经 multica skill pull)
+  local_dev: git symlink (DRI 开发机, scripts/sync-team-config.sh)
+entry_skill: tc-router
+skills:
+  - name: tc-router
+    owner: 曾振华
+    last_reviewed_at: 2026-07-03
+  - name: tc-kickoff
+    owner: 曾振华
+    last_reviewed_at: 2026-07-03
+  - name: tc-research
+    owner: 曾振华
+    last_reviewed_at: 2026-07-03
+  - name: tc-plan
+    owner: 曾振华
+    last_reviewed_at: 2026-07-03
+  - name: tc-design-review
+    owner: 曾振华
+    last_reviewed_at: 2026-07-03
+  - name: tc-build
+    owner: 曾振华
+    last_reviewed_at: 2026-07-03
+  - name: tc-health
+    owner: 曾振华
+    last_reviewed_at: 2026-07-03
+  - name: tc-handoff
+    owner: 曾振华
+    last_reviewed_at: 2026-07-03
+  - name: tc-review
+    owner: 曾振华
+    last_reviewed_at: 2026-07-03
+  - name: tc-conflict
+    owner: 曾振华
+    last_reviewed_at: 2026-07-03
+  - name: tc-rhythm
+    owner: 曾振华
+    last_reviewed_at: 2026-07-03
+  - name: tc-ops
+    owner: 曾振华
+    last_reviewed_at: 2026-07-03
+  - name: tc-render
+    owner: 曾振华
+    last_reviewed_at: 2026-07-03

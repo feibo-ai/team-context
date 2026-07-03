@@ -1,0 +1,3 @@
+interface:
+  display_name: TC Research
+  short_description: Research-phase orchestrator — parallel subagent investigation before any plan or code.
