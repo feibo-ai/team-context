@@ -43,8 +43,8 @@ python3 "$TCR/scripts/publish.py" --type {plan|research|case|handoff} \
 > **◆ = 双形态正文(anyOf)**:收 `string`(单段)或**非空 string 数组**(逐项渲染为段落,化解长文压平)。
 > 示例:`"done": ["第一段", "第二段"]` 与 `"done": "一整段"` 等价收取,前者逐项成段;`"nextAction": ["导语", "第一批…", "第二批…"]` 首条作下一步导语。
 > `[]` 与 `[""]` 一律拒收(required×空数组同空白 string);数组项必须是 string(类型污染 exit 1)。
-> 渲染为「受控文档」样式:受控条+审批栏+类别方章+统计格+要点框,标签全中文、零 emoji、零 rotate,
-> 重点前置 480px 内联首屏;类别主色 计划暗朱/研究藏青/复盘墨绿/交接赭棕;CSS 单源 = `assets/style.css`。
+> 渲染为 graphite 软性单色文档(蓝本 = leadspark 设计文档):页眉(品牌 + 明暗开关)+ 徽章行 + 编号卡片(card),标签全中文、零 emoji,
+> 全站单色(oklch 零彩度),唯一彩色=success/warning/danger 三语义色,Geist(缺失回退 system-ui),明暗双主题跟随系统 + 右上角手动开关,窄屏响应式;CSS 单源 = `assets/style.css`。
 
 字段集 `additionalProperties:false` —— 多/拼错一个 key 即 exit 1(防静默吞)。
 `slug` 仅允许字母/数字/`.-_`(阻断路径穿越)。
