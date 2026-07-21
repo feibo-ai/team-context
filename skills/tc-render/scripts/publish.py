@@ -17,7 +17,7 @@ file-cards.ts:NEW_FILE_CARD_RE + CI 探针)。
   --data    JSON 文件,字段按 SCHEMAS[type] 硬校验(additionalProperties:false +
             required + 阈值派生自 schema minLength/minItems,无硬编码魔数)
   --issue   目标 issue:完整 UUID 或 issue key(如 TEA-88;--dry-run 时可省)。
-            非 UUID 输入经 `multica issue show` 运行时解析为完整 UUID 再进 API(命门不变)
+            非 UUID 输入经 `multica issue get` 运行时解析为完整 UUID 再进 API(命门不变)
   --out     本地 html 落盘路径(须 .html 且在 CWD 允许根内 · 路径白名单);省略则按 type+date+slug 默认
   --dry-run 只渲染+校验+落盘,不发布也不转换(评审用)
   --no-transition 发布后跳过入口状态转换(逃生口;默认开启转换)
@@ -251,10 +251,10 @@ def validate_fields(doc_type, data):
 # ======================================================================
 
 TYPE_META = {
-    "plan":     {"cls": "t-plan",     "cn": "计划", "seal": "计<br>划", "rule": "流程依据:SOP v0.4 非妥协 #1"},
-    "research": {"cls": "t-research", "cn": "研究", "seal": "研<br>究", "rule": "流程依据:SOP v0.4 · 研究阶段"},
-    "case":     {"cls": "t-case",     "cn": "复盘", "seal": "复<br>盘", "rule": "流程依据:SOP v0.4 非妥协 #2"},
-    "handoff":  {"cls": "t-handoff",  "cn": "交接", "seal": "交<br>接", "rule": "流程依据:SOP v0.4 非妥协 #1"},
+    "plan":     {"cn": "计划", "cat": "实施计划", "rule": "SOP v0.4 非妥协 #1"},
+    "research": {"cn": "研究", "cat": "研究报告", "rule": "SOP v0.4 · 研究阶段"},
+    "case":     {"cn": "复盘", "cat": "复盘报告", "rule": "SOP v0.4 非妥协 #2"},
+    "handoff":  {"cn": "交接", "cat": "交接单",   "rule": "SOP v0.4 非妥协 #1"},
 }
 
 _CN_NUM = "一二三四五六七八九十"
@@ -272,68 +272,89 @@ def _items(v):
 
 
 def paras(v, blank=""):
-    """双形态正文 → <p> 序列(D1):string=单段(旧路径),array=逐项一段;空→占位段。"""
+    """双形态正文 → <p> 序列:string=单段,array=逐项一段;空→占位段。"""
     items = _items(v) or ([blank] if blank else [])
     return "".join("<p>%s</p>" % esc(x) for x in items)
 
 
-def appr_grid(doc_type, row1, row2):
-    """审批栏:左方章跨两行 + 两行各 4 格。row*: [(label, value, vcls)]。"""
-    def cell(c, extra):
-        label, value, vcls = c
-        return ('<div class="ac%s"><div class="al">%s</div><div class="av%s">%s</div></div>'
-                % (extra, esc(label), (" " + vcls) if vcls else "", esc(value)))
-    cells = [cell(c, " last" if i == 3 else "") for i, c in enumerate(row1)]
-    cells += [cell(c, " ac2 last" if i == 3 else " ac2") for i, c in enumerate(row2)]
-    return ('<div class="appr"><div class="sealcell"><div class="sq">%s</div></div>%s</div>'
-            % (TYPE_META[doc_type]["seal"], "".join(cells)))
+# ---- graphite 组件构件(徽章 / 药丸 / 卡片 / 网格 / callout / 键值行 / 表格)----
+
+def badge(label, value, cls=""):
+    inner = ("%s <b>%s</b>" % (esc(label), esc(value))) if label else ("<b>%s</b>" % esc(value))
+    return '<span class="badge%s">%s</span>' % ((" " + cls) if cls else "", inner)
 
 
-def tc(num_html, label, cls="", small=False):
-    """统计格单元;num_html 由调用方负责转义(允许 <small> 结构)。"""
-    return ('<div class="tc%s"><div class="n%s">%s</div><div class="l">%s</div></div>'
-            % ((" " + cls) if cls else "", " sm" if small else "", num_html, esc(label)))
+def badges(items):
+    """items: [(label, value, cls)];value 为空的项跳过。"""
+    cells = [badge(l, v, c) for (l, v, c) in items if str(v or "").strip()]
+    return '<div class="badges">%s</div>' % "".join(cells)
 
 
-def tally(cells, c3=False):
-    return '<div class="tally%s">%s</div>' % (" c3" if c3 else "", "".join(cells))
+def pill(text, cls=""):
+    return '<span class="pill%s">%s</span>' % ((" " + cls) if cls else "", esc(text))
 
 
-def keypoints(title, items):
-    """要点提示框;无非空项 → 空串(整框不渲染)。"""
-    items = _items(items)
-    if not items:
-        return ""
-    lis = "".join('<li><span class="kn">%d</span>%s</li>' % (i + 1, esc(x))
-                  for i, x in enumerate(items))
-    return '<div class="keypoints"><div class="kt">%s</div><ol>%s</ol></div>' % (esc(title), lis)
+def tile(h4, body_html):
+    return '<div class="tile"><h4>%s</h4>%s</div>' % (esc(h4), body_html)
 
 
-def h2(num, title, danger=False):
-    return ('<h2%s><span class="num">%s</span>%s</h2>'
-            % (' class="danger"' if danger else "", esc(num), esc(title)))
+def grid(tiles_html, cols="g3"):
+    return '<div class="grid %s">%s</div>' % (cols, tiles_html)
 
 
-def shell(doc_type, slug, h1_text, sub, appr_html, mid_html, body_html):
-    """受控文档骨架(顺序齐定稿原型):sheet 框线 + 受控条 + 审批栏 + 标题区
-    + 首屏件(tally/问题框/要点)+ 正文。标签全中文;默认落盘路径不在此层。"""
+def callout(body_html, cls=""):
+    return '<div class="callout%s">%s</div>' % ((" " + cls) if cls else "", body_html)
+
+
+def kv(k, body_html):
+    return '<div class="kv"><span class="k">%s</span><span>%s</span></div>' % (esc(k), body_html)
+
+
+def section(no, title, body_html, lede=None):
+    lede_html = ('<p class="lede">%s</p>' % esc(lede)) if lede else ""
+    return ('<section><div class="card"><h2><span class="no">%s</span>%s</h2>%s%s</div></section>'
+            % (esc(no), esc(title), lede_html, body_html))
+
+
+def table(head_cells, rows_html):
+    """head_cells: [(text, width_px 或 None)];rows_html 由调用方构造(每行 <tr>…)。"""
+    ths = "".join('<th%s>%s</th>' % ((' style="width:%dpx"' % w) if w else "", esc(t))
+                  for (t, w) in head_cells)
+    return '<table><thead><tr>%s</tr></thead><tbody>%s</tbody></table>' % (ths, rows_html)
+
+
+def shell(doc_type, title, subtitle, badges_html, sections_html):
+    """graphite 骨架:wrap + header(品牌行 + 明暗开关 + h1 + 副标 + 徽章)+ 编号卡片 + footer。
+    明暗默认跟随系统(CSS prefers-color-scheme),右上角开关经 localStorage 手动覆盖;
+    无 JS / 外链被剥离时静默降级(仍跟随系统、回退 system-ui)。标签全中文、零 emoji。"""
     m = TYPE_META[doc_type]
-    sub_html = ('<div class="sub">%s</div>' % esc(sub)) if sub else ""
+    sub_html = ('<p class="subtitle">%s</p>\n' % esc(subtitle)) if subtitle else ""
     return (
-        '<!DOCTYPE html>\n<html lang="zh-CN"><head><meta charset="UTF-8">'
-        '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
-        '<title>%s</title>\n<style>%s</style></head>\n<body class="%s">\n'
-        '<div class="sheet">\n'
-        '<div class="ctrl"><span>受控文档 · <b>%s</b></span><span>%s</span></div>\n'
+        '<!DOCTYPE html>\n<html lang="zh-CN">\n<head>\n<meta charset="UTF-8">\n'
+        '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
+        '<title>%s</title>\n'
+        '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
+        '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
+        '<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet">\n'
+        '<style>%s</style>\n</head>\n<body>\n'
+        '<div class="wrap">\n'
+        '<header class="doc">\n'
+        '<div class="doc-topline"><span class="brand">AI MIQ · 受控文档</span>'
+        '<button class="theme-toggle" type="button" onclick="tcrToggleTheme()">明暗切换</button></div>\n'
+        '<h1>%s</h1>\n%s%s\n</header>\n'
         '%s\n'
-        '<div class="titlebar"><h1>%s</h1>%s</div>\n'
-        '%s\n'
-        '<div class="body">\n%s\n</div>\n'
+        '<footer>AI MIQ 团队 · %s · 依据 %s · multica issue 内联渲染</footer>\n'
         '</div>\n'
-        '<footer>AI MIQ 团队 · 受控文档 · %s · multica issue 内联渲染</footer>\n'
-        '</body></html>\n'
-    ) % (esc(h1_text), CSS, m["cls"], esc(slug), esc(m["rule"]), appr_html,
-         esc(h1_text), sub_html, mid_html, body_html, esc(m["cn"]))
+        '<script>\n'
+        '(function(){try{var s=localStorage.getItem("tcr-theme");'
+        'if(s){document.documentElement.setAttribute("data-theme",s);}}catch(e){}})();\n'
+        'function tcrToggleTheme(){var el=document.documentElement,c=el.getAttribute("data-theme");'
+        'var dark=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;'
+        'var n=c==="dark"?"light":(c==="light"?"dark":(dark?"light":"dark"));'
+        'el.setAttribute("data-theme",n);try{localStorage.setItem("tcr-theme",n);}catch(e){}}\n'
+        '</script>\n</body>\n</html>\n'
+    ) % (esc(title), CSS, esc(title), sub_html, badges_html, sections_html,
+         esc(m["cat"]), esc(m["rule"]))
 
 
 def render_plan(d):
@@ -348,45 +369,54 @@ def render_plan(d):
     exec_ = "、".join(_items(d.get("exec"))) or "(未分配)"
     collab = "、".join(_items(d.get("collab"))) or "(无)"
 
-    appr = appr_grid("plan",
-                     [("文档类别", "实施计划", "t"), ("编号", slug, ""),
-                      ("层级", layer_cn, ""), ("阶段", "送审待批", "")],
-                     [("拟制", dri, ""), ("评审", reviewer, ""),
-                      ("批准", "待负责人拍板", ""), ("日期", today(), "")])
-    cells = tally([
-        tc("%d<small> 条</small>" % len(crits), "完成标准"),
-        tc(("%d<small> 项</small>" % len(decisions)) if decisions else "—", "已拍决策"),
-        tc(("%d<small> 项</small>" % len(risks)) if risks else "—", "风险"),
-        tc(esc(appetite), "投入预算 · 超时升版重审", cls="v", small=True),
+    bdg = badges([
+        ("类别", "实施计划", ""), ("编号", slug, ""), ("层级", layer_cn, ""),
+        ("负责人", dri, ""), ("评审", reviewer, ""),
+        ("投入", appetite, "warn"), ("阶段", "送审待批", ""),
     ])
-    kp = keypoints("拍板要点", decisions or crits[:3])
+    subtitle = "%s · 送审待批 · 完成标准 %d 条 · 投入预算 %s" % (layer_cn, len(crits), appetite)
+
+    secs = []
+    n = 0
+    if decisions:
+        lis = "".join("<li>%s</li>" % esc(x) for x in decisions)
+        secs.append(section("%02d" % n, "拍板要点", "<ol>%s</ol>" % lis,
+                            lede="进入执行前必须共识的关键决策。"))
+        n += 1
+    secs.append(section("%02d" % n, "目标", paras(d.get("goal"))))
+    n += 1
 
     crit_rows = "".join(
-        '<tr><td class="c">2.%d</td><td>%s</td>'
-        '<td class="c"><span class="mk wait">☐ 待验</span></td></tr>'
-        % (i + 1, esc(c)) for i, c in enumerate(crits))
-    roles_rows = "".join(
-        '<tr><td class="c">%s</td><td>%s</td></tr>' % (esc(r), esc(v))
+        '<tr><td class="c">%d</td><td>%s</td><td class="c">%s</td></tr>'
+        % (i + 1, esc(c), pill("待验", "wait")) for i, c in enumerate(crits))
+    secs.append(section("%02d" % n, "完成标准",
+                        table([("序号", 48), ("完成标准", None), ("核验", 76)], crit_rows),
+                        lede="送审 · 逐条待验。"))
+    n += 1
+
+    role_tiles = "".join(
+        tile(r, "<p>%s</p>" % esc(v))
         for r, v in [("负责人", dri), ("执行", exec_), ("协作", collab), ("评审", reviewer)])
-    secs = [
-        h2("1", "目标"), paras(d.get("goal")),
-        h2("2", "完成标准(送审 · 待验)"),
-        '<table class="formal"><tr><th style="width:44px">序号</th><th>完成标准</th>'
-        '<th style="width:92px">核验</th></tr>%s</table>' % crit_rows,
-        h2("3", "分工"),
-        '<table class="formal"><tr><th style="width:96px">角色</th><th>承担</th></tr>%s</table>' % roles_rows,
-        h2("4", "投入预算"),
-        '<div class="appetite"><div class="at">预算上限</div><div class="av2">%s'
-        '<small>　超时即触发升版强制重审,不带病延期。</small></div></div>' % esc(appetite),
-    ]
+    secs.append(section("%02d" % n, "分工", grid(role_tiles, "g2")))
+    n += 1
+
+    secs.append(section("%02d" % n, "投入预算",
+                        callout("<strong>%s</strong> —— 超时即触发升版强制重审,不带病延期。" % esc(appetite), "warn")))
+    n += 1
+
     if _folded(d.get("approach")) or decisions or risks:
-        secs.append(h2("5", "方案要点"))
-        secs.append(paras(d.get("approach")))
-        secs += ['<div class="dgrid"><dt>D%d</dt><dd>%s</dd></div>' % (i + 1, esc(x))
-                 for i, x in enumerate(decisions)]
-        secs += ['<div class="dgrid"><dt>R%d</dt><dd>%s</dd></div>' % (i + 1, esc(x))
-                 for i, x in enumerate(risks)]
-    doc = shell("plan", slug, slug, None, appr, cells + kp, "\n".join(secs))
+        body = paras(d.get("approach"))
+        dr = "".join("<li><code>D%d</code> %s</li>" % (i + 1, esc(x)) for i, x in enumerate(decisions))
+        rr = "".join("<li><code>R%d</code> %s</li>" % (i + 1, esc(x)) for i, x in enumerate(risks))
+        extra = ""
+        if dr:
+            extra += "<h3>已拍决策</h3><ul>%s</ul>" % dr
+        if rr:
+            extra += "<h3>风险</h3><ul>%s</ul>" % rr
+        secs.append(section("%02d" % n, "方案要点", body + extra))
+        n += 1
+
+    doc = shell("plan", slug, subtitle, bdg, "\n".join(secs))
     return doc, "docs/plans/plan_%s_%s.html" % (today(), slug)
 
 
@@ -395,29 +425,35 @@ def render_research(d):
     filled = _folded(d.get("findings")) > 0
     has_open = _folded(d.get("openQuestions")) > 0
     verdict = (d.get("verdict") or "").strip()
-    # 裁决格缺省两态:骨架态(发现未回填)/已回填未出裁决
     vtext = verdict or ("已回填 · 裁决待对账" if filled else "调研中 · 待回填")
+    question = (d.get("question") or "").strip()
 
-    appr = appr_grid("research",
-                     [("文档类别", "研究报告", "t"), ("编号", slug, ""),
-                      ("层级", "—", ""), ("阶段", "调研完成" if filled else "调研中", "")],
-                     [("拟制", "调研子 agent", ""), ("对账", "负责人", ""),
-                      ("复核", "与前轮对照", ""), ("日期", today(), "")])
-    q = ('<div class="question"><div class="qt">研究问题</div><p>%s</p></div>'
-         % esc((d.get("question") or "").strip()))
-    cells = tally([
-        tc("已填充" if filled else "待填充", "发现", small=True),
-        tc("已记录" if has_open else "无", "待解问题", small=True),
-        tc(esc(vtext), "总体裁决", cls="v", small=True),
-    ], c3=True)
+    bdg = badges([
+        ("类别", "研究报告", ""), ("编号", slug, ""),
+        ("阶段", "调研完成" if filled else "调研中", "ok" if filled else ""),
+        ("待解问题", "有" if has_open else "无", ""),
+        ("裁决", vtext, "ok" if (verdict and filled) else "warn"),
+    ])
+    subtitle = "研究阶段 · " + ("发现已回填,待对账裁决" if filled else "骨架待 fresh session 深度调研填充")
+
     f = d.get("findings")
-    kp = keypoints("发现要点", _items(f)[:3] if isinstance(f, list) else [])
+    if isinstance(f, list) and _items(f):
+        find_body = "<ul>%s</ul>" % "".join("<li>%s</li>" % esc(x) for x in _items(f))
+    else:
+        find_body = paras(f, blank="(待 fresh session 深度调研填充)")
+    oq = d.get("openQuestions")
+    if isinstance(oq, list) and _items(oq):
+        oq_body = "<ul>%s</ul>" % "".join("<li>%s</li>" % esc(x) for x in _items(oq))
+    else:
+        oq_body = paras(oq, blank="(研究过程中浮现的开放问题)")
 
     secs = [
-        h2("1", "发现"), paras(f, blank="(待 fresh session 深度调研填充)"),
-        h2("2", "待解问题"), paras(d.get("openQuestions"), blank="(研究过程中浮现的开放问题)"),
+        section("00", "研究问题", callout('<p class="lead">%s</p>' % esc(question))),
+        section("01", "发现", find_body),
+        section("02", "待解问题", oq_body, lede="进入 Plan 前必须解决。"),
+        section("03", "总体裁决", callout("<strong>%s</strong>" % esc(vtext))),
     ]
-    doc = shell("research", slug, slug, None, appr, q + cells + kp, "\n".join(secs))
+    doc = shell("research", slug, subtitle, bdg, "\n".join(secs))
     return doc, "docs/research/research_%s_%s.html" % (today(), slug)
 
 
@@ -427,70 +463,65 @@ def render_case(d):
     crs = [c for c in (d.get("criteriaResults") or []) if str(c.get("criterion") or "").strip()]
     met = sum(1 for c in crs if c.get("met"))
     rules = _items(d.get("ruleCandidates"))
-    # 结论格三态(v4):全数达成 / n/m 达成 / 未提供逐项核验
     if crs and met == len(crs):
-        vtext = "已收尾 · 标准全数达成"
+        vtext, vcls = "已收尾 · 标准全数达成", "ok"
     elif crs:
-        vtext = "已收尾 · %d/%d 达成" % (met, len(crs))
+        vtext, vcls = "已收尾 · %d/%d 达成" % (met, len(crs)), "warn"
     else:
-        vtext = "复盘存档"
+        vtext, vcls = "复盘存档", ""
 
-    appr = appr_grid("case",
-                     [("文档类别", "复盘报告", "t"), ("编号", slug, ""),
-                      ("层级", "—", ""), ("阶段", "复盘收尾", "")],
-                     [("拟制", "tc-review session", ""), ("评审", "复盘评审子 agent", ""),
-                      ("批准", "负责人拍板", ""), ("日期", today(), "")])
-    cells = tally([
-        tc(("%d<small> / %d</small>" % (met, len(crs))) if crs else "—", "完成标准"),
-        tc(str(len(kj)), "关键判断"),
-        tc(str(len(rules)) if rules else "—", "规则候选"),
-        tc(esc(vtext), "结论", cls="v", small=True),
+    bdg = badges([
+        ("类别", "复盘报告", ""), ("编号", slug, ""),
+        ("完成标准", ("%d/%d" % (met, len(crs))) if crs else "—", "ok" if (crs and met == len(crs)) else ""),
+        ("关键判断", "%d 项" % len(kj), ""),
+        ("结论", vtext, vcls),
     ])
-    kp = keypoints("要点提示", [j.get("title") for j in kj])
+    subtitle = "复盘收尾 · %d 个关键判断 · %d 条规则候选" % (len(kj), len(rules))
 
-    crit_rows = ""
-    for i, c in enumerate(crs):
-        if c.get("met"):
-            mark = '<span class="mk ok">✓ 达成</span>'
-        else:
-            reason = (c.get("notMetReason") or "").strip()
-            mark = ('<span class="mk bad">× 未达成</span>%s'
-                    % ((" — %s" % esc(reason)) if reason else ""))
-        crit_rows += ('<tr><td class="c">3.%d</td><td>%s</td><td>%s</td></tr>'
-                      % (i + 1, esc(c.get("criterion")), mark))
-    crit_html = ('<table class="formal"><tr><th style="width:44px">序号</th><th>完成标准</th>'
-                 '<th style="width:128px">核验结果</th></tr>%s</table>' % crit_rows
-                 ) if crs else '<p class="note">(未提供逐项核验)</p>'
+    if crs:
+        rows = ""
+        for i, c in enumerate(crs):
+            if c.get("met"):
+                mark = pill("达成", "ok")
+            else:
+                reason = (c.get("notMetReason") or "").strip()
+                mark = pill("未达成", "bad") + ((' <span class="muted">— %s</span>' % esc(reason)) if reason else "")
+            rows += '<tr><td class="c">%d</td><td>%s</td><td>%s</td></tr>' % (i + 1, esc(c.get("criterion")), mark)
+        crit_html = table([("序号", 48), ("完成标准", None), ("核验结果", 150)], rows)
+    else:
+        crit_html = '<p class="muted">(未提供逐项核验)</p>'
 
-    j_blocks = []
+    j_blocks = ""
     for i, j in enumerate(kj):
         rows = ""
         for label, v in [("背景", j.get("context")),
                          ("选项", " ／ ".join(_items(j.get("options")))),
                          ("选择", j.get("chose"))]:
             if str(v or "").strip():
-                rows += ('<div class="jrow"><dt>%s</dt><dd>%s</dd></div>' % (esc(label), esc(v)))
-        hind = ('<div class="hind"><dt>事后看 · 核心收获</dt><dd>%s</dd></div>'
+                rows += '<div class="jrow"><span class="k">%s</span><span>%s</span></div>' % (esc(label), esc(v))
+        hind = ('<div class="hind"><span class="k">事后看 · 核心收获</span><span>%s</span></div>'
                 % esc(j.get("inHindsight"))) if str(j.get("inHindsight") or "").strip() else ""
-        aux = ('<div class="aux"><dt>古法不可能</dt><dd>%s</dd></div>'
+        aux = ('<div class="aux"><span class="k">古法不可能</span><span>%s</span></div>'
                % esc(j.get("ancientImpossible"))) if str(j.get("ancientImpossible") or "").strip() else ""
-        j_blocks.append(
-            '<div class="judge"><div class="judge-h"><span class="ji">判断%s</span>'
+        j_blocks += (
+            '<div class="judge"><div class="judge-h"><span class="pill core">判断%s</span>'
             '<span class="jt">%s</span></div><div class="judge-b">%s%s%s</div></div>'
             % (cn_idx(i + 1), esc(j.get("title") or "(未命名判断)"), rows, hind, aux))
 
-    rules_html = ('<table class="formal"><tr><th>候选规则</th><th style="width:84px">状态</th></tr>%s</table>'
-                  % "".join('<tr><td>%s</td><td class="c"><span class="pend">待提级</span></td></tr>'
-                            % esc(r) for r in rules)) if rules else '<p class="note">(无)</p>'
+    if rules:
+        rrows = "".join('<tr><td>%s</td><td class="c">%s</td></tr>' % (esc(r), pill("待提级", "warn")) for r in rules)
+        rules_html = table([("候选规则", None), ("状态", 88)], rrows)
+    else:
+        rules_html = '<p class="muted">(无)</p>'
 
     secs = [
-        h2("1", "目标"), paras(d.get("goal")),
-        h2("2", "实际发生"), paras(d.get("whatHappened")),
-        h2("3", "完成标准核验"), crit_html,
-        h2("4", "关键判断"), "\n".join(j_blocks),
-        h2("5", "规则候选"), rules_html,
+        section("01", "目标", paras(d.get("goal"))),
+        section("02", "实际发生", paras(d.get("whatHappened"))),
+        section("03", "完成标准核验", crit_html),
+        section("04", "关键判断", j_blocks),
+        section("05", "规则候选", rules_html),
     ]
-    doc = shell("case", slug, slug, None, appr, cells + kp, "\n".join(secs))
+    doc = shell("case", slug, subtitle, bdg, "\n".join(secs))
     return doc, "cases/%s-%s.html" % (today(), slug)
 
 
@@ -501,42 +532,39 @@ def render_handoff(d):
     pol = (d.get("pollutionSignal") or "").strip()
     na = d.get("nextAction")
     na_items = _items(na)
-    n_impl = len(na_items) if isinstance(na, list) else 0
 
-    appr = appr_grid("handoff",
-                     [("文档类别", "交接单", "t"), ("编号", slug, ""),
-                      ("层级", "—", ""), ("阶段", "转下一 session", "")],
-                     [("移交", "本 session", ""), ("接收", "下一 session", ""),
-                      ("污染信号", pol or "无 · 洁净", "warn" if pol else "ok"),
-                      ("时点", at, "")])
-    cells = tally([
-        tc("下一 session", "接收", small=True),
-        tc(("%d<small> 项</small>" % n_impl) if n_impl else "—", "实现项"),
-        tc(str(len(dead)), "禁区", cls="warn" if dead else ""),
-        tc("唯一输入 · 见下一步", "开工指引", cls="v", small=True),
+    bdg = badges([
+        ("类别", "交接单", ""), ("编号", slug, ""),
+        ("污染信号", pol or "无 · 洁净", "warn" if pol else "ok"),
+        ("禁区", "%d 条" % len(dead), ""),
+        ("时点", at, ""),
     ])
+    subtitle = "转下一 session · 接收方照「下一步」冷启动开工"
 
     if na_items:
-        next_body = ('<div class="lead">%s</div>' % esc(na_items[0])
-                     ) + "".join("<p>%s</p>" % esc(x) for x in na_items[1:])
+        rest = "".join("<p>%s</p>" % esc(x) for x in na_items[1:])
+        next_html = callout('<p class="lead">%s</p>%s' % (esc(na_items[0]), rest))
     else:
-        next_body = '<div class="lead">(待补充)</div>'
-    dead_html = ('<table class="formal"><tr><th class="danger" style="width:42px">标记</th>'
-                 '<th class="danger">已证伪的路线与原因</th></tr>%s</table>'
-                 % "".join('<tr><td class="c"><span class="mk bad">×</span></td><td>%s</td></tr>'
-                           % esc(x) for x in dead)) if dead else '<p class="note">(无)</p>'
+        next_html = callout('<p class="lead">(待补充)</p>')
+
+    if dead:
+        drows = "".join('<tr><td class="c">%s</td><td>%s</td></tr>' % (pill("×", "bad"), esc(x)) for x in dead)
+        dead_html = table([("标记", 56), ("已证伪的路线与原因", None)], drows)
+    else:
+        dead_html = '<p class="muted">(无)</p>'
+
     archive = (
-        '<div class="clause"><dt>末次提交</dt><dd><code>%s</code> · 分支 <code>%s</code></dd></div>'
-        '<div class="clause"><dt>已完成</dt><dd>%s</dd></div>'
-    ) % (esc(d.get("lastCommit") or "—"), esc(d.get("branch") or "—"),
-         paras(d.get("done")))
+        kv("末次提交", "<code>%s</code> · 分支 <code>%s</code>"
+           % (esc(d.get("lastCommit") or "—"), esc(d.get("branch") or "—")))
+        + kv("已完成", paras(d.get("done")))
+    )
 
     secs = [
-        h2("1", "下一步(接收方照此开工)"), '<div class="next">%s</div>' % next_body,
-        h2("2", "禁区(已证伪路线 · 勿重试)", danger=True), dead_html,
-        h2("3", "交接时点存档"), archive,
+        section("01", "下一步(接收方照此开工)", next_html),
+        section("02", "禁区(已证伪路线 · 勿重试)", dead_html, lede="以下路线已被证伪,不要重试。"),
+        section("03", "交接时点存档", archive),
     ]
-    doc = shell("handoff", slug, slug, None, appr, cells, "\n".join(secs))
+    doc = shell("handoff", slug, subtitle, bdg, "\n".join(secs))
     return doc, "docs/plans/handoff_%s_%s.html" % (today(), slug)
 
 
@@ -604,12 +632,12 @@ def record_gate(ok, path=GATE_COUNTS_PATH):
 def resolve_issue_ref(ref):
     """非 UUID 的 issue 引用(key 如 TEA-88 / UUID 前缀)→ 完整 UUID。
 
-    经 `multica issue show <ref> --output json` 解析(CLI 端 resolveIssueRef 认
+    经 `multica issue get <ref> --output json` 解析(CLI 端 resolveIssueRef 认
     key/前缀/UUID 三形态);进 API 的一律完整 UUID 这一命门不变,只把解析负担
     从人/agent 挪进脚本。解析失败 → 硬失败,绝不带着可疑引用继续发布。
     """
     try:
-        proc = subprocess.run(["multica", "issue", "show", str(ref), "--output", "json"],
+        proc = subprocess.run(["multica", "issue", "get", str(ref), "--output", "json"],
                               capture_output=True, text=True)
     except FileNotFoundError:
         fail("找不到 multica CLI,无法解析 issue 引用 %r;先安装/更新 multica" % ref)
